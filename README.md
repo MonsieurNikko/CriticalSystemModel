@@ -144,6 +144,20 @@ sbt compile
 
 ## 👥 Collaboration en équipe — Les règles d'or
 
+## 🤖 Gouvernance IA (obligatoire)
+
+Avant toute contribution (IA ou humaine), lire et appliquer la charte:
+
+- `documentation/AGENT_RULES.md` (règles officielles de travail, vérification, traçabilité)
+- `documentation/historique.md` (journal obligatoire à mettre à jour à chaque intervention)
+
+Exigences minimales avant merge:
+
+- Le périmètre de la tâche est respecté.
+- Les invariants métier sont préservés (pas de double-réservation, stock non négatif, pas de deadlock).
+- La vérification technique est documentée (`sbt compile`, `sbt test` si applicable).
+- Une entrée complète est ajoutée dans `documentation/historique.md` (modele, github, date/heure, fichiers, détails, résultats).
+
 ### 🌿 Workflow Git (à suivre sans exception)
 
 ```bash
@@ -191,6 +205,16 @@ Exemple : `feat: ajout de l'acteur ClientActor avec message ReservationRequest`
 - **Réunion hebdomadaire courte** (30 min) : qu'est-ce que j'ai fait ? qu'est-ce que je vais faire ? est-ce que j'ai un blocage ?
 - **Issues GitHub** : chaque tâche = une issue = une branche = une Pull Request
 - **Ne jamais bloquer en silence** : si vous êtes bloqués plus de 2h → vous en parlez à l'équipe
+- **Traçabilité stricte** : chaque intervention doit être journalisée dans `documentation/historique.md` le jour même.
+
+### ✅ Checklist rapide avant Pull Request
+
+- [ ] Charte lue: `documentation/AGENT_RULES.md`
+- [ ] Changements limités au périmètre prévu
+- [ ] Build OK: `sbt compile`
+- [ ] Tests exécutés (ou justification si N/A): `sbt test`
+- [ ] Entrée ajoutée dans `documentation/historique.md` avec modele et github
+- [ ] Commit et push effectués sur la branche de travail (jamais sur `main`)
 
 ---
 
