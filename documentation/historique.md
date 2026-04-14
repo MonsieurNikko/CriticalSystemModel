@@ -35,6 +35,61 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ## Entrees
 
+### [2026-04-14 09:09] - Affectation des noms reels dans la repartition
+- Modele: GPT-5.3-Codex
+- GitHub: @MonsieurNikko
+- Type: IA
+- Branche: feature/documentation-agent-rules
+- Contexte/tache: remplacer les placeholders Membre A/B/C/D par les noms reels de l'equipe
+- Fichiers modifies:
+	- documentation/repartition-equipe.md
+	- documentation/historique.md
+- Changements detailles:
+	- Affectation des roles a Axelobistro, Alicette, Nikko et Ostreann selon l'ordre fourni.
+	- Mise a jour des binomes de relecture et des sections collaboratives avec les noms.
+	- Alignement des exemples de branches et du planning hebdomadaire avec les noms de l'equipe.
+- Commandes executees:
+	- Get-Date -Format "yyyy-MM-dd HH:mm"
+	- edition documentaire via apply_patch
+- Resultats de verification:
+	- Build: N/A
+	- Tests: N/A
+	- Notes: modifications documentaires uniquement
+- Risques/impacts:
+	- La repartition reste ajustable selon les disponibilites reelles de chacun.
+	- Aucun impact sur le code applicatif.
+- Prochaines actions recommandees:
+	- Confirmer collectivement la repartition en reunion courte.
+	- Ouvrir les 4 issues de demarrage et associer chaque branche a son owner.
+
+### [2026-04-14 09:04] - Proposition de repartition equipe (4 membres)
+- Modele: GPT-5.3-Codex
+- GitHub: @MonsieurNikko
+- Type: IA
+- Branche: feature/documentation-agent-rules
+- Contexte/tache: relire les fichiers projet et proposer une repartition logique permettant le travail parallele et collaboratif
+- Fichiers modifies:
+	- documentation/repartition-equipe.md
+	- documentation/historique.md
+- Changements detailles:
+	- Ajout d'un plan de repartition a 4 membres avec owners, binomes, zones communes et flux de collaboration.
+	- Ajout d'un planning iteratif sur 2 semaines avec points d'integration.
+	- Definition d'un workflow Git collaboratif, d'une Definition of Done commune et des parades aux risques principaux.
+- Commandes executees:
+	- rg --files -g "!target/**" -g "!project/target/**"
+	- lecture README.md, build.sbt, documentation/AGENT_RULES.md, documentation/historique.md, project/build.properties
+	- Get-Date -Format "yyyy-MM-dd HH:mm"
+- Resultats de verification:
+	- Build: N/A
+	- Tests: N/A
+	- Notes: modifications documentaires uniquement
+- Risques/impacts:
+	- Le plan suppose une execution disciplinee des revues croisees et points d'integration.
+	- Le PDF projet n'a pas ete parse automatiquement dans cet environnement.
+- Prochaines actions recommandees:
+	- Valider collectivement les owners A/B/C/D avec les noms reels.
+	- Creer les issues GitHub et branches associees avant demarrage implementation.
+
 ### [2026-03-27 10:05] - Mise a jour regles push et champ modele
 - Modele: GPT-5.3-Codex
 - GitHub: @MonsieurNikko
