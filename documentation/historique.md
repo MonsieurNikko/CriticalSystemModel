@@ -35,6 +35,40 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ## Entrees
 
+### [2026-04-15 09:25] - Demarrage implementation M14 Chatelet
+- Modele: GPT-5.3-Codex
+- GitHub: @MonsieurNikko
+- Type: IA
+- Branche: feature/documentation-agent-rules
+- Contexte/tache: demarrer l'implementation d'un systeme distribue critique pour la gestion du trafic M14 a Chatelet et aligner la documentation
+- Fichiers modifies:
+	- README.md
+	- documentation/repartition-equipe.md
+	- documentation/historique.md
+	- src/main/scala/m14/StationControl.scala
+	- src/main/scala/m14/Main.scala
+	- src/test/scala/m14/StationControlSpec.scala
+- Changements detailles:
+	- Creation d'un socle Akka Typed pour StationControl avec supervision de densite, gestion d'incidents et mode Safety.
+	- Ajout d'un point d'entree minimal de simulation M14 (Main).
+	- Ajout de tests ScalaTest/Akka TestKit couvrant 3 scenarios critiques (incident critique, surcharge zone, retour mode normal).
+	- Pivot documentaire complet du README et de la repartition equipe vers le domaine M14 Chatelet.
+- Commandes executees:
+	- rg --files -g "!target/**" -g "!project/target/**"
+	- sbt compile
+	- sbt test
+	- Get-Date -Format "yyyy-MM-dd HH:mm"
+- Resultats de verification:
+	- Build: PASS
+	- Tests: PASS
+	- Notes: warning SLF4J (binder absent) sans impact fonctionnel sur les tests
+- Risques/impacts:
+	- Le scope peut deriver si la modelisation inclut toute la ligne au lieu de la zone Chatelet.
+	- Les artefacts de build (target/) ne doivent pas etre commits.
+- Prochaines actions recommandees:
+	- Completer la modelisation Petri des proprietes Safety/Liveness definies dans le README.
+	- Ajouter des tests de concurrence supplementaires pour des rafales d'evenements simultanes.
+
 ### [2026-04-14 09:09] - Affectation des noms reels dans la repartition
 - Modele: GPT-5.3-Codex
 - GitHub: @MonsieurNikko

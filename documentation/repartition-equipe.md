@@ -1,6 +1,6 @@
 # Repartition equipe (4 personnes) - Travail en parallele
 
-Objectif: avancer vite sans se bloquer, tout en garantissant une integration continue entre code Akka, modele de Petri et verification.
+Objectif: avancer vite sans se bloquer, tout en garantissant une integration continue entre code Akka, modele de Petri et verification sur le systeme M14 Chatelet.
 
 ## 1) Principe de decoupage
 
@@ -12,40 +12,40 @@ Rotation recommandee chaque semaine pour que tout le monde comprenne tout le pro
 
 ## 2) Repartition proposee
 
-### Axelobistro - Flux Reservation (Akka)
+### Axelobistro - StationControl et protocole de messages (Akka)
 - Scope:
-  - definition des messages de reservation
-  - acteur billetterie (orchestration)
-  - scenarios reussite/annulation
+  - definition des messages metier (densite, incident, resolution)
+  - orchestration StationControl (modes Normal/Safety)
+  - gestion des snapshots d'etat
 - Livrables:
-  - code acteur + protocoles
-  - diagramme sequence reservation
+  - code acteur central + protocoles
+  - diagramme de sequence de bascule Safety
 - Binome relecture: Ostreann
 
-### Alicette - Flux Stock & Cohesion des invariants (Akka)
+### Alicette - Controle des acces et regles de surete (Akka)
 - Scope:
-  - acteur stock
-  - prevention du stock negatif
-  - gestion concurrence sur decrementation/incrementation
+  - logique de fermeture/reouverture des acces par zone
+  - surveillance des seuils de densite
+  - prevention des etats incoherents en mode incident
 - Livrables:
-  - logique de stock atomique
-  - tests ciblant stock jamais negatif
+  - composants de controle d'acces robustes
+  - scenarios de securite zone surchargee
 - Binome relecture: Axelobistro
 
 ### Nikko - Modele formel (Reseau de Petri + preuves)
 - Scope:
-  - modelisation places/transitions du flux complet
-  - invariants de place/transition
-  - formalisation absence deadlock/double-reservation
+  - modelisation des etats station (normal/safety)
+  - invariants de place/transition sur seuils et incidents
+  - formalisation absence deadlock + traitement des alertes
 - Livrables:
   - modele Petri versionne
-  - notes de preuve (structurelles/LTL si prevu)
+  - notes de preuve (structurelles/LTL)
 - Binome relecture: Alicette
 
 ### Ostreann - Integration, tests et qualite
 - Scope:
   - architecture des tests (ScalaTest + akka-testkit)
-  - tests de non-regression
+  - tests de non-regression et de concurrence
   - CI locale (sbt compile, sbt test) et support integration
 - Livrables:
   - suite de tests reproductible
@@ -56,21 +56,21 @@ Rotation recommandee chaque semaine pour que tout le monde comprenne tout le pro
 
 Pour eviter le travail en silo, vous partagez 3 zones communes:
 - Contrats de messages (co-rediges par Axelobistro + Alicette + Ostreann)
-- Invariants formels (co-rediges par Alicette + Nikko)
-- Scenarios de validation (co-rediges par Axelobistro + Nikko + Ostreann)
+- Invariants formels M14 (co-rediges par Alicette + Nikko)
+- Scenarios de validation station (co-rediges par Axelobistro + Nikko + Ostreann)
 
 Regle pratique: toute PR doit toucher au moins 1 artefact metier ET 1 artefact de validation (test, modele, ou doc de preuve).
 
 ## 4) Planning type sur 2 semaines (iteratif)
 
 ### Semaine 1
-- Jour 1: cadrage des contrats/messages + checklist invariants
-- Jours 2-3: implementation parallele Axelobistro/Alicette, modelisation Nikko, squelette tests Ostreann
-- Jour 4: integration intermediaire (merge de toutes les branches vers une branche d'integration)
+- Jour 1: cadrage du protocole M14 + checklist invariants
+- Jours 2-3: implementation parallele StationControl/Access, modelisation Petri, squelette tests
+- Jour 4: integration intermediaire (merge des branches vers integration)
 - Jour 5: revue croisee + ajustements
 
 ### Semaine 2
-- Jours 1-2: consolidation des cas limites (erreurs paiement, annulations, concurrence)
+- Jours 1-2: consolidation des cas limites (surcharges, incidents critiques, retour normal)
 - Jour 3: campagne de verification complete (compile, tests, coherence avec Petri)
 - Jour 4: freeze fonctionnel + documentation finale
 - Jour 5: repetition demo + buffer correction
@@ -78,10 +78,10 @@ Regle pratique: toute PR doit toucher au moins 1 artefact metier ET 1 artefact d
 ## 5) Workflow Git conseille (collaboratif)
 
 - Branches de travail:
-  - feature/reservation-akka (Axelobistro)
-  - feature/stock-invariants (Alicette)
-  - feature/petri-verification (Nikko)
-  - feature/tests-integration (Ostreann)
+  - feature/m14-station-control (Axelobistro)
+  - feature/m14-access-safety (Alicette)
+  - feature/m14-petri-verification (Nikko)
+  - feature/m14-tests-integration (Ostreann)
 - Branche d'integration hebdomadaire:
   - integration/week-XX
 - Regles:
@@ -101,7 +101,7 @@ Une tache est terminee seulement si:
 
 - Risque: derive entre code Akka et modele Petri
   - Parade: point de synchronisation fixe 2 fois/semaine (Axelobistro + Alicette avec Nikko)
-- Risque: blocage integration tardive
-  - Parade: integration/week-XX des le milieu de semaine
+- Risque: mode Safety mal gere en concurrence
+  - Parade: tests de scenario critiques rediges par Ostreann et relus par l'equipe
 - Risque: surcharge d'un membre
   - Parade: rotation owner/backup chaque semaine
