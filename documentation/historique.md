@@ -6,7 +6,6 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 ## Template d'entree (copier/coller)
 
 ### [YYYY-MM-DD HH:MM] - Titre court de l'intervention
-- Modele: nom-du-modele-ou-N/A
 - GitHub: @username
 - Type: IA | Humain
 - Branche: feature/nom-branche
@@ -36,7 +35,6 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 ## Entrees
 
 ### [2026-04-15 09:25] - Demarrage implementation M14 Chatelet
-- Modele: GPT-5.3-Codex
 - GitHub: @MonsieurNikko
 - Type: IA
 - Branche: feature/documentation-agent-rules
@@ -70,7 +68,6 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 	- Ajouter des tests de concurrence supplementaires pour des rafales d'evenements simultanes.
 
 ### [2026-04-14 09:09] - Affectation des noms reels dans la repartition
-- Modele: GPT-5.3-Codex
 - GitHub: @MonsieurNikko
 - Type: IA
 - Branche: feature/documentation-agent-rules
@@ -97,7 +94,6 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 	- Ouvrir les 4 issues de demarrage et associer chaque branche a son owner.
 
 ### [2026-04-14 09:04] - Proposition de repartition equipe (4 membres)
-- Modele: GPT-5.3-Codex
 - GitHub: @MonsieurNikko
 - Type: IA
 - Branche: feature/documentation-agent-rules
@@ -125,7 +121,6 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 	- Creer les issues GitHub et branches associees avant demarrage implementation.
 
 ### [2026-03-27 10:05] - Mise a jour regles push et champ modele
-- Modele: GPT-5.3-Codex
 - GitHub: @MonsieurNikko
 - Type: IA
 - Branche: feature/documentation-agent-rules
@@ -153,7 +148,6 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 	- Ouvrir une Pull Request pour relecture equipe.
 
 ### [2026-03-27 09:40] - Initialisation du template historique
-- Modele: GPT-5.3-Codex
 - GitHub: @MonsieurNikko
 - Type: IA
 - Branche: main
