@@ -1,5 +1,5 @@
-# CriticalSystemModel - Gestion Critique du Trafic M14 a Chatelet
-> Modelisation et verification formelle avec Akka, Scala et Reseaux de Petri
+# CriticalSystemModel - Sous-systeme critique M14 (troncon partage)
+> Recadrage du projet existant: abstraction formelle et simulation distribuee d'un mecanisme d'exclusion mutuelle
 
 ![Status](https://img.shields.io/badge/status-en%20cours-yellow)
 ![Equipe](https://img.shields.io/badge/equipe-4%20personnes-blue)
@@ -9,29 +9,33 @@
 
 ## Resume du projet
 
-Ce projet consiste a construire et verifier formellement un systeme distribue de gestion de trafic passagers sur la ligne 14 (zone Chatelet), avec focalisation sur la securite de quai et la gestion d'incidents.
+Le projet est recentre sur un sous-systeme critique inspire de la M14: le controle d'acces concurrent de deux trains automatiques a un troncon partage.
 
-Le systeme doit coordonner:
-- la supervision de densite passagers (quais et couloirs)
-- le pilotage des acces (ouverture/fermeture)
-- la gestion d'incidents critiques
-- la diffusion d'alertes operationnelles
+Ce choix est une reduction du projet existant, pas une recreation. Le cas a 2 trains est retenu comme plus petit cas non trivial pour etudier:
+- concurrence
+- exclusion mutuelle
+- attente/arbitrage
+- progression apres liberation
 
-Deux approches sont menees en parallele:
-- Akka + Scala: implementation executable et simulation
-- Reseaux de Petri: preuve formelle de surete et vivacite
+Le projet combine:
+- Akka + Scala: simulation distribuee du protocole de messages
+- Reseaux de Petri: abstraction formelle du comportement essentiel et verification des proprietes critiques
+
+Positionnement academique explicite:
+- ce projet ne modelise pas la ligne M14 complete
+- ce projet modelise un sous-systeme critique simplifie, defendable et analysable a la main
 
 ---
 
-## Objectifs du projet
+## Objectifs du projet (version recadree)
 
 | # | Objectif | Description |
 |---|----------|-------------|
 | 1 | Etat de l'art | Etudier verification formelle et systemes de transport urbain critiques |
-| 2 | Modelisation | Definir l'architecture d'acteurs Akka pour M14 Chatelet |
-| 3 | Traduction formelle | Construire le reseau de Petri du controle de trafic |
-| 4 | Verification | Prouver absence de deadlock, surete capacitaire, traitement des incidents |
-| 5 | Simulation & comparaison | Confronter comportement Akka et modele formel |
+| 2 | Modelisation | Definir une architecture d'acteurs minimale pour le controle d'acces au troncon partage |
+| 3 | Traduction formelle | Construire un reseau de Petri compact, centre sur l'exclusion mutuelle |
+| 4 | Verification | Prouver exclusion mutuelle, absence de collision, progression apres liberation |
+| 5 | Simulation & comparaison | Relier messages Akka et transitions Petri sur 3 scenarios critiques |
 
 ---
 
@@ -49,16 +53,16 @@ Deux approches sont menees en parallele:
 
 | Notion | Pourquoi c'est utile |
 |--------|----------------------|
-| Akka Typed | Definir acteurs de supervision et securite |
-| Messages asynchrones | Echanger des evenements de trafic/incidents |
-| Reseaux de Petri | Capturer transitions de mode normal/surete |
+| Akka Typed | Definir acteurs de train et arbitre de section critique |
+| Messages asynchrones | Emettre demande/autorisation/attente/sortie/liberation |
+| Reseaux de Petri | Capturer les transitions essentielles d'acces exclusif |
 | Proprietes structurelles | Deadlock-freedom, bornitude, vivacite |
 
 ### Niveau 3 - Semaine 4-6
 
 | Notion | Pourquoi c'est utile |
 |--------|----------------------|
-| LTL | Exprimer les obligations temporelles de securite |
+| LTL | Exprimer exclusion mutuelle et progression eventuelle |
 | Invariants de place/transition | Prouver les contraintes critiques |
 | ScalaTest + Akka TestKit | Valider scenarios de concurrence |
 
@@ -122,33 +126,58 @@ Exemples de branches:
 
 ---
 
-## Vue d'ensemble du systeme M14 Chatelet
+## Vue d'ensemble du sous-systeme critique
 
-Architecture fonctionnelle de reference:
+Architecture cible minimale:
 
 ```
-[FlowSensorActor] --densite--> [StationControlActor] --commandes--> [GateControlActor]
-                                      |
-                                      +--> [IncidentManagerActor]
-                                      |
-                                      +--> [AlertDispatcherActor]
+[Train1Actor] --demande--> [SectionControllerActor] <--demande-- [Train2Actor]
+    ^                          |       ^
+    |                          |       |
+    +---- autorisation/attente +-------+
+            sortie/liberation
 ```
 
 ### Invariants metier critiques
 
-- Le seuil de densite d'une zone ne doit jamais rester depasse sans action de controle.
-- En incident critique, le systeme bascule en mode Safety et ferme les acces.
-- Aucune alerte critique n'est perdue ni traitee deux fois.
-- Le systeme ne doit jamais entrer en deadlock.
-- Apres resolution d'incident, un retour controle au mode Normal doit etre possible.
+- Un seul train peut occuper le troncon critique a un instant donne.
+- L'occupation concurrente du troncon par deux trains est impossible.
+- Un train en attente peut progresser quand le troncon est libere (sous hypothese d'arbitrage non pathologique).
+- Le protocole de messages critique doit rester borne et interpretable.
 
 ### Proprietes formelles ciblees
 
-- Safety 1: pas d'ouverture d'acces en zone fermee pour incident critique.
-- Safety 2: porte fermee si densite > seuil.
-- Safety 3: unicite de traitement d'une alerte critique.
-- Liveness 1: toute alerte critique est traitee en temps borne.
-- Liveness 2: en absence d'incident actif et sous seuil, les acces reouvrent.
+- Safety 1: exclusion mutuelle sur le troncon partage.
+- Safety 2: absence de collision sur le troncon critique.
+- Liveness 1: progression eventuelle d'un train en attente apres liberation.
+- Liveness 2: absence de blocage injustifie dans les scenarios retenus.
+
+### Invariant principal
+
+Invariant de ressource vise:
+
+T1_sur_troncon + T2_sur_troncon + Troncon_libre = 1
+
+Cet invariant sert de noyau de preuve de l'exclusion mutuelle.
+
+---
+
+## Perimetre du coeur du projet
+
+Le coeur du projet inclut uniquement:
+- 2 trains concurrents
+- 1 troncon critique partage
+- 1 mecanisme d'arbitrage d'acces
+- 1 protocole minimal de messages
+
+Hors coeur (extensions eventuelles uniquement):
+- densite voyageurs
+- supervision complete de station
+- alertes complexes
+- gestion globale multi-incidents
+- logique d'exploitation complete de ligne
+
+Voir le detail du recadrage dans documentation/recadrage-m14-troncon-critique.md.
 
 ---
 

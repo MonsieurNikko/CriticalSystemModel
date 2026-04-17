@@ -33,6 +33,61 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ## Entrees
 
+### [2026-04-17 12:10] - Recadrage du guide complet et alignement final de la documentation
+- GitHub: @MonsieurNikko
+- Branche: feature/m14-docs-recentrage-guide
+- Contexte/tache: modifier aussi le guide global pour supprimer l'ancien cadrage billetterie et l'aligner sur le sous-systeme critique M14 retenu
+- Fichiers modifies:
+	- projet2026_guide_complet.md
+	- documentation/historique.md
+- Changements detailles:
+	- Remplacement du contenu billetterie par un guide recadre sur 2 trains, 1 troncon partage, 1 controleur d'acces.
+	- Suppression des sections de code detaillees dans le guide au profit d'un cadrage academique de planification.
+	- Alignement explicite des objectifs, scenarios, proprietes et limites avec le noyau de preuve exclusion mutuelle + progression.
+- Commandes executees:
+	- Get-Date -Format "yyyy-MM-dd HH:mm"
+	- edition documentaire via apply_patch
+	- sbt compile
+	- sbt test
+- Resultats de verification:
+	- Build: PASS
+	- Tests: PASS
+	- Notes: warning SLF4J (binder absent) observe en tests, sans impact fonctionnel
+- Risques/impacts:
+	- Baisse de confusion entre ancien sujet billetterie et recadrage M14.
+	- Le guide devient plus sobre mais plus defendable sur les exigences formelles.
+- Prochaines actions recommandees:
+	- Pousser sur branche dediee et ouvrir la revue.
+	- Fusionner vers main apres validation finale de coherence documentaire.
+
+### [2026-04-17 12:05] - Recadrage documentaire vers le sous-systeme troncon critique
+- GitHub: @MonsieurNikko
+- Branche: main
+- Contexte/tache: appliquer un recadrage strict du projet existant vers un perimetre minimal defendable (2 trains, 1 troncon partage), sans implementation
+- Fichiers modifies:
+	- README.md
+	- documentation/repartition-equipe.md
+	- documentation/recadrage-m14-troncon-critique.md
+	- documentation/historique.md
+- Changements detailles:
+	- Reorientation du README vers une abstraction explicite de sous-systeme critique M14, en supprimant le cadrage station complete du coeur du projet.
+	- Mise a jour de la repartition equipe pour aligner les roles, livrables et risques sur le mecanisme d'exclusion mutuelle du troncon partage.
+	- Ajout d'un document de recadrage complet (diagnostic, architecture minimale, flux critiques, scenarios, reseau de Petri cible, proprietes, invariant principal, limites).
+	- Clarification des hypotheses academiques pour eviter toute sur-promesse de realisme ou d'equivalence totale Akka/Petri.
+- Commandes executees:
+	- Get-Date -Format "yyyy-MM-dd HH:mm"
+	- edition documentaire via apply_patch/create_file
+- Resultats de verification:
+	- Build: N/A
+	- Tests: N/A
+	- Notes: phase de planification uniquement, aucun code source ni tests modifies
+- Risques/impacts:
+	- Le recadrage peut paraitre moins "complet" mais augmente fortement la defendabilite formelle.
+	- Un risque de re-derivation du scope subsiste si les extensions futures reviennent trop tot dans le coeur.
+- Prochaines actions recommandees:
+	- Valider en equipe le perimetre final et geler la checklist de scope.
+	- Preparer la matrice de correspondance messages Akka <-> transitions Petri sur 3 scenarios.
+
 ### [2026-04-17 11:45] - Push et Merge vers la branche principale (main)
 - GitHub: @MonsieurNikko
 - Branche: main
