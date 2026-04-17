@@ -7,7 +7,6 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ### [YYYY-MM-DD HH:MM] - Titre court de l'intervention
 - GitHub: @username
-- Type: IA | Humain
 - Branche: feature/nom-branche
 - Contexte/tache: description courte de l'objectif
 - Fichiers modifies:
