@@ -1,235 +1,175 @@
-# 🎟️ CriticalSystemModel — Système de Billetterie Distribué
-> Modélisation et Vérification Formelle avec Akka, Scala et Réseaux de Pétri
+# CriticalSystemModel - Gestion Critique du Trafic M14 a Chatelet
+> Modelisation et verification formelle avec Akka, Scala et Reseaux de Petri
 
 ![Status](https://img.shields.io/badge/status-en%20cours-yellow)
-![Équipe](https://img.shields.io/badge/équipe-4%20personnes-blue)
+![Equipe](https://img.shields.io/badge/equipe-4%20personnes-blue)
 ![Deadline](https://img.shields.io/badge/deadline-fin%20mai%202026-red)
 
 ---
 
-## 📌 Résumé du projet
+## Resume du projet
 
-Ce projet consiste à **construire et vérifier formellement** un système de billetterie distribué.
+Ce projet consiste a construire et verifier formellement un systeme distribue de gestion de trafic passagers sur la ligne 14 (zone Chatelet), avec focalisation sur la securite de quai et la gestion d'incidents.
 
-L'idée : plusieurs composants (acteurs) communiquent pour gérer des réservations de billets. On doit s'assurer qu'il est **impossible** de vendre deux fois le même billet, qu'il n'y a **jamais de blocage**, et que les règles métier sont **toujours respectées**.
+Le systeme doit coordonner:
+- la supervision de densite passagers (quais et couloirs)
+- le pilotage des acces (ouverture/fermeture)
+- la gestion d'incidents critiques
+- la diffusion d'alertes operationnelles
 
-On utilise deux approches en parallèle :
-- **Akka + Scala** → le vrai code qui simule le système
-- **Réseaux de Pétri** → le modèle mathématique qui prouve que le système est correct
+Deux approches sont menees en parallele:
+- Akka + Scala: implementation executable et simulation
+- Reseaux de Petri: preuve formelle de surete et vivacite
 
 ---
 
-## 🎯 Objectifs du projet
+## Objectifs du projet
 
 | # | Objectif | Description |
 |---|----------|-------------|
-| 1 | **État de l'art** | Comprendre la vérification formelle et les réseaux de Pétri |
-| 2 | **Modélisation** | Définir l'architecture en acteurs Akka pour la billetterie |
-| 3 | **Traduction formelle** | Construire le réseau de Pétri correspondant |
-| 4 | **Vérification** | Prouver : pas de deadlock, pas de double-réservation, stock jamais négatif |
-| 5 | **Simulation & comparaison** | Tester le code Scala et comparer avec le modèle formel |
+| 1 | Etat de l'art | Etudier verification formelle et systemes de transport urbain critiques |
+| 2 | Modelisation | Definir l'architecture d'acteurs Akka pour M14 Chatelet |
+| 3 | Traduction formelle | Construire le reseau de Petri du controle de trafic |
+| 4 | Verification | Prouver absence de deadlock, surete capacitaire, traitement des incidents |
+| 5 | Simulation & comparaison | Confronter comportement Akka et modele formel |
 
 ---
 
-## 🧠 Savoirs requis (de zéro)
+## Savoirs requis
 
-> Pas de panique. Voici exactement ce que chaque membre doit apprendre, dans l'ordre.
+### Niveau 1 - Semaine 1-2
 
-### 🔵 Niveau 1 — Bases à acquérir en semaine 1-2
-
-| Notion | Pourquoi c'est utile | Ressource suggérée |
+| Notion | Pourquoi c'est utile | Ressource suggeree |
 |--------|----------------------|--------------------|
-| **Scala** (syntaxe de base) | Langage utilisé pour coder le projet | [Tour of Scala](https://docs.scala-lang.org/tour/tour-of-scala.html) |
-| **Programmation orientée objet** | Classes, objets, méthodes | Vos cours Java/Python s'appliquent ici |
-| **Modèle Acteur** | Comprendre comment Akka fonctionne | [Akka documentation intro](https://akka.io/docs/) |
-| **Git & GitHub** | Travailler en équipe sans se marcher dessus | Voir section collaboration ci-dessous |
+| Scala (bases) | Langage principal du projet | https://docs.scala-lang.org/tour/tour-of-scala.html |
+| Modele Acteur | Structurer coordination concurrente | https://akka.io/docs/ |
+| Git/GitHub | Travailler en equipe sans collision | Workflow ci-dessous |
 
-### 🟡 Niveau 2 — À apprendre en semaine 2-4
-
-| Notion | Pourquoi c'est utile |
-|--------|----------------------|
-| **Akka Actors** | Définir les composants du système (Client, Billetterie, Paiement...) |
-| **Messages Akka** | Faire communiquer les acteurs entre eux |
-| **Réseaux de Pétri** | Modéliser les états et transitions du système |
-| **Propriétés structurelles** | Absence de deadlock, bornitude, vivacité |
-
-### 🔴 Niveau 3 — À apprendre en semaine 4-6
+### Niveau 2 - Semaine 2-4
 
 | Notion | Pourquoi c'est utile |
 |--------|----------------------|
-| **LTL (Linear Temporal Logic)** | Formaliser des propriétés comme "un billet ne peut jamais être vendu deux fois" |
-| **Invariants de place/transition** | Prouver mathématiquement les propriétés du réseau de Pétri |
-| **Tests unitaires Scala** | Valider le comportement du code |
+| Akka Typed | Definir acteurs de supervision et securite |
+| Messages asynchrones | Echanger des evenements de trafic/incidents |
+| Reseaux de Petri | Capturer transitions de mode normal/surete |
+| Proprietes structurelles | Deadlock-freedom, bornitude, vivacite |
+
+### Niveau 3 - Semaine 4-6
+
+| Notion | Pourquoi c'est utile |
+|--------|----------------------|
+| LTL | Exprimer les obligations temporelles de securite |
+| Invariants de place/transition | Prouver les contraintes critiques |
+| ScalaTest + Akka TestKit | Valider scenarios de concurrence |
 
 ---
 
-## 🗓️ Plan de travail — Jour 1 (26 mars 2026)
+## Demarrage implementation
 
-### ✅ À faire AUJOURD'HUI (26 mars 2026)
+Structure cible du depot:
 
-#### 1. Installer l'environnement de développement (tout le monde)
-
-```bash
-# Étape 1 — Installer Java 11+ (requis pour Scala)
-# Télécharger ici : https://adoptium.net/
-# Vérifier l'installation :
-java -version
-
-# Étape 2 — Installer Scala via Coursier (gestionnaire officiel)
-# Télécharger Coursier ici : https://get-coursier.io/docs/cli-installation
-# Puis lancer :
-cs setup
-# Vérifier :
-scala -version
-
-# Étape 3 — Installer sbt (outil de build Scala)
-# Inclus avec Coursier, sinon : https://www.scala-sbt.org/download.html
-sbt -version
-
-# Étape 4 — Extension VSCode
-# Ouvrir VSCode → Extensions → chercher "Scala (Metals)" → Installer
-```
-
-#### 2. Cloner le repo et créer la structure du projet
-
-```bash
-git clone https://github.com/MonsieurNikko/CriticalSystemModel
-cd CriticalSystemModel
-```
-
-Structure de dossiers à créer dès aujourd'hui :
 ```
 CriticalSystemModel/
 ├── src/
 │   ├── main/
 │   │   └── scala/
-│   │       └── billetterie/       ← votre code Akka/Scala ici
+│   │       └── m14/              <- code Akka/Scala
 │   └── test/
 │       └── scala/
-│           └── billetterie/       ← vos tests ici
-├── petri/                         ← vos modèles de réseaux de Pétri (schémas, analyses)
-├── docs/                          ← votre rapport, bibliographie
-├── README.md                      ← ce fichier
-└── build.sbt                      ← configuration du projet
+│           └── m14/              <- tests
+├── petri/                        <- modeles formels
+├── documentation/                <- gouvernance et suivi
+├── README.md
+└── build.sbt
 ```
 
-#### 3. Créer le fichier build.sbt
-
-Créer un fichier `build.sbt` à la racine avec ce contenu :
-
-```scala
-ThisBuild / scalaVersion := "2.13.12"
-ThisBuild / version      := "0.1.0"
-
-lazy val root = (project in file("."))
-  .settings(
-    name := "CriticalSystemModel",
-    libraryDependencies ++= Seq(
-      "com.typesafe.akka" %% "akka-actor-typed" % "2.8.5",
-      "com.typesafe.akka" %% "akka-actor-testkit-typed" % "2.8.5" % Test,
-      "org.scalatest"     %% "scalatest" % "3.2.17" % Test
-    )
-  )
-```
-
-#### 4. Tester que tout fonctionne
+Commande de verification locale:
 
 ```bash
-cd CriticalSystemModel
 sbt compile
-# Si vous voyez "success" → votre environnement est prêt ✅
+sbt test
 ```
 
 ---
 
-## 👥 Collaboration en équipe — Les règles d'or
+## Gouvernance IA (obligatoire)
 
-### 🌿 Workflow Git (à suivre sans exception)
+Lire et appliquer avant toute contribution:
+
+- documentation/AGENT_RULES.md
+- documentation/historique.md
+
+Exigences minimales avant merge:
+
+- Perimetre respecte
+- Invariants metier preserves
+- Verification technique documentee (compile/test)
+- Entree complete ajoutee dans documentation/historique.md
+
+### Workflow Git
 
 ```bash
-# Ne JAMAIS travailler directement sur main
-# Toujours créer une branche pour votre tâche :
 git checkout -b feature/nom-de-ma-tache
-
-# Exemple :
-git checkout -b feature/acteur-billetterie
-git checkout -b feature/reseau-petri-reservation
-git checkout -b feature/rapport-etat-de-lart
-
-# Quand votre tâche est finie :
 git add .
-git commit -m "feat: description claire de ce que vous avez fait"
+git commit -m "feat: description claire"
 git push origin feature/nom-de-ma-tache
-# Puis ouvrir une Pull Request sur GitHub → un autre membre relit → merge
 ```
 
-### 💬 Conventions de commit (à utiliser dès le début)
-
-| Préfixe | Usage |
-|---------|-------|
-| `feat:` | Nouvelle fonctionnalité |
-| `fix:` | Correction d'un bug |
-| `docs:` | Modification de documentation |
-| `test:` | Ajout ou modification de tests |
-| `refactor:` | Restructuration du code sans changer le comportement |
-
-Exemple : `feat: ajout de l'acteur ClientActor avec message ReservationRequest`
-
-### 📋 Répartition suggérée des rôles
-
-| Rôle | Responsabilité principale |
-|------|---------------------------|
-| **Lead Dev Scala/Akka** | Architecture des acteurs, code principal |
-| **Modélisateur Pétri** | Construction et analyse du réseau de Pétri |
-| **Rédacteur Rapport** | État de l'art, documentation, bibliographie |
-| **Intégration & Tests** | Tests unitaires, comparaison simulation/modèle |
-
-> ⚠️ Ces rôles ne sont pas des silos ! Tout le monde doit comprendre l'ensemble du projet. On tourne et on s'entraide.
-
-### 📅 Rituels d'équipe recommandés
-
-- **Réunion hebdomadaire courte** (30 min) : qu'est-ce que j'ai fait ? qu'est-ce que je vais faire ? est-ce que j'ai un blocage ?
-- **Issues GitHub** : chaque tâche = une issue = une branche = une Pull Request
-- **Ne jamais bloquer en silence** : si vous êtes bloqués plus de 2h → vous en parlez à l'équipe
+Exemples de branches:
+- feature/m14-station-control
+- feature/m14-petri-model
+- feature/m14-safety-tests
 
 ---
 
-## 🗺️ Vue d'ensemble du système de billetterie
+## Vue d'ensemble du systeme M14 Chatelet
 
-Le système qu'on va construire aura ces composants (acteurs Akka) :
+Architecture fonctionnelle de reference:
 
 ```
-[Client] ──demande billet──► [ActeurBilletterie] ──vérifie──► [ActeurStock]
-                                      │
-                                      └──► [ActeurPaiement] ──► [ActeurConfirmation]
+[FlowSensorActor] --densite--> [StationControlActor] --commandes--> [GateControlActor]
+                                      |
+                                      +--> [IncidentManagerActor]
+                                      |
+                                      +--> [AlertDispatcherActor]
 ```
 
-**Règles critiques (invariants métier) :**
-- Un billet ne peut jamais être vendu deux fois (pas de double-réservation)
-- Le stock de billets ne peut jamais passer en dessous de 0
-- Un paiement refusé annule toujours la réservation
-- Le système ne peut jamais se bloquer indéfiniment (pas de deadlock)
+### Invariants metier critiques
+
+- Le seuil de densite d'une zone ne doit jamais rester depasse sans action de controle.
+- En incident critique, le systeme bascule en mode Safety et ferme les acces.
+- Aucune alerte critique n'est perdue ni traitee deux fois.
+- Le systeme ne doit jamais entrer en deadlock.
+- Apres resolution d'incident, un retour controle au mode Normal doit etre possible.
+
+### Proprietes formelles ciblees
+
+- Safety 1: pas d'ouverture d'acces en zone fermee pour incident critique.
+- Safety 2: porte fermee si densite > seuil.
+- Safety 3: unicite de traitement d'une alerte critique.
+- Liveness 1: toute alerte critique est traitee en temps borne.
+- Liveness 2: en absence d'incident actif et sous seuil, les acces reouvrent.
 
 ---
 
-## 📚 Bibliographie de départ
+## Bibliographie de depart
 
-- [Documentation officielle Akka](https://akka.io/docs/)
-- [Tour of Scala](https://docs.scala-lang.org/tour/tour-of-scala.html)
-- Murata, T. (1989). *Petri nets: Properties, analysis and applications*. Proceedings of the IEEE — **référence incontournable sur les réseaux de Pétri**
-- [Introduction à la logique LTL — TU Munich](https://www7.in.tum.de/um/courses/verification/SS05/LTL.pdf)
-
----
-
-## 📦 Livrables (rappel)
-
-- [ ] Bibliographie commentée
-- [ ] Code Akka/Scala fonctionnel
-- [ ] Réseau de Pétri du système
-- [ ] Rapport de vérification des propriétés
-- [ ] Comparaison simulation vs modèle formel
-- [ ] Ce dépôt GitHub propre et documenté
+- Documentation officielle Akka: https://akka.io/docs/
+- Tour of Scala: https://docs.scala-lang.org/tour/tour-of-scala.html
+- Murata, T. (1989), Petri nets: Properties, analysis and applications, Proceedings of the IEEE.
+- Introduction a la logique LTL (TU Munich): https://www7.in.tum.de/um/courses/verification/SS05/LTL.pdf
 
 ---
 
-*Projet réalisé dans le cadre du cours — 2026*
+## Livrables
+
+- Bibliographie commentee
+- Code Akka/Scala fonctionnel (M14 Chatelet)
+- Reseau de Petri du controle de trafic
+- Rapport de verification des proprietes
+- Comparaison simulation Akka vs modele formel
+- Depot GitHub propre et trace
+
+---
+
+Projet realise dans le cadre du cours - 2026
