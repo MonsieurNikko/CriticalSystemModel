@@ -34,9 +34,38 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ## Entrees
 
+### [2026-04-17 11:45] - Push et Merge vers la branche principale (main)
+- GitHub: @MonsieurNikko
+- Branche: main
+- Contexte/tache: Finaliser la premiere phase d'implementation critique en fusionnant la branche de fonctionnalite vers main
+- Fichiers modifies:
+	- Toutes les ressources de la branche feature/documentation-agent-rules
+- Changements detailles:
+	- Validation et commit de l'historique complet avant fusion.
+	- Synchronisation locale de main avec le depot distant (git pull).
+	- Fusion (merge) de feature/documentation-agent-rules vers main.
+	- Publication (push) des changements fusionnes vers le depot principal.
+- Commandes executees:
+	- git add documentation/historique.md
+	- git commit -m "docs: mise a jour de l'historique avant merge"
+	- git push origin feature/documentation-agent-rules
+	- git checkout main
+	- git pull origin main
+	- git merge feature/documentation-agent-rules
+	- git push origin main
+- Resultats de verification:
+	- Build: PASS (pre-merge branch)
+	- Tests: PASS (pre-merge branch)
+	- Notes: Fusion reussie via strategie 'ort' apres resolution de retard local sur main.
+- Risques/impacts:
+	- Branche main desormais a jour avec le pivot M14 Chatelet.
+	- Ecrasement potentiel de modifications conflictuelles sur main (resolu par pull preventif).
+- Prochaines actions recommandees:
+	- Supprimer la branche feature locale si elle n'est plus necessaire.
+	- Demarrer la phase de modelisation formelle (Reseaux de Petri).
+
 ### [2026-04-15 09:25] - Demarrage implementation M14 Chatelet
 - GitHub: @MonsieurNikko
-- Type: IA
 - Branche: feature/documentation-agent-rules
 - Contexte/tache: demarrer l'implementation d'un systeme distribue critique pour la gestion du trafic M14 a Chatelet et aligner la documentation
 - Fichiers modifies:
@@ -69,7 +98,6 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ### [2026-04-14 09:09] - Affectation des noms reels dans la repartition
 - GitHub: @MonsieurNikko
-- Type: IA
 - Branche: feature/documentation-agent-rules
 - Contexte/tache: remplacer les placeholders Membre A/B/C/D par les noms reels de l'equipe
 - Fichiers modifies:
@@ -95,7 +123,6 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ### [2026-04-14 09:04] - Proposition de repartition equipe (4 membres)
 - GitHub: @MonsieurNikko
-- Type: IA
 - Branche: feature/documentation-agent-rules
 - Contexte/tache: relire les fichiers projet et proposer une repartition logique permettant le travail parallele et collaboratif
 - Fichiers modifies:
@@ -122,7 +149,6 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ### [2026-03-27 10:05] - Mise a jour regles push et champ modele
 - GitHub: @MonsieurNikko
-- Type: IA
 - Branche: feature/documentation-agent-rules
 - Contexte/tache: aligner la gouvernance documentaire avec les nouvelles consignes (push obligatoire, champ modele)
 - Fichiers modifies:
@@ -149,7 +175,6 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ### [2026-03-27 09:40] - Initialisation du template historique
 - GitHub: @MonsieurNikko
-- Type: IA
 - Branche: main
 - Contexte/tache: mise en place du format officiel de tracabilite pour le projet
 - Fichiers modifies:
