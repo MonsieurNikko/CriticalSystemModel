@@ -10,10 +10,10 @@
 ### 2. Objectifs
 - Garantir la qualite technique des modifications.
 - Garantir la tracabilite complete des changements.
-- Preserver les invariants critiques du projet:
-  - pas de double-reservation
-  - stock jamais negatif
-  - pas de deadlock
+- Preserver les invariants critiques du sous-systeme M14 (troncon partage):
+  - exclusion mutuelle: T1_sur_troncon + T2_sur_troncon + Troncon_libre = 1
+  - absence de collision sur le troncon
+  - absence de deadlock dans le protocole d'acces
 
 ### 3. Pre-travail obligatoire (avant toute modification)
 - Lire tous les fichiers pertinents du scope de la tache pour comprendre le codebase en profondeur.
@@ -91,6 +91,24 @@
 - Date: 2026-03-27
 - Portee: depot CriticalSystemModel
 
+  ### 12. Regles de vibe-code (style etudiant)
+- Le code produit avec assistance IA doit ressembler a du code ecrit par un etudiant: simple, naif, lisible.
+- Interdictions cote style:
+  - pas d'implicits, pas de macros, pas de point-free style, pas d'operateurs custom
+  - pas de chaines de flatMap/for-yield complexes; preferer if/else et boucles simples
+  - pas de hierarchies de types avancees (tagless final, type classes maison, etc.)
+  - pas de "patterns Scala idiomatiques" si une version naive marche
+- Obligations cote style:
+  - noms de variables longs et explicites (en francais ou anglais, mais coherents dans un fichier)
+  - une ligne d'en-tete au sommet de chaque fichier source: `// NomDuFichier : role en une phrase.`
+  - fonctions courtes (<30 lignes), nesting <=3
+  - duplication legere (2-3 lignes similaires) toleree si elle ameliore la lisibilite
+  - commentaires rares mais en francais simple, expliquant POURQUOI, jamais QUOI
+- Obligations cote tracabilite vibe-code:
+  - chaque session vibe-code se termine par un resume de 5 lignes max ecrit par l'agent IA et copie par l'humain dans documentation/historique.md
+  - le message de commit (redige par l'humain) doit suivre la structure: 1) Quoi, 2) Pourquoi, 3) Comment relire (quel fichier ouvrir en premier)
+- Test de defendabilite: si un equipier ouvre un fichier vibe-code, il doit pouvoir l'expliquer a l'oral en 2 minutes sans aide. Si non, le code est trop complexe et doit etre simplifie.
+
 ---
 
 ## EN - Official policy for AI agents and contributors
@@ -103,10 +121,10 @@
 ### 2. Goals
 - Ensure technical quality of all changes.
 - Ensure full change traceability.
-- Preserve critical project invariants:
-  - no double booking
-  - stock never negative
-  - no deadlock
+- Preserve critical M14 subsystem invariants (shared track section):
+  - mutual exclusion: T1_on_section + T2_on_section + section_free = 1
+  - no collision on the shared section
+  - no deadlock in the access protocol
 
 ### 3. Mandatory pre-work (before any edit)
 - Read all files relevant to the task scope to deeply understand the codebase.
@@ -144,7 +162,6 @@
 - Every change must add a new entry in documentation/historique.md.
 - Mandatory for every intervention, AI or human.
 - Required fields:
-  - Model (or N/A for human contribution)
   - GitHub (@username)
   - Type (AI/Human)
   - Date
@@ -182,4 +199,27 @@
   ### 11. Effective date
 - Version: 1.0
 - Date: 2026-03-27
+- Scope: CriticalSystemModel repository
+
+  ### 12. Vibe-code rules (student style)
+- Code produced with AI assistance must look like student-written code: simple, naive, readable.
+- Style prohibitions:
+  - no implicits, no macros, no point-free style, no custom operators
+  - no complex flatMap / for-yield chains; prefer if/else and plain loops
+  - no advanced type hierarchies (tagless final, custom type classes, etc.)
+  - no "idiomatic Scala patterns" if a naive version works
+- Style obligations:
+  - long, descriptive variable names (in French or English, but consistent within a file)
+  - one-line header at the top of every source file: `// FileName : role in one sentence.`
+  - short functions (<30 lines), nesting <=3
+  - mild duplication (2-3 similar lines) acceptable when it improves readability
+  - sparse comments in plain French, explaining WHY, never WHAT
+- Vibe-code traceability obligations:
+  - every vibe-code session ends with a 5-line max summary produced by the AI agent and copied by the human into documentation/historique.md
+  - the commit message (written by the human) must follow the structure: 1) What, 2) Why, 3) How to re-read (which file to open first)
+- Defensibility test: if a teammate opens a vibe-coded file, they must be able to explain it orally in 2 minutes without help. If not, the code is too complex and must be simplified.
+
+  ### 13. Effective date (EN section)
+- Version: 1.1
+- Date: 2026-04-25
 - Scope: CriticalSystemModel repository

@@ -1,6 +1,6 @@
 # Historique des changements - CriticalSystemModel
 
-Ce fichier est obligatoire pour la tracabilite des interventions IA et humaines.
+Ce fichier est obligatoire pour la tracabilite des interventions sur le projet.
 Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ## Template d'entree (copier/coller)
@@ -32,6 +32,78 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 ---
 
 ## Entrees
+
+### [2026-04-26 00:10] - Preparation merge vers main + adaptation historique
+- GitHub: @MonsieurNikko
+- Branche: feature/m14-coeur-troncon
+- Contexte/tache: preparer l'integration de la branche de travail sur `main`, en nettoyant la tracabilite documentaire avant merge.
+- Fichiers modifies:
+	- documentation/historique.md
+	- documentation/REGLES_PROJET.md
+	- documentation/PLAN.md
+	- documentation/HANDOVER.md
+	- src/main/scala/m14/troncon/Protocol.scala
+	- src/main/scala/m14/troncon/SectionController.scala
+	- src/main/scala/m14/troncon/Train.scala
+- Changements detailles:
+	- Ajout d'une entree de preparation merge pour expliciter le passage feature -> main.
+	- Correction de la reference historique `documentation/AGENT_RULES.md` vers `documentation/REGLES_PROJET.md` suite au renommage.
+	- Consolidation des artefacts de Phase 1 (plan sprint, handover, squelette troncon) avant integration.
+- Commandes executees:
+	- git status -sb
+	- lecture de documentation/historique.md
+	- git add (fichiers projet uniquement)
+	- git commit
+	- git checkout main
+	- git pull origin main
+	- git merge feature/m14-coeur-troncon
+	- git push origin main
+- Resultats de verification:
+	- Build: N/A (pas de relance compile/test dans cette etape de merge)
+	- Tests: N/A
+	- Notes: les artefacts `target/` et `.metals/` restent exclus du commit.
+- Risques/impacts:
+	- Sans hygiene Git, des artefacts de build pourraient polluer la revue (evite ici par selection explicite des fichiers).
+	- Le merge peut necessiter une resolution si `main` a evolue entre-temps.
+- Prochaines actions recommandees:
+	- Verifier `sbt compile` et `sbt test` depuis `main` apres merge.
+	- Ouvrir la Phase 2 (protocole + arbitrage) sur la branche de travail.
+
+---
+
+### [2026-04-25 23:16] - Sprint final : planification + squelette package troncon
+- GitHub: @MonsieurNikko
+- Branche: feature/m14-coeur-troncon
+- Contexte/tache: demarrer le sprint final de 9 jours (deadline reelle 2026-05-04). Poser le plan de sprint, le guide de reprise pour l'equipe, et le squelette compilant des 3 acteurs du coeur troncon (Phase 1 sur 10).
+- Fichiers modifies:
+  - documentation/PLAN.md (nouveau)
+  - documentation/HANDOVER.md (nouveau)
+	- documentation/REGLES_PROJET.md (modifie: §2 invariants alignes sur le coeur M14)
+  - src/main/scala/m14/troncon/Protocol.scala (nouveau)
+  - src/main/scala/m14/troncon/SectionController.scala (nouveau)
+  - src/main/scala/m14/troncon/Train.scala (nouveau)
+- Changements detailles:
+  - PLAN.md : sprint 25 avril -> 4 mai decoupe en 10 phases, avec tableau des livrables, definition of done, risques, hors scope explicite et format de rendu.
+  - HANDOVER.md : guide de reprise (lecture en 10 minutes), glossaire Akka/Petri/verif, conventions de lecture du code, checklist push, tableau d'anti-patterns.
+	- REGLES_PROJET.md : §2 invariants critiques mis a jour (T1+T2+libre=1, pas de collision, pas de deadlock).
+  - Package troncon : 3 fichiers squelette qui compilent. Protocol.scala definit IdTrain (Train1/Train2), MessagePourControleur (Demande, Sortie), MessagePourTrain (Autorisation, Attente). SectionController et Train sont des Behaviors vides avec TODO Phase 2/3.
+- Commandes executees:
+  - git checkout -b feature/m14-coeur-troncon
+  - mkdir -p src/main/scala/m14/troncon
+  - sbt compile
+- Resultats de verification:
+  - Build: PASS (5 sources Scala compiles en 8s)
+  - Tests: N/A (Phase 1 ne touche pas les tests existants)
+  - Notes: warning JLine "dumb terminal" attendu en mode batch sbt, sans impact fonctionnel.
+- Risques/impacts:
+  - Le squelette troncon coexiste avec StationControl.scala (ancien scope station). Non-blocant : StationControl reste hors-coeur, mentionne comme extension future dans PLAN.md.
+  - Le protocole de messages dans Protocol.scala est une premiere passe ; il pourra etre affine en Phase 2 sans casser le compile.
+- Prochaines actions recommandees:
+  - Push de la branche feature/m14-coeur-troncon apres validation humaine.
+  - Lancer Phase 2 (samedi 26 avril) : finaliser Protocol.scala, implementer la logique d'arbitrage SectionController, ecrire le test scenario nominal.
+  - Demarrer en parallele la biblio sur une branche dediee.
+
+---
 
 ### [2026-04-17 12:10] - Recadrage du guide complet et alignement final de la documentation
 - GitHub: @MonsieurNikko
