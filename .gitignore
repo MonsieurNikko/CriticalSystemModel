@@ -1,0 +1,25 @@
+# Artefacts de compilation Scala / sbt
+target/
+project/target/
+project/project/
+**/target/
+
+# Caches sbt
+.bsp/
+.bloop/
+
+# IDE et outils Metals
+.metals/
+.idea/
+.vscode/
+*.iml
+
+# Logs et fichiers temporaires
+*.log
+*.tmp
+.DS_Store
+
+# Specifique macOS
+.AppleDouble
+.LSOverride
+Icon?
