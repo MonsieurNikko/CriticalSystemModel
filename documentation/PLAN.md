@@ -41,15 +41,20 @@ Hors coeur (mentionnes "extensions futures" dans le rapport, pas implementes) :
 
 ## 3) Livrables exiges par le cahier des charges (projet_2026.pdf)
 
-| # | Livrable | Ou | Etat cible |
-|---|----------|-----|-----------|
-| L1 | Bibliographie commentee (etat de l'art) | `documentation/biblio.md` | 5-8 sources, 2-4 lignes par source |
-| L2 | Modele Akka/Scala fonctionnel | `src/main/scala/m14/troncon/` | Compile + 3 scenarios passent |
-| L3 | Reseau de Petri | `petri/petri-troncon.md` (texte + ASCII) | 7 places, 6 transitions, marquage initial |
-| L4 | Rapport de verification (proprietes structurelles + invariants + LTL) | `documentation/rapport.md` | Invariant principal prouve, deadlocks ecartes, LTL formalise |
-| L5 | Analyseur Petri en code | `src/main/scala/m14/petri/` | Espace d'etats genere, invariants verifies par programme |
-| L6 | Simulation comparee Akka vs Petri (3 scenarios) | `documentation/comparaison.md` | Tableau de correspondance messages <-> transitions |
-| L7 | Lien GitHub final | README.md | Depot propre, branche main a jour |
+| # | Livrable | Ou | Etat cible | Etat actuel |
+|---|----------|-----|-----------|-------------|
+| L1 | Bibliographie commentee (etat de l'art) | `documentation/biblio.md` | 5-8 sources, 2-4 lignes par source | **Squelette + 9 sources commentees** (a relire/finaliser Phase 8) |
+| L2 | Modele Akka/Scala fonctionnel | `src/main/scala/m14/troncon/` | Compile + 3 scenarios passent | Squelettes vides, logique a coder Phases 2-3 |
+| L3 | Reseau de Petri | `petri/petri-troncon.md` (texte + ASCII) | 7 places, 6 transitions, marquage initial | **Complet** : 7 places, 6 transitions, ASCII, invariants prouves a la main |
+| L4 | Rapport de verification (proprietes structurelles + invariants + LTL) | `documentation/rapport.md` | Invariant principal prouve, deadlocks ecartes, LTL formalise | **Squelette structure** (sections vides a remplir Phases 7-8) |
+| L5 | Analyseur Petri en code | `src/main/scala/m14/petri/` | Espace d'etats genere, invariants verifies par programme | A coder Phases 5-6 |
+| L6 | Simulation comparee Akka vs Petri (3 scenarios) | `documentation/comparaison.md` | Tableau de correspondance messages <-> transitions | **Squelette + matrice 3 scenarios** (sortie analyseur a inserer Phase 6) |
+| L7 | Lien GitHub final | README.md | Depot propre, branche main a jour | A finaliser Phase 9 |
+
+**Documents pivots d'equipe** (a lire avant toute contribution) :
+- `documentation/lexique.md` : coherence de nommage metier <-> code Akka <-> Petri <-> tests
+- `documentation/protocole-coordination.md` : contrat de travail parallele code/preuves, decisions verrouillees, procedures de changement, questions anticipees Phase 2-3
+- `documentation/preuves-manuelles.md` : carnet de travail manuel pour la piste verification formelle (independante du code)
 
 **Contrainte cle du cahier** : interdiction d'utiliser un outil logiciel de Petri externe. L'analyseur **doit** etre code par nous.
 
@@ -57,14 +62,15 @@ Hors coeur (mentionnes "extensions futures" dans le rapport, pas implementes) :
 
 ## 4) Calendrier par phase
 
-### Phase 1 - vendredi 25 avril : Plan + squelette
+### Phase 1 - vendredi 25 avril : Plan + squelette (TERMINEE)
 - [x] Lire cahier des charges + recadrage
-- [ ] Valider ce PLAN.md
-- [ ] Creer la branche `feature/m14-coeur-troncon`
-- [ ] Squelette des 3 acteurs (`Train.scala`, `SectionController.scala`) - signatures de messages, pas de logique
-- [ ] `sbt compile` doit passer
-- [ ] Demarrer la biblio en parallele sur une branche dediee (peut commencer des aujourd'hui, ne depend de rien)
-- **Verification** : compile OK, branche poussee, plan valide en equipe
+- [x] Valider ce PLAN.md
+- [x] Creer la branche `feature/m14-coeur-troncon`
+- [x] Squelette des 3 acteurs (`Protocol.scala`, `Train.scala`, `SectionController.scala`) - signatures de messages, pas de logique
+- [x] `sbt compile` passe
+- [x] Branche `feature/m14-coeur-troncon` mergee sur `main` le 26 avril (voir historique.md)
+- [ ] Bibliographie : structure creee dans `documentation/biblio.md`, references a etoffer en Phase 8
+- **Verification** : compile OK, squelettes presents sur main, structure documentaire en place
 
 ### Phase 2 - samedi 26 avril : Protocole + arbitrage
 - [ ] Definir le **protocole de messages** dans `src/main/scala/m14/troncon/Protocol.scala` : `Demande(trainId)`, `Autorisation`, `Attente`, `Sortie(trainId)`, `Liberation`
