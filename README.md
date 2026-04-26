@@ -3,7 +3,7 @@
 
 ![Status](https://img.shields.io/badge/status-en%20cours-yellow)
 ![Equipe](https://img.shields.io/badge/equipe-4%20personnes-blue)
-![Deadline](https://img.shields.io/badge/deadline-fin%20mai%202026-red)
+![Deadline](https://img.shields.io/badge/deadline-4%20mai%202026-red)
 
 ---
 
@@ -100,7 +100,9 @@ sbt test
 
 Lire et appliquer avant toute contribution:
 
-- documentation/AGENT_RULES.md
+- documentation/REGLES_PROJET.md
+- documentation/PLAN.md
+- documentation/HANDOVER.md
 - documentation/historique.md
 
 Exigences minimales avant merge:
@@ -119,10 +121,10 @@ git commit -m "feat: description claire"
 git push origin feature/nom-de-ma-tache
 ```
 
-Exemples de branches:
-- feature/m14-station-control
-- feature/m14-petri-model
-- feature/m14-safety-tests
+Exemples de branches (alignees sur le scope troncon partage) :
+- feature/m14-coeur-troncon
+- feature/m14-petri-troncon
+- feature/m14-scenarios-validation
 
 ---
 
@@ -192,11 +194,12 @@ Voir le detail du recadrage dans documentation/recadrage-m14-troncon-critique.md
 
 ## Livrables
 
-- Bibliographie commentee
-- Code Akka/Scala fonctionnel (M14 Chatelet)
-- Reseau de Petri du controle de trafic
-- Rapport de verification des proprietes
-- Comparaison simulation Akka vs modele formel
+- Bibliographie commentee (`documentation/biblio.md`)
+- Code Akka/Scala fonctionnel du troncon partage (`src/main/scala/m14/troncon/`)
+- Reseau de Petri du controle d'acces concurrent (`petri/petri-troncon.md`)
+- Analyseur Petri en Scala (`src/main/scala/m14/petri/`)
+- Rapport de verification des proprietes (`documentation/rapport.md`)
+- Comparaison simulation Akka vs modele formel (`documentation/comparaison.md`)
 - Depot GitHub propre et trace
 
 ---

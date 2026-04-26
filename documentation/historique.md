@@ -33,6 +33,106 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ## Entrees
 
+### [2026-04-26 15:45] - Phase 2 implementee : SectionController complet avec FIFO
+- GitHub: @MonsieurNikko (assistance IA Claude Sonnet 4.6)
+- Branche: feature/m14-doc-anticipation-phase2
+- Contexte/tache: implementation de la logique d'arbitrage du troncon partage conformement au protocole de coordination (sections 4 Q1-Q10) et au lexique d'equipe.
+- Fichiers modifies:
+	- src/main/scala/m14/troncon/SectionController.scala (squelette vide -> implementation complete 70 lignes)
+- Changements detailles:
+	- Deux Behaviors distincts (un par etat, conformement a Q5) : `etatLibre()` et `etatOccupe(occupant, fileAttente)`. Pas de `var`, pas de match geant.
+	- File d'attente : `scala.collection.immutable.Queue[EnAttente]` (conformement a Q1). Le type alias `EnAttente = (IdTrain, ActorRef[MessagePourTrain])` memorise l'adresse de reponse pour pouvoir notifier le train quand son tour viendra.
+	- Robustesse defensive (Q2, Q3) : un Demande recu de l'occupant ou un Sortie recu hors-occupation sont ignores avec commentaire explicite. Pas de modification du modele Petri pour ces cas (cf protocole cas B).
+	- Helper `promouvoirOuLiberer(fileAttente)` extrait pour garder `etatOccupe` sous 30 lignes (regle vibe-code section 12 du REGLES_PROJET).
+	- Commentaires referencent explicitement les transitions Petri concernees (Ti_entree_autorisee, Ti_sortie_liberation) et les sections de doc (lexique.md section 2, comparaison.md scenario 2, etc).
+- Verification mentale sur les 3 scenarios (cf documentation/comparaison.md) :
+	- Scenario 1 nominal : etatLibre -> etatOccupe(Train1, vide) -> etatLibre. OK.
+	- Scenario 2 concurrence : etatLibre -> etatOccupe(Train1, vide) -> etatOccupe(Train1, [(Train2, ref2)]). OK.
+	- Scenario 3 liberation : etatOccupe(Train1, [(Train2, ref2)]) -> etatOccupe(Train2, vide) avec Autorisation envoyee a ref2. OK.
+- Commandes executees:
+	- ecriture du fichier
+- Resultats de verification:
+	- Build: NON LANCE (sbt non disponible sur la machine de l'agent IA, cf entree precedente)
+	- Tests: N/A (les tests scenario sont l'objet de la Phase 4, pas encore ecrits)
+	- Notes: l'utilisateur humain doit lancer `sbt compile` localement avant de pousser.
+- Risques/impacts:
+	- Le code reference `Q1` `Q2` etc dans les commentaires : si protocole-coordination.md est renumerote, ces references se desynchronisent. Risque faible.
+	- La file FIFO Akka est plus deterministe que le modele Petri (qui est non-deterministe sur le choix entre T1_entree_autorisee et T2_entree_autorisee depuis M4). Cette dissymetrie est documentee dans petri-troncon.md section 9 et lexique.md section 2.
+	- Pas de tests ecrits a cette etape : la validation se fait par lecture humaine du code et verification mentale. Phase 4 ajoutera les 3 ScenarioXxxSpec.scala.
+- Prochaines actions recommandees:
+	- Lancer `sbt compile` en local pour valider la syntaxe Scala (en particulier l'usage de `Queue.dequeueOption`, disponible en Scala 2.13).
+	- Phase 3 : implementer `Train.scala` avec la meme structure (un Behavior par etat : `comportementHors`, `comportementEnAttente`, `comportementSurTroncon`).
+	- Phase 4 : ecrire les 3 fichiers de tests (`ScenarioNominalSpec`, `ScenarioConcurrenceSpec`, `ScenarioLiberationProgressionSpec`) en utilisant Akka TestKit Probes.
+
+---
+
+### [2026-04-26 15:15] - Ajout carnet preuves manuelles + protocole de coordination equipe
+- GitHub: @MonsieurNikko (assistance IA Claude Sonnet 4.6)
+- Branche: feature/m14-doc-anticipation-phase2
+- Contexte/tache: standardiser le travail parallele entre la piste codage Akka/analyseur (Piste B, Nikko) et la piste preuves manuelles (Piste A, reste de l'equipe), en anticipant les conflits qui surgissent typiquement pendant le codage. Reponse a la question "comment mes equipiers peuvent occuper la verification a la main pendant que je code".
+- Fichiers crees:
+	- documentation/preuves-manuelles.md (carnet de travail manuel structure en 7 taches : enumeration espace d'etats, verification invariant principal, invariants par train, absence de deadlock, formalisation LTL, argumentation Liveness sous fairness, diagramme final ; chaque tache contient un template + un exemple pre-rempli pour servir de modele)
+	- documentation/protocole-coordination.md (contrat d'equipe : sources de verite par artefact, liste gelee des decisions verrouillees, procedures de changement par cas (A renommage, B detail protocole, C bug Petri, D bug code, E nouveau scenario), 10 questions anticipees pour Phase 2-3 avec reponses de reference, points de synchronisation, template RFC, checklist de cloture, anti-patterns)
+- Changements detailles:
+	- preuves-manuelles.md : permet a 3 contributeurs (Axelobistro, Alicette, Ostreann) de travailler sur les preuves formelles immediatement, sans attendre que le code soit ecrit. Contient deja les 8 marquages attendus pre-remplis dans la tache 1, l'invariant principal verifie en tache 2, les transitions tirables par marquage en tache 4. Les zones a remplir par l'equipe sont marquees `_` ou `?`.
+	- protocole-coordination.md : repond au besoin de "standardisation". Section 1 indique qui edite quoi et qui relit. Section 2 verrouille 7 decisions critiques (7 places, 6 transitions, 4 messages, 2 trains, marquage initial, invariant principal, 3 scenarios). Section 4 anticipe 10 questions concretes du codage Phase 2-3 et donne des reponses de reference (FIFO, robustesse defensive, etat interne du controleur, etc).
+- Commandes executees:
+	- ecriture des 2 fichiers
+- Resultats de verification:
+	- Build: N/A (changements 100% documentaires)
+	- Tests: N/A
+- Risques/impacts:
+	- Le protocole-coordination.md depend du fait que tous les contributeurs le lisent vraiment. Risque humain, pas technique.
+	- Les "reponses de reference" des Q1-Q10 figent certains choix d'implementation (Queue immutable, Behavior par etat, pas de var, etc) qui contraignent la Piste B. C'est volontaire pour eviter qu'on se reinterroge sur ces points pendant le codage.
+- Prochaines actions recommandees:
+	- Distribuer ce protocole a l'equipe (envoyer le lien de la branche `feature/m14-doc-anticipation-phase2`).
+	- Avant Phase 2 : que chaque contributeur confirme avoir lu protocole-coordination.md (par une entree historique.md ou un emoji sur le PR).
+	- Phase 2 : Nikko code SectionController en respectant strictement les Q1-Q10 du protocole.
+	- En parallele : Axelobistro commence tache 1 du carnet, Alicette commence taches 2-3.
+
+---
+
+### [2026-04-26 14:30] - Correction docs + anticipation livrables L1/L3/L4/L6 + lexique d'equipe
+- GitHub: @MonsieurNikko (assistance IA Claude Sonnet 4.6)
+- Branche: feature/m14-doc-anticipation-phase2
+- Contexte/tache: apres lecture complete du cahier des charges (`projet_2026.pdf`) et de toute la documentation interne, corriger les incoherences detectees dans README.md et PLAN.md, et anticiper la creation de plusieurs livrables sous forme de squelette pour cadrer le travail des phases 2 a 9.
+- Fichiers modifies:
+	- README.md (3 corrections : badge deadline, reference fichier renomme, libelle livrable obsolete)
+	- documentation/PLAN.md (Phase 1 cochee comme terminee, table des livrables enrichie d'une colonne "Etat actuel")
+	- documentation/historique.md (cette entree)
+- Fichiers crees:
+	- petri/petri-troncon.md (livrable L3 complet : 7 places, 6 transitions, marquage initial, schema ASCII, preuve a la main de l'invariant principal, espace d'etats attendu, table de correspondance messages Akka <-> transitions Petri, limites assumees)
+	- documentation/biblio.md (livrable L1 : squelette + 9 sources commentees couvrant Petri, Akka, LTL, concurrence, transport critique)
+	- documentation/comparaison.md (livrable L6 : squelette + matrice complete des 3 scenarios avec marquages Petri pas-a-pas)
+	- documentation/rapport.md (livrable L4 : squelette structure 8 sections, sections vides a remplir Phases 7-8)
+	- documentation/lexique.md (document pivot d'equipe : aligne le vocabulaire entre metier, code Akka, places Petri, tests pour garantir la comprehension partagee dans une equipe de 4 contributeurs)
+	- CLAUDE.md (a la racine, genere par /init pour orienter les futures sessions IA)
+- Changements detailles:
+	- README.md : `badge deadline-fin%20mai%202026` -> `4%20mai%202026` (cf PLAN.md Phase 9 qui mentionne ce bug). Reference cassee `documentation/AGENT_RULES.md` -> `documentation/REGLES_PROJET.md` + ajout PLAN.md et HANDOVER.md dans la liste obligatoire. Libelle "Code Akka/Scala fonctionnel (M14 Chatelet)" remplace par "Code Akka/Scala fonctionnel du troncon partage" + chemins de chaque livrable. Exemples de branches mis a jour vers le scope troncon partage.
+	- PLAN.md : cases Phase 1 cochees (squelettes presents, branche merge sur main, compile passe). Table des livrables : ajout d'une colonne "Etat actuel" reflechissant ce qui existe vraiment apres cette intervention.
+	- petri/petri-troncon.md : pose le formalisme complet du reseau, fait office de **source de verite du vocabulaire** pour le code a venir (les noms `T1_hors`, `T1_attente`, `T1_sur_troncon` etc. doivent etre repris a l'identique dans les Behaviors Akka).
+	- documentation/lexique.md : table de correspondance metier <-> Petri <-> Akka <-> tests, avec regle dure de coherence : tout nouveau terme passe d'abord par Petri, puis par le lexique, puis par le code.
+- Commandes executees:
+	- git checkout -b feature/m14-doc-anticipation-phase2
+	- lecture exhaustive de documentation/{PLAN,REGLES_PROJET,HANDOVER,historique,recadrage-m14-troncon-critique,repartition-equipe}.md
+	- extraction et lecture du cahier des charges projet_2026.pdf via decodage zlib des streams
+	- ecriture des 6 fichiers ci-dessus
+- Resultats de verification:
+	- Build: N/A (sbt n'est pas disponible sur la machine de l'agent IA - changements 100% documentaires, aucun fichier .scala touche, donc risque nul sur le build)
+	- Tests: N/A (aucun changement de code Scala)
+	- Notes: l'utilisateur humain doit faire tourner `sbt compile && sbt test` localement avant push final, conforme aux regles projet section 6.
+- Risques/impacts:
+	- Risque cosmetique : la table des livrables PLAN.md a une nouvelle colonne, peut casser un parser markdown strict (peu probable).
+	- Le document `lexique.md` mentionne des noms de Behaviors (`comportementHors`, `comportementEnAttente`, `comportementSurTroncon`, `EtatLibre`, `EtatOccupe`) qui n'existent pas encore dans le code : c'est volontaire, c'est le contrat que devront respecter les Phases 2 et 3.
+	- La biblio liste 9 sources alors que la cible cahier est 5-8 : a relire en Phase 8, possibilite d'en retirer 1 ou 2.
+- Prochaines actions recommandees:
+	- Phase 2 (samedi 26 avril, en cours) : implementer `SectionController` en respectant strictement les noms de places Petri (cf lexique.md section 2). Logique d'arbitrage avec file FIFO. Un comportement Akka (Behavior) par etat, pas un grand match.
+	- Phase 3 (dimanche 27 avril) : implementer `Train` avec un Behavior par etat (`comportementHors`, `comportementEnAttente`, `comportementSurTroncon`).
+	- Phase 4 : ecrire les 3 fichiers de tests `ScenarioNominalSpec`, `ScenarioConcurrenceSpec`, `ScenarioLiberationProgressionSpec` en suivant la matrice de comparaison.md section 2-3-4.
+	- Avant tout push : refaire passer `sbt compile && sbt test`, completer cette entree historique.
+
+---
+
 ### [2026-04-26 00:10] - Preparation merge vers main + adaptation historique
 - GitHub: @MonsieurNikko
 - Branche: feature/m14-coeur-troncon
