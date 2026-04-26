@@ -33,6 +33,39 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ## Entrees
 
+### [2026-04-26 16:05] - Nettoyage repository : .gitignore + sortie de target/ du tracking git
+- GitHub: @MonsieurNikko (assistance IA Claude Sonnet 4.6)
+- Branche: feature/m14-gitignore-cleanup
+- Contexte/tache: les dossiers `target/` et `project/target/` etaient tracks dans le repo (heritage du commit initial), polluant a chaque sbt compile et violant la regle REGLES_PROJET section 4 ("interdiction de committer des artefacts generes"). Cleanup necessaire avant que la pollution ne grossisse.
+- Fichiers crees:
+	- .gitignore (entrees standard Scala/sbt + caches IDE Metals/IntelliJ/VSCode + macOS .DS_Store)
+- Fichiers retires du tracking (preserves sur disque) :
+	- target/ (47 fichiers : .class, caches sbt, streams)
+	- project/target/ (33 fichiers : config-classes, sbt-1.0 update cache, streams)
+- Changements detailles:
+	- Creation de .gitignore avec couverture exhaustive : `target/`, `project/target/`, `**/target/`, `.bsp/`, `.bloop/`, `.metals/`, `.idea/`, `.vscode/`, `*.iml`, `*.log`, `*.tmp`, `.DS_Store`.
+	- `git rm -r --cached target project/target` pour sortir 80 fichiers du tracking sans les supprimer du disque.
+	- Verification : sbt compile + sbt test passent toujours apres cleanup (3/3 StationControlSpec verts).
+- Commandes executees:
+	- git checkout -b feature/m14-gitignore-cleanup
+	- creation de .gitignore
+	- git rm -r --cached target project/target
+	- git add .gitignore
+	- sbt "compile; test" -> SUCCESS
+- Resultats de verification:
+	- Build: PASS (post-cleanup)
+	- Tests: PASS (3/3 StationControlSpec)
+	- Notes: les fichiers target/ existent toujours sur disque, ils sont juste ignores par git desormais.
+- Risques/impacts:
+	- Diff massif (80 suppressions) qui peut surprendre dans la PR. C'est purement administratif, aucun code source touche.
+	- Si un equipier avait un checkout local avec target/ dans son index : un `git pull` suivi d'un `sbt compile` regenerera tout, sans perte.
+- Prochaines actions recommandees:
+	- Push de la branche feature/m14-gitignore-cleanup, merge --no-ff vers main, push main.
+	- Apres ce nettoyage, le `git status` cesse d'etre pollue par target/ a chaque session.
+	- Phase 3 (Train.scala) peut commencer dans un repo propre.
+
+---
+
 ### [2026-04-26 15:55] - Verification Phase 2 : sbt compile + sbt test verts
 - GitHub: @MonsieurNikko (assistance IA Claude Sonnet 4.6)
 - Branche: feature/m14-doc-anticipation-phase2
