@@ -33,6 +33,30 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ## Entrees
 
+### [2026-04-26 15:55] - Verification Phase 2 : sbt compile + sbt test verts
+- GitHub: @MonsieurNikko (assistance IA Claude Sonnet 4.6)
+- Branche: feature/m14-doc-anticipation-phase2
+- Contexte/tache: installer sbt sur la machine de l'agent IA, puis valider que le commit precedent (5826b9b) compile et que les tests existants continuent de passer.
+- Fichiers modifies:
+	- documentation/historique.md (cette entree)
+- Commandes executees:
+	- brew install sbt (sbt 1.12.9 installe avec succes via Homebrew, Java 21 Temurin)
+	- sbt compile : 5 fichiers Scala compiles, 8 secondes
+	- sbt test : 3 tests StationControlSpec passent, 0 echec
+- Resultats de verification:
+	- Build: PASS
+	- Tests: PASS (3/3 StationControlSpec)
+	- Notes: warning cosmetique SLF4J sur l'absence de logger backend, sans impact fonctionnel.
+- Risques/impacts:
+	- L'absence de tests pour SectionController reste une lacune qui sera comblee en Phase 4 (3 ScenarioXxxSpec).
+	- StationControlSpec teste un module hors scope du recadrage, mais on le garde vert pour ne pas casser l'historique du build.
+- Prochaines actions recommandees:
+	- Push de la branche feature/m14-doc-anticipation-phase2 vers origin (necessite auth GitHub).
+	- Apres push : merge --no-ff vers main et push origin main.
+	- Phase 3 : implementer Train.scala (3 Behaviors : comportementHors, comportementEnAttente, comportementSurTroncon).
+
+---
+
 ### [2026-04-26 15:45] - Phase 2 implementee : SectionController complet avec FIFO
 - GitHub: @MonsieurNikko (assistance IA Claude Sonnet 4.6)
 - Branche: feature/m14-doc-anticipation-phase2
