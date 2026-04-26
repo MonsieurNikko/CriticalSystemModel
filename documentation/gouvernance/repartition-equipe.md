@@ -10,9 +10,7 @@ On decoupe par mecanisme critique, pas par sous-systemes larges. Chaque flux a:
 
 Rotation recommandee chaque semaine pour que tout le monde comprenne tout le projet.
 
-## 2) Repartition proposee
-
-### Nikko - Lead Dev (Code Akka & Analyseur Scala)
+### Pole A - Implémentation & Code Akka (Terminé)
 - Scope:
   - Architecture et implémentation Akka (`SectionController`, `Train`, `Protocol`)
   - Développement de l'analyseur Petri en Scala (`PetriNet`, `Analyseur`)
@@ -20,41 +18,38 @@ Rotation recommandee chaque semaine pour que tout le monde comprenne tout le pro
 - Livrables:
   - Code fonctionnel et testé (22/22 verts)
   - Preuves programmatiques d'absence de deadlock et d'exclusion mutuelle
-- Binôme relecture: Alicette (pour la cohérence métier)
+- Statut: Fait
 
-### Axelobistro - Modèle Formel & Protocole (Papier)
-- Scope:
-  - Définition stricte des places/transitions du réseau de Petri
-  - Alignement du vocabulaire Akka/Petri (`lexique.md`)
-- Livrables:
-  - Réseau Petri compact analysable à la main (`petri-troncon.md`)
-  - Mapping explicite message -> transition
-- Binôme relecture: Ostreann
-
-### Alicette - Preuves d'Invariants & Sûreté (Papier)
+### Pole B - Preuves d'Invariants & Modèle Formel (Charge: Moyenne)
 - Scope:
   - Preuves mathématiques/manuelles de l'exclusion mutuelle
   - Clarification des hypothèses d'arbitrage (fairness minimale)
+  - Formalisation LTL (Safety / Liveness)
 - Livrables:
   - Carnet de preuves manuelles (`preuves-manuelles.md`)
   - Validation formelle des 3 scénarios critiques
-- Binôme relecture: Nikko
 
-### Ostreann - Rédaction du Rapport & LTL (Papier)
+### Pole C - Comparaison & Tests (Charge: Faible)
 - Scope:
-  - Formalisation LTL (Safety / Liveness)
+  - Alignement du vocabulaire Akka/Petri (`lexique.md`)
+  - Exécution de l'analyseur et intégration des résultats
+- Livrables:
+  - Mapping explicite message -> transition
+  - Tableau de comparaison Akka vs Petri (`comparaison.md`)
+
+### Pole D - Rédaction du Rapport Final (Charge: Forte)
+- Scope:
   - Synthèse globale et bibliographie
+  - Assemblage de tous les travaux des pôles A, B et C
 - Livrables:
   - Rapport final (`rapport.md`) complet et structuré
-  - Tableau de comparaison Akka vs Petri (`comparaison.md`)
-- Binôme relecture: Axelobistro
 
 ## 3) Travail ensemble (important)
 
 Pour eviter le travail en silo, vous partagez 3 zones communes:
-- Contrats de messages critiques (co-redigés par Nikko + Axelobistro)
-- Invariant principal et hypotheses de vivacite (co-redigés par Alicette + Ostreann)
-- Scenarios de validation du troncon partage (co-redigés par toute l'équipe)
+- Contrats de messages critiques (validation croisée de l'équipe)
+- Invariant principal et hypotheses de vivacite (validation croisée de l'équipe)
+- Scenarios de validation du troncon partage (validation croisée de l'équipe)
 
 Regle pratique: toute PR doit toucher au moins 1 artefact metier ET 1 artefact de validation (test, modele, ou doc de preuve).
 
@@ -75,9 +70,8 @@ Regle pratique: toute PR doit toucher au moins 1 artefact metier ET 1 artefact d
 ## 5) Workflow Git conseille (collaboratif)
 
 - Branches de travail:
-  - `feature/m14-phase3-train` (Nikko - Code)
-  - `feature/m14-preuves-manuelles` (Alicette/Axelobistro - Docs)
-  - `feature/m14-rapport-final` (Ostreann - Docs)
+  - `feature/m14-preuves-manuelles` (Pour les tâches du Pôle B)
+  - `feature/m14-rapport-final` (Pour les tâches des Pôles C et D)
 - Branche principale:
   - `main`
 - Regles:

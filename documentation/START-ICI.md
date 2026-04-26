@@ -57,20 +57,30 @@ CriticalSystemModel/
 └── build.sbt                  Config Scala/Akka
 ```
 
-## Par ou commencer selon ton role
+## Par ou commencer (Poles d'activites)
 
-### Nikko (Lead Code & Architecture)
-1. Lis `documentation/suivi/PLAN.md`
-2. Ta tache : tu es le responsable de toute la partie implementation Scala (Akka, Analyseur Petri, tests). Le code est de ton ressort.
-3. Prochaine etape : preparer la trame du rapport (`documentation/livrables/rapport.md`).
+Nous avons 3 grands poles restants pour terminer le projet. Choisissez un pole selon vos affinites et coordonnez-vous :
 
-### L'Equipe Preuves Formelles (Axelobistro, Alicette, Ostreann)
-Pendant que Nikko gere le code, votre mission est de blinder la theorie, les preuves manuelles, et le rapport.
-1. Lisez `petri/petri-troncon.md` et `documentation/gouvernance/lexique.md` pour maitriser le vocabulaire et le modele.
-2. Vos taches immediates :
-   - **Preuves manuelles** : completer `documentation/livrables/preuves-manuelles.md` (taches 2 a 7).
-   - **Comparaison** : mettre a jour `documentation/livrables/comparaison.md` avec la sortie de l'analyseur.
-   - **Redaction** : avancer sur le rapport final (`documentation/livrables/rapport.md`).
+### Pole 1 : Preuves Formelles & LTL (Charge : Moyenne)
+- **Objectif** : Blinder la theorie et les preuves mathematiques.
+- **Actions** :
+  1. Lire `petri/petri-troncon.md`.
+  2. Completer le carnet de preuves : `documentation/livrables/preuves-manuelles.md` (taches 2 a 7).
+  3. Rediger la formalisation LTL (Safety/Liveness).
+
+### Pole 2 : Comparaison & Tests (Charge : Faible)
+- **Objectif** : Prouver que notre code Scala correspond au reseau de Petri.
+- **Actions** :
+  1. Lancer l'analyseur : `sbt "runMain m14.petri.Analyseur"`.
+  2. Inserer les resultats dans `documentation/livrables/comparaison.md`.
+  3. Mettre a jour le mapping explicite entre Messages Akka et Transitions Petri.
+
+### Pole 3 : Redaction du Rapport & Biblio (Charge : Forte)
+- **Objectif** : Assembler le livrable final (8-15 pages).
+- **Actions** :
+  1. Relire `documentation/suivi/PLAN.md` (Phases 7 et 8).
+  2. Completer la bibliographie dans `documentation/livrables/biblio.md`.
+  3. Rediger le rapport final `documentation/livrables/rapport.md` en integrant le travail des poles 1 et 2.
 
 ## Commandes essentielles
 
