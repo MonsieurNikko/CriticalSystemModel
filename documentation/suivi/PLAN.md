@@ -9,7 +9,7 @@
 
 - **Deadline reelle** : 4 mai 2026 (le badge README "fin mai" est obsolete, sera corrige en Phase 9)
 - **Duree restante** : 9 jours (25 avril -> 3 mai au soir, rendu le 4 mai)
-- **Equipe** : 4 contributeurs (voir `documentation/repartition-equipe.md` pour les specialites)
+- **Equipe** : 4 contributeurs (voir `documentation/gouvernance/repartition-equipe.md` pour les specialites)
 - **Mode de travail** : code lisible et defendable - chaque membre doit pouvoir expliquer le code qu'il signe
 
 ---
@@ -43,18 +43,18 @@ Hors coeur (mentionnes "extensions futures" dans le rapport, pas implementes) :
 
 | # | Livrable | Ou | Etat cible | Etat actuel |
 |---|----------|-----|-----------|-------------|
-| L1 | Bibliographie commentee (etat de l'art) | `documentation/biblio.md` | 5-8 sources, 2-4 lignes par source | **Squelette + 9 sources commentees** (a relire/finaliser Phase 8) |
+| L1 | Bibliographie commentee (etat de l'art) | `documentation/livrables/biblio.md` | 5-8 sources, 2-4 lignes par source | **Squelette + 9 sources commentees** (a relire/finaliser Phase 8) |
 | L2 | Modele Akka/Scala fonctionnel | `src/main/scala/m14/troncon/` | Compile + 3 scenarios passent | Squelettes vides, logique a coder Phases 2-3 |
 | L3 | Reseau de Petri | `petri/petri-troncon.md` (texte + ASCII) | 7 places, 6 transitions, marquage initial | **Complet** : 7 places, 6 transitions, ASCII, invariants prouves a la main |
-| L4 | Rapport de verification (proprietes structurelles + invariants + LTL) | `documentation/rapport.md` | Invariant principal prouve, deadlocks ecartes, LTL formalise | **Squelette structure** (sections vides a remplir Phases 7-8) |
+| L4 | Rapport de verification (proprietes structurelles + invariants + LTL) | `documentation/livrables/rapport.md` | Invariant principal prouve, deadlocks ecartes, LTL formalise | **Squelette structure** (sections vides a remplir Phases 7-8) |
 | L5 | Analyseur Petri en code | `src/main/scala/m14/petri/` | Espace d'etats genere, invariants verifies par programme | A coder Phases 5-6 |
-| L6 | Simulation comparee Akka vs Petri (3 scenarios) | `documentation/comparaison.md` | Tableau de correspondance messages <-> transitions | **Squelette + matrice 3 scenarios** (sortie analyseur a inserer Phase 6) |
+| L6 | Simulation comparee Akka vs Petri (3 scenarios) | `documentation/livrables/comparaison.md` | Tableau de correspondance messages <-> transitions | **Squelette + matrice 3 scenarios** (sortie analyseur a inserer Phase 6) |
 | L7 | Lien GitHub final | README.md | Depot propre, branche main a jour | A finaliser Phase 9 |
 
 **Documents pivots d'equipe** (a lire avant toute contribution) :
-- `documentation/lexique.md` : coherence de nommage metier <-> code Akka <-> Petri <-> tests
-- `documentation/protocole-coordination.md` : contrat de travail parallele code/preuves, decisions verrouillees, procedures de changement, questions anticipees Phase 2-3
-- `documentation/preuves-manuelles.md` : carnet de travail manuel pour la piste verification formelle (independante du code)
+- `documentation/gouvernance/lexique.md` : coherence de nommage metier <-> code Akka <-> Petri <-> tests
+- `documentation/gouvernance/protocole-coordination.md` : contrat de travail parallele code/preuves, decisions verrouillees, procedures de changement, questions anticipees Phase 2-3
+- `documentation/livrables/preuves-manuelles.md` : carnet de travail manuel pour la piste verification formelle (independante du code)
 
 **Contrainte cle du cahier** : interdiction d'utiliser un outil logiciel de Petri externe. L'analyseur **doit** etre code par nous.
 
@@ -69,7 +69,7 @@ Hors coeur (mentionnes "extensions futures" dans le rapport, pas implementes) :
 - [x] Squelette des 3 acteurs (`Protocol.scala`, `Train.scala`, `SectionController.scala`) - signatures de messages, pas de logique
 - [x] `sbt compile` passe
 - [x] Branche `feature/m14-coeur-troncon` mergee sur `main` le 26 avril (voir historique.md)
-- [ ] Bibliographie : structure creee dans `documentation/biblio.md`, references a etoffer en Phase 8
+- [ ] Bibliographie : structure creee dans `documentation/livrables/biblio.md`, references a etoffer en Phase 8
 - **Verification** : compile OK, squelettes presents sur main, structure documentaire en place
 
 ### Phase 2 - samedi 26 avril : Protocole + arbitrage
@@ -82,14 +82,14 @@ Hors coeur (mentionnes "extensions futures" dans le rapport, pas implementes) :
 - [ ] Implementer `Train.scala` (etats : hors / attente / sur_troncon)
 - [ ] Test scenario **concurrence** : 2 trains demandent quasi-simultanement, un seul entre, l'autre attend
 - [ ] Test scenario **liberation/progression** : le train sort, le second progresse
-- [ ] Premiere version de `documentation/biblio.md` poussee pour relecture
+- [ ] Premiere version de `documentation/livrables/biblio.md` poussee pour relecture
 - **Verification** : `sbt test` vert sur 3 scenarios
 
 ### Phase 4 - lundi 28 avril : Reseau de Petri (papier)
 - [ ] Dessin ASCII du reseau (7 places, 6 transitions) dans `petri/petri-troncon.md`
 - [ ] Definition formelle du marquage initial
 - [ ] Verification **a la main** de l'invariant principal sur les 3 scenarios
-- [ ] Tableau de **correspondance message Akka <-> transition Petri** (premiere ebauche dans `documentation/comparaison.md`)
+- [ ] Tableau de **correspondance message Akka <-> transition Petri** (premiere ebauche dans `documentation/livrables/comparaison.md`)
 - **Verification** : reseau coherent avec architecture Akka
 
 ### Phase 5 - mardi 29 avril : Analyseur Petri (1) - structure de donnees
@@ -105,7 +105,7 @@ Hors coeur (mentionnes "extensions futures" dans le rapport, pas implementes) :
 - [ ] Verification de l'invariant principal sur tous les marquages atteignables
 - [ ] Detection de **deadlock** (etat sans transition tirable)
 - [ ] Test d'integration end-to-end : Akka simule scenario X, Analyseur explore espace d'etats X, on compare
-- [ ] Mise a jour de `documentation/comparaison.md` avec les sorties de l'analyseur
+- [ ] Mise a jour de `documentation/livrables/comparaison.md` avec les sorties de l'analyseur
 - **Verification** : ~6-8 etats atteignables, aucun deadlock, invariant tient partout
 
 ### Phase 7 - jeudi 1 mai : LTL + finalisation comparaison
@@ -113,14 +113,14 @@ Hors coeur (mentionnes "extensions futures" dans le rapport, pas implementes) :
   - Safety : `G !(T1_sur_troncon ∧ T2_sur_troncon)`
   - Liveness : `G (T1_attente -> F T1_sur_troncon)` (sous fairness)
 - [ ] Justification informelle des proprietes LTL sur l'espace d'etats fini
-- [ ] `documentation/comparaison.md` finalise : matrice 3 scenarios x (message Akka, transition Petri, etat resultant)
-- [ ] Demarrer la **structure du rapport** (`documentation/rapport.md` avec sections vides + plan)
+- [ ] `documentation/livrables/comparaison.md` finalise : matrice 3 scenarios x (message Akka, transition Petri, etat resultant)
+- [ ] Demarrer la **structure du rapport** (`documentation/livrables/rapport.md` avec sections vides + plan)
 - **Verification** : tableau coherent, scenarios reproductibles, structure rapport prete
 
 ### Phase 8 - vendredi 2 mai : Bibliographie + rapport
-- [ ] `documentation/biblio.md` finalise : 5-8 references commentees
+- [ ] `documentation/livrables/biblio.md` finalise : 5-8 references commentees
   - Murata 1989 (Petri nets), doc Akka officielle, LTL TUM, livre Magee/Kramer ou similaire, Lamport (concurrent reasoning), 1-2 articles transport critique
-- [ ] `documentation/rapport.md` complet :
+- [ ] `documentation/livrables/rapport.md` complet :
   - Section **Contexte** + **Bibliographie** + **Limites/Conclusion**
   - Section **Architecture Akka** (acteurs, protocole, scenarios)
   - Section **Verification** (proprietes Safety/Liveness, deadlock, justification)
@@ -131,7 +131,7 @@ Hors coeur (mentionnes "extensions futures" dans le rapport, pas implementes) :
 ### Phase 9 - samedi 3 mai : Polish, README, fusion main
 - [ ] Corriger badge README ("4 mai 2026" au lieu de "fin mai")
 - [ ] Section "Comment lancer" du README claire et testee : `sbt compile`, `sbt test`, `sbt "runMain m14.petri.Analyseur"`
-- [ ] Verifier `documentation/historique.md` a jour avec toutes les phases
+- [ ] Verifier `documentation/suivi/historique.md` a jour avec toutes les phases
 - [ ] Checklist finale livrables (L1 a L7) cochee une derniere fois
 - [ ] Merger `feature/m14-coeur-troncon` -> `main` apres validation collective
 - [ ] Tag git : `v1.0-rendu-2026-05-04`
@@ -150,7 +150,7 @@ Un livrable est "fait" si et seulement si :
 - [ ] Le code compile sans erreur (`sbt compile`)
 - [ ] Les tests existants passent (`sbt test`)
 - [ ] Le fichier est dans le repo, sur la branche de travail, pousse
-- [ ] `documentation/historique.md` contient une entree decrivant le changement
+- [ ] `documentation/suivi/historique.md` contient une entree decrivant le changement
 - [ ] Relecture par au moins 1 autre membre de l'equipe
 
 ---
@@ -185,10 +185,10 @@ Si une de ces idees revient, repondre : "extension hors sprint, voir section Lim
 - **Pas de site web**, pas de slides obligatoires
 - Tout sur GitHub : code dans `src/`, Petri dans `petri/`, docs en Markdown dans `documentation/`
 - Le lien GitHub est le livrable principal
-- Le rapport final est `documentation/rapport.md` (exportable PDF si l'enseignant le demande)
+- Le rapport final est `documentation/livrables/rapport.md` (exportable PDF si l'enseignant le demande)
 
 ---
 
 ## 9) Validation de ce plan
 
-Une fois ce plan valide en equipe, il devient la reference jusqu'au 4 mai. Toute deviation passe par une mise a jour de ce fichier et une entree dans `documentation/historique.md`.
+Une fois ce plan valide en equipe, il devient la reference jusqu'au 4 mai. Toute deviation passe par une mise a jour de ce fichier et une entree dans `documentation/suivi/historique.md`.

@@ -13,14 +13,14 @@
 Points a couvrir :
 - Rappel du domaine applicatif (metro automatique M14, sous-systeme troncon partage).
 - Pourquoi un systeme critique distribue, et pourquoi la verification formelle est pertinente.
-- Resume du recadrage du projet (cf. `documentation/recadrage-m14-troncon-critique.md`).
+- Resume du recadrage du projet (cf. `documentation/contexte/recadrage-m14-troncon-critique.md`).
 - Choix d'abstraction : 2 trains, 1 troncon, 1 controleur. Justification du minimalisme defendable.
 
 ---
 
 ## 2) Bibliographie
 
-> A finaliser en Phase 8 a partir de `documentation/biblio.md`.
+> A finaliser en Phase 8 a partir de `documentation/livrables/biblio.md`.
 
 Resumer les sources utilisees, regroupees par theme : Petri, Akka, LTL, concurrence, transport critique. Citer chaque source au moins une fois dans le corps du rapport.
 
@@ -33,7 +33,7 @@ Resumer les sources utilisees, regroupees par theme : Petri, Akka, LTL, concurre
 Points a couvrir :
 - Diagramme des acteurs : 2 `Train` + 1 `SectionController`.
 - Description des `Behavior[T]` typés et de leur cycle de vie.
-- Protocole de messages : `Demande`, `Sortie`, `Autorisation`, `Attente`. Source : `petri/petri-troncon.md` section 8 et `documentation/lexique.md` section 3.
+- Protocole de messages : `Demande`, `Sortie`, `Autorisation`, `Attente`. Source : `petri/petri-troncon.md` section 8 et `documentation/gouvernance/lexique.md` section 3.
 - Logique d'arbitrage du controleur : etat libre / occupe + file FIFO.
 - Justification des hypotheses (un seul controleur centralise, pas de panne, pas de timeout).
 
@@ -84,7 +84,7 @@ Liveness : `G (T1_attente -> F T1_sur_troncon)` sous hypothese de fairness (FIFO
 
 ## 6) Comparaison Akka vs Petri
 
-> A rediger en Phase 8 a partir de `documentation/comparaison.md`.
+> A rediger en Phase 8 a partir de `documentation/livrables/comparaison.md`.
 
 Reprendre la matrice scenarios x (message, transition, marquage) et conclure sur la coherence entre simulation et modele formel.
 
@@ -122,5 +122,5 @@ Extensions possibles (mentionnees, non implementees) :
 ## Annexes
 
 - A1 : sortie complete de l'analyseur Petri (a coller en Phase 6).
-- A2 : matrice de comparaison detaillee (extrait de `documentation/comparaison.md`).
+- A2 : matrice de comparaison detaillee (extrait de `documentation/livrables/comparaison.md`).
 - A3 : extraits de code commentes (un Behavior par etat, le BFS de l'analyseur).

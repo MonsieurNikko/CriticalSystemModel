@@ -13,8 +13,8 @@
 Avant de remplir ce carnet, lire dans cet ordre :
 
 1. **`petri/petri-troncon.md`** sections 1 a 5 : definition complete du reseau, invariant principal prouve sur chaque transition.
-2. **`documentation/lexique.md`** : pour ne jamais s'eloigner du vocabulaire commun.
-3. **`documentation/comparaison.md`** sections 2 a 4 : matrice scenarios x (message Akka, transition Petri, marquage).
+2. **`documentation/gouvernance/lexique.md`** : pour ne jamais s'eloigner du vocabulaire commun.
+3. **`documentation/livrables/comparaison.md`** sections 2 a 4 : matrice scenarios x (message Akka, transition Petri, marquage).
 
 Tout ce qui suit dans ce carnet **prolonge** ces documents avec les preuves manuelles complementaires.
 
@@ -225,7 +225,7 @@ A remplir par l'equipe en redaction libre (5-10 lignes) :
 
 ### Resultat attendu
 
-Cette discussion doit alimenter directement la section "Limites assumees" du rapport (`documentation/rapport.md` section 7).
+Cette discussion doit alimenter directement la section "Limites assumees" du rapport (`documentation/livrables/rapport.md` section 7).
 
 ---
 
@@ -263,7 +263,7 @@ A faire : completer ce graphe en y faisant figurer **toutes** les transitions ti
 
 ### Insertion finale
 
-Ce diagramme sera repris dans le rapport (`documentation/rapport.md` section 5) comme illustration centrale de la verification.
+Ce diagramme sera repris dans le rapport (`documentation/livrables/rapport.md` section 5) comme illustration centrale de la verification.
 
 ---
 
@@ -277,7 +277,7 @@ Il devra produire :
 - [ ] Pour chaque marquage, la verification des invariants par train (correspondance avec la tache 3).
 - [ ] La confirmation qu'aucun marquage n'est un deadlock (correspondance avec la tache 4).
 
-Si le code et le carnet divergent, **on debugge le code en priorite** (le carnet est la reference). En cas d'erreur dans le carnet, on corrige et on re-explique dans `documentation/historique.md`.
+Si le code et le carnet divergent, **on debugge le code en priorite** (le carnet est la reference). En cas d'erreur dans le carnet, on corrige et on re-explique dans `documentation/suivi/historique.md`.
 
 ### Ou inserer les sorties dans le rapport
 

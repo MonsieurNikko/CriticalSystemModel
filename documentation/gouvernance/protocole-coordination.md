@@ -15,16 +15,16 @@ Chaque information du projet a **une seule** source de verite. En cas de conflit
 | Information                             | Source de verite                                  | Qui edite        | Qui doit relire   |
 |-----------------------------------------|---------------------------------------------------|------------------|-------------------|
 | Modele formel (places, transitions)     | `petri/petri-troncon.md`                          | Piste A (Nikko)  | Toute l'equipe    |
-| Vocabulaire metier <-> code <-> Petri   | `documentation/lexique.md`                        | Piste A          | Piste B avant chaque commit |
+| Vocabulaire metier <-> code <-> Petri   | `documentation/gouvernance/lexique.md`                        | Piste A          | Piste B avant chaque commit |
 | Protocole de messages Akka              | `src/main/scala/m14/troncon/Protocol.scala`       | Piste B          | Piste A           |
 | Logique d'arbitrage du controleur       | `src/main/scala/m14/troncon/SectionController.scala` | Piste B       | Piste A pour validation FIFO |
 | Machine a etats du train                | `src/main/scala/m14/troncon/Train.scala`          | Piste B          | Piste A           |
-| Preuves d'invariants a la main          | `documentation/preuves-manuelles.md`              | Piste A          | Piste B en Phase 6 |
-| Correspondance scenarios <-> transitions | `documentation/comparaison.md`                   | Piste A + Piste B (co-redige) | Toute l'equipe |
+| Preuves d'invariants a la main          | `documentation/livrables/preuves-manuelles.md`              | Piste A          | Piste B en Phase 6 |
+| Correspondance scenarios <-> transitions | `documentation/livrables/comparaison.md`                   | Piste A + Piste B (co-redige) | Toute l'equipe |
 | Sortie programmatique de l'analyseur    | `src/main/scala/m14/petri/` + log de sortie       | Piste B          | Piste A en Phase 6 |
-| Rapport final                           | `documentation/rapport.md`                        | Toute l'equipe   | Toute l'equipe |
+| Rapport final                           | `documentation/livrables/rapport.md`                        | Toute l'equipe   | Toute l'equipe |
 
-**Regle** : si tu modifies un fichier, tu es responsable de notifier les autres editeurs concernes via une entree dans `documentation/historique.md` **dans la meme session**.
+**Regle** : si tu modifies un fichier, tu es responsable de notifier les autres editeurs concernes via une entree dans `documentation/suivi/historique.md` **dans la meme session**.
 
 ---
 
@@ -47,10 +47,10 @@ Si pendant le codage une de ces verrous semble bloquer, **stop** : on en discute
 
 ### Cas A - Renommer un terme (ex : `comportementHors` -> `etatHors`)
 
-1. Modifier `documentation/lexique.md` en premier (ajouter une note "ancien -> nouveau").
+1. Modifier `documentation/gouvernance/lexique.md` en premier (ajouter une note "ancien -> nouveau").
 2. Modifier `petri/petri-troncon.md` si la place Petri est concernee.
 3. Modifier le code Scala.
-4. Mettre a jour `documentation/preuves-manuelles.md` (recherche-remplace).
+4. Mettre a jour `documentation/livrables/preuves-manuelles.md` (recherche-remplace).
 5. Une entree historique.md citant les 4 fichiers.
 
 **Personne en charge** : la piste qui detecte le besoin propose, l'autre piste relit avant le push.
@@ -62,7 +62,7 @@ Exemple : "que fait le controleur si un train envoie `Sortie` alors qu'il n'est 
 1. Verifier d'abord si le cas est **possible** dans le modele Petri. Si la transition n'est pas tirable depuis aucun marquage atteignable, c'est un cas qui ne peut pas se produire avec une implementation correcte.
 2. Si c'est le cas (cas impossible) : dans le code, on **ignore le message** avec un commentaire explicite : `// cas impossible si la machine d'etat est respectee, robustesse defensive`.
 3. Ne **pas** ajouter de transition Petri pour modeliser ce cas. Le modele Petri reflete le comportement attendu, pas les bugs.
-4. Documenter le choix dans `documentation/preuves-manuelles.md` section "Robustesse defensive".
+4. Documenter le choix dans `documentation/livrables/preuves-manuelles.md` section "Robustesse defensive".
 
 ### Cas C - Le code revele un bug du modele Petri
 
@@ -82,8 +82,8 @@ Symetrique du cas C. Meme procedure : stop, reunion, decision, trace.
 
 C'est une violation du verrou n°6. Pas autorise sans reunion. Si vraiment necessaire :
 1. Justifier pourquoi les 3 scenarios sont insuffisants.
-2. Mettre a jour `documentation/recadrage-m14-troncon-critique.md` section 7.
-3. Mettre a jour `documentation/preuves-manuelles.md` et `documentation/comparaison.md`.
+2. Mettre a jour `documentation/contexte/recadrage-m14-troncon-critique.md` section 7.
+3. Mettre a jour `documentation/livrables/preuves-manuelles.md` et `documentation/livrables/comparaison.md`.
 4. Tracer dans historique.md avec validation des 4 contributeurs.
 
 ---
@@ -158,7 +158,7 @@ C'est le point de convergence des deux pistes. Apres l'analyseur :
 - [ ] Comparer la sortie de l'analyseur avec la tache 1 du carnet (8 marquages attendus).
 - [ ] Comparer les invariants verifies par le code avec la tache 2 du carnet.
 - [ ] En cas d'ecart : reunion immediate, application de la procedure cas C ou D.
-- [ ] Mettre a jour `documentation/comparaison.md` section 6 avec la sortie brute du code.
+- [ ] Mettre a jour `documentation/livrables/comparaison.md` section 6 avec la sortie brute du code.
 
 ---
 
@@ -199,7 +199,7 @@ A faire avant de quitter une session de travail (5 minutes max) :
 
 - [ ] Mes fichiers compilent (`sbt compile` si j'ai touche du code).
 - [ ] Les tests existants passent (`sbt test` si j'ai touche du code).
-- [ ] J'ai mis a jour `documentation/historique.md` avec une entree datee.
+- [ ] J'ai mis a jour `documentation/suivi/historique.md` avec une entree datee.
 - [ ] Si j'ai touche un fichier de la liste section 1, j'ai signale dans la note de session quel autre contributeur doit relire.
 - [ ] Si j'ai bloque sur un cas non prevu : j'ai ouvert une RFC (template section 6) plutot que de decider seul.
 - [ ] J'ai pousse sur ma branche feature, pas sur main.

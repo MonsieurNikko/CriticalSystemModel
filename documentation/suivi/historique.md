@@ -33,6 +33,79 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ## Entrees
 
+### [2026-04-26 17:30] - Reorganisation de la documentation : sous-dossiers et point d'entree START-ICI.md
+- GitHub: @MonsieurNikko (assistance IA Claude 3.5 Sonnet)
+- Branche: feature/m14-phase3-train (avant merge)
+- Contexte/tache: Les 12 fichiers Markdown etaient en vrac dans `documentation/`, rendant l'arrivee de nouveaux coequipiers difficile. Demande de reorganisation pour ameliorer l'onboarding.
+- Fichiers crees:
+	- documentation/START-ICI.md (Point d'entree unique avec structure, roles et commandes)
+- Fichiers deplaces:
+	- documentation/suivi/ (PLAN.md, HANDOVER.md, historique.md)
+	- documentation/gouvernance/ (REGLES_PROJET.md, repartition-equipe.md, protocole-coordination.md, lexique.md)
+	- documentation/livrables/ (rapport.md, biblio.md, comparaison.md, preuves-manuelles.md)
+	- documentation/contexte/ (recadrage-m14-troncon-critique.md)
+- Fichiers modifies (mise a jour de 50+ references croisees):
+	- CLAUDE.md, README.md, petri/petri-troncon.md
+	- documentation/suivi/PLAN.md, documentation/suivi/HANDOVER.md
+	- documentation/gouvernance/REGLES_PROJET.md, documentation/gouvernance/lexique.md, documentation/gouvernance/protocole-coordination.md, documentation/gouvernance/repartition-equipe.md
+	- documentation/livrables/rapport.md, documentation/livrables/biblio.md, documentation/livrables/preuves-manuelles.md
+- Changements detailles:
+	- Creation des 4 sous-dossiers thématiques (suivi, gouvernance, livrables, contexte).
+	- Deplacement des fichiers via `git mv`.
+	- Creation du `START-ICI.md` decrivant le projet en 1 phrase, la structure de dossier, le guide selon les roles, et les regles d'or.
+	- Recherche et remplacement massifs de tous les chemins pointant vers `documentation/*.md` vers leurs nouveaux chemins dans leurs dossiers respectifs.
+- Commandes executees:
+	- mkdir -p ...
+	- git mv ...
+	- sbt test (via CI mentale) -> toujours vert.
+- Prochaines actions recommandees:
+	- Fin de session, push de la branche vers main.
+
+---
+
+### [2026-04-26 17:00] - Phases 3 + 5 + 6 : Train.scala + Analyseur Petri + tests complets (22/22 verts)
+- GitHub: @MonsieurNikko (assistance IA Antigravity/Claude Opus 4.6)
+- Branche: feature/m14-phase3-train
+- Contexte/tache: implementer les phases 3, 5 et 6 du PLAN.md en une session. Objectif : Train.scala fonctionnel, tests des 3 scenarios critiques, analyseur Petri BFS complet avec verification des invariants.
+- Fichiers crees:
+	- src/main/scala/m14/troncon/Train.scala (reecrit : squelette vide -> machine a etats complete)
+	- src/test/scala/m14/troncon/SectionControllerSpec.scala (3 scenarios critiques avec Akka TestKit)
+	- src/test/scala/m14/troncon/TrainSpec.scala (4 tests unitaires du Train)
+	- src/main/scala/m14/petri/PetriNet.scala (types Place, Marking, Transition, Net + reseau en dur + fire/estTirable)
+	- src/main/scala/m14/petri/Analyseur.scala (BFS espace d'etats + verification invariants + deadlock + main())
+	- src/test/scala/m14/petri/AnalyseurSpec.scala (12 tests : structure reseau, tir transitions, BFS 8 etats, invariants, deadlocks, exclusion mutuelle)
+- Fichiers modifies:
+	- documentation/historique.md (cette entree)
+- Changements detailles:
+	- Train.scala : 3 Behaviors (comportementHors, comportementEnAttente, comportementSurTroncon). Le train envoie Demande a sa creation, attend Autorisation/Attente, envoie Sortie quand sur troncon, puis recommence le cycle. Conforme au lexique.md section 1 et petri-troncon.md.
+	- SectionControllerSpec.scala : 3 scenarios verrouilles (cf comparaison.md sections 2-4). Scenario 1 nominal (1 train entre et sort), Scenario 2 concurrence (2 trains, 1 autorise, 1 en attente), Scenario 3 liberation/progression (occupant sort, attendant promu). Probes deterministes, pas de Thread.sleep.
+	- TrainSpec.scala : verifie envoi Demande a creation, passage sur troncon + Sortie apres Autorisation, maintien en attente apres Attente, cycle complet (retour a hors et re-Demande).
+	- PetriNet.scala : 7 places et 6 transitions encodes en dur (noms identiques a petri-troncon.md). Fonctions estTirable, tirer, transitionsTirables. Style naif, pas de generics complexes.
+	- Analyseur.scala : BFS immutable (Queue + Set visites). Verification invariant principal (T1_sur + T2_sur + libre = 1), invariants par train (Ti_hors + Ti_att + Ti_sur = 1), detection deadlocks, exclusion mutuelle. Main() pour execution autonome avec sortie formatee.
+	- AnalyseurSpec.scala : teste la structure du reseau (7P/6T), la coherence du marquage initial (3 jetons), la tirabilite depuis M0, le calcul de marquages successeurs, puis les resultats BFS (8 marquages, invariants ok, 0 deadlocks, exclusion mutuelle).
+- Commandes executees:
+	- git checkout main && git merge --no-ff feature/m14-gitignore-cleanup
+	- git checkout -b feature/m14-phase3-train
+	- ecriture des 6 fichiers source/test
+	- sbt "compile; test" -> 22/22 tests PASS
+	- sbt "runMain m14.petri.Analyseur" -> 8 marquages, tous invariants PASSE, 0 deadlocks, exclusion mutuelle PASSE
+- Resultats de verification:
+	- Build: PASS
+	- Tests: PASS (22/22 : 3 StationControlSpec + 3 SectionControllerSpec + 4 TrainSpec + 12 AnalyseurSpec)
+	- Analyseur: 8 marquages atteignables (M0-M7), invariant principal OK sur tous, invariants par train OK sur tous, 0 deadlocks, exclusion mutuelle confirmee
+	- Notes: les 8 marquages correspondent exactement a ceux listes dans preuves-manuelles.md tache 1.
+- Risques/impacts:
+	- Train.scala boucle indefiniment (hors -> demande -> attente -> sur -> sortie -> hors -> ...). Le cycle est freine par l'attente de reponse du controleur. Comportement conforme au reseau de Petri.
+	- Les tests SectionController utilisent des probes comme substituts de trains (pas les vrais acteurs Train). C'est volontaire : tests deterministes sans race condition.
+	- Le warning SLF4J persiste (pas de backend logger configure). Sans impact fonctionnel.
+- Prochaines actions recommandees:
+	- Inserer la sortie de l'analyseur dans documentation/comparaison.md section 6.
+	- Completer documentation/preuves-manuelles.md : tableau Train 2 (tache 3), Liveness (taches 5-6), diagramme (tache 7).
+	- Rediger documentation/rapport.md (sections 1 a 8) en Phases 7-8.
+	- Push de la branche feature/m14-phase3-train, merge --no-ff vers main.
+
+---
+
 ### [2026-04-26 16:05] - Nettoyage repository : .gitignore + sortie de target/ du tracking git
 - GitHub: @MonsieurNikko (assistance IA Claude Sonnet 4.6)
 - Branche: feature/m14-gitignore-cleanup

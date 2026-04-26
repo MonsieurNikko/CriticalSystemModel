@@ -95,7 +95,7 @@ Une tache est terminee seulement si:
 - comportement code valide (Akka)
 - impact sur invariants explicite
 - test associe present (ou justification N/A)
-- trace dans documentation/historique.md
+- trace dans `documentation/suivi/historique.md`
 
 ## 7) Risques et parades
 

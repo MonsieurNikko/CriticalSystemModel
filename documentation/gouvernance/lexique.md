@@ -86,4 +86,4 @@
 
 - Toute introduction de nouveau terme metier doit etre ajoutee ici **avant** d'apparaitre dans le code.
 - En cas de divergence detectee entre code, Petri et lexique : on aligne sur ce qui est dans `petri/petri-troncon.md` (source de verite formelle), puis on corrige les autres.
-- Une entree dans `documentation/historique.md` est obligatoire a chaque modification de ce fichier.
+- Une entree dans `documentation/suivi/historique.md` est obligatoire a chaque modification de ce fichier.

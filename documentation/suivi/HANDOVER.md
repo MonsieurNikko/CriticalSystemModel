@@ -9,8 +9,8 @@
 
 Ordre de lecture obligatoire :
 
-1. **`documentation/PLAN.md`** - quelle phase est en cours, quel est le livrable cible.
-2. **`documentation/historique.md` (entree la plus recente)** - ce qui a ete fait dans la derniere session, les commandes lancees.
+1. **`documentation/suivi/PLAN.md`** - quelle phase est en cours, quel est le livrable cible.
+2. **`documentation/suivi/historique.md` (entree la plus recente)** - ce qui a ete fait dans la derniere session, les commandes lancees.
 3. **`git log --oneline -15`** sur la branche - historique des commits, en lisant les messages "Quoi / Pourquoi / Comment relire".
 4. **Le fichier "comment relire" indique dans le dernier commit** - c'est le point d'entree code de la session.
 5. **`sbt compile && sbt test`** - confirme que ton checkout est sain avant de toucher quoi que ce soit.
@@ -84,7 +84,7 @@ A faire dans cet ordre :
 - [ ] **En-tete une-ligne** present en haut de chaque fichier nouveau ou modifie en profondeur.
 - [ ] **`sbt compile`** : OK.
 - [ ] **`sbt test`** : OK (ou echec documente).
-- [ ] **`documentation/historique.md`** : nouvelle entree decrivant les changements, les commandes, le resultat.
+- [ ] **`documentation/suivi/historique.md`** : nouvelle entree decrivant les changements, les commandes, le resultat.
 - [ ] **Message de commit** structure : 1) Quoi, 2) Pourquoi, 3) Comment relire (quel fichier ouvrir en premier).
 - [ ] **Pas d'artefact** dans le diff (`target/`, `.bsp/`, `.metals/`...).
 - [ ] **Branche dediee**, jamais `main` directement.
@@ -111,7 +111,7 @@ Si une seule case n'est pas cochee : tu ne pousses pas. Tu corriges ou tu demand
 
 Si, malgre ce document, tu te perds :
 
-1. Lis l'entree la plus recente de `documentation/historique.md` une 2eme fois.
+1. Lis l'entree la plus recente de `documentation/suivi/historique.md` une 2eme fois.
 2. Pose une question dans le canal d'equipe avec le commit hash et le fichier qui te bloque.
 3. L'auteur du dernier changement doit te repondre dans la journee pendant le sprint.
 
