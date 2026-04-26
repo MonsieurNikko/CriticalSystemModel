@@ -5,9 +5,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Mandatory Reading
 
 Before making any changes, read these documents:
-- `documentation/REGLES_PROJET.md` — coding rules, Git workflow, commit conventions, and AI agent constraints
-- `documentation/PLAN.md` — sprint phases and deliverables (deadline May 4, 2026)
-- `documentation/historique.md` — mandatory change log (update it after every significant change)
+- `documentation/START-ICI.md` — start here (project overview, team roles, what to do)
+- `documentation/gouvernance/REGLES_PROJET.md` — coding rules, Git workflow, commit conventions, and AI agent constraints
+- `documentation/suivi/PLAN.md` — sprint phases and deliverables (deadline May 4, 2026)
+- `documentation/suivi/historique.md` — mandatory change log (update it after every significant change)
 
 ## Build & Test Commands
 
@@ -88,7 +89,7 @@ From `REGLES_PROJET.md`:
 - Work on `feature/<name>` branches, never commit directly to `main`
 - Commit format: `type(scope): message` (e.g., `feat(troncon): implement SectionController FIFO queue`)
 - Run `sbt compile && sbt test` before any push
-- Update `documentation/historique.md` with every significant change (reverse-chronological, use the template in that file)
+- Update `documentation/suivi/historique.md` with every significant change (reverse-chronological, use the template in that file)
 - Merge to `main` via PR only after verification passes
 
 ## Three Critical Test Scenarios

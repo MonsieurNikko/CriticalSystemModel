@@ -83,7 +83,7 @@ Source de contexte applicatif. Sert a justifier le choix du domaine (metro autom
 
 ## Notes de gestion bibliographique
 
-- Toute source ajoutee ici doit etre citee au moins une fois dans `documentation/rapport.md` (livrable L4).
+- Toute source ajoutee ici doit etre citee au moins une fois dans `documentation/livrables/rapport.md` (livrable L4).
 - Eviter d'ajouter des sources non lues : preferer 5 sources comprises a 15 sources decoratives.
 - Format des liens : URL stable (DOI, page institutionnelle, edition de reference). Pas de lien vers un PDF tiers periss able.
 - Etat actuel : 9 sources. Cible cahier des charges : 5-8. Possibilite d'en retirer 1 ou 2 a la relecture si redondantes (par exemple Lamport 1978 si non utilisee dans le rapport).

@@ -82,7 +82,12 @@ CriticalSystemModel/
 │       └── scala/
 │           └── m14/              <- tests
 ├── petri/                        <- modeles formels
-├── documentation/                <- gouvernance et suivi
+├── documentation/                <- toute la doc (lire START-ICI.md en premier)
+│   ├── START-ICI.md              <- POINT D'ENTREE pour les nouveaux
+│   ├── suivi/                    <- planning, historique, reprise
+│   ├── gouvernance/              <- regles, equipe, coordination
+│   ├── livrables/                <- rapport, biblio, comparaison, preuves
+│   └── contexte/                 <- recadrage du projet
 ├── README.md
 └── build.sbt
 ```
@@ -100,17 +105,18 @@ sbt test
 
 Lire et appliquer avant toute contribution:
 
-- documentation/REGLES_PROJET.md
-- documentation/PLAN.md
-- documentation/HANDOVER.md
-- documentation/historique.md
+- documentation/START-ICI.md (point d'entree)
+- documentation/gouvernance/REGLES_PROJET.md
+- documentation/suivi/PLAN.md
+- documentation/suivi/HANDOVER.md
+- documentation/suivi/historique.md
 
 Exigences minimales avant merge:
 
 - Perimetre respecte
 - Invariants metier preserves
 - Verification technique documentee (compile/test)
-- Entree complete ajoutee dans documentation/historique.md
+- Entree complete ajoutee dans documentation/suivi/historique.md
 
 ### Workflow Git
 
@@ -179,7 +185,7 @@ Hors coeur (extensions eventuelles uniquement):
 - gestion globale multi-incidents
 - logique d'exploitation complete de ligne
 
-Voir le detail du recadrage dans documentation/recadrage-m14-troncon-critique.md.
+Voir le detail du recadrage dans documentation/contexte/recadrage-m14-troncon-critique.md.
 
 ---
 
@@ -194,12 +200,12 @@ Voir le detail du recadrage dans documentation/recadrage-m14-troncon-critique.md
 
 ## Livrables
 
-- Bibliographie commentee (`documentation/biblio.md`)
+- Bibliographie commentee (`documentation/livrables/biblio.md`)
 - Code Akka/Scala fonctionnel du troncon partage (`src/main/scala/m14/troncon/`)
 - Reseau de Petri du controle d'acces concurrent (`petri/petri-troncon.md`)
 - Analyseur Petri en Scala (`src/main/scala/m14/petri/`)
-- Rapport de verification des proprietes (`documentation/rapport.md`)
-- Comparaison simulation Akka vs modele formel (`documentation/comparaison.md`)
+- Rapport de verification des proprietes (`documentation/livrables/rapport.md`)
+- Comparaison simulation Akka vs modele formel (`documentation/livrables/comparaison.md`)
 - Depot GitHub propre et trace
 
 ---

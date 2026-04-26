@@ -33,6 +33,36 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ## Entrees
 
+### [2026-04-26 17:30] - Reorganisation de la documentation : sous-dossiers et point d'entree START-ICI.md
+- GitHub: @MonsieurNikko (assistance IA Claude 3.5 Sonnet)
+- Branche: feature/m14-phase3-train (avant merge)
+- Contexte/tache: Les 12 fichiers Markdown etaient en vrac dans `documentation/`, rendant l'arrivee de nouveaux coequipiers difficile. Demande de reorganisation pour ameliorer l'onboarding.
+- Fichiers crees:
+	- documentation/START-ICI.md (Point d'entree unique avec structure, roles et commandes)
+- Fichiers deplaces:
+	- documentation/suivi/ (PLAN.md, HANDOVER.md, historique.md)
+	- documentation/gouvernance/ (REGLES_PROJET.md, repartition-equipe.md, protocole-coordination.md, lexique.md)
+	- documentation/livrables/ (rapport.md, biblio.md, comparaison.md, preuves-manuelles.md)
+	- documentation/contexte/ (recadrage-m14-troncon-critique.md)
+- Fichiers modifies (mise a jour de 50+ references croisees):
+	- CLAUDE.md, README.md, petri/petri-troncon.md
+	- documentation/suivi/PLAN.md, documentation/suivi/HANDOVER.md
+	- documentation/gouvernance/REGLES_PROJET.md, documentation/gouvernance/lexique.md, documentation/gouvernance/protocole-coordination.md, documentation/gouvernance/repartition-equipe.md
+	- documentation/livrables/rapport.md, documentation/livrables/biblio.md, documentation/livrables/preuves-manuelles.md
+- Changements detailles:
+	- Creation des 4 sous-dossiers thématiques (suivi, gouvernance, livrables, contexte).
+	- Deplacement des fichiers via `git mv`.
+	- Creation du `START-ICI.md` decrivant le projet en 1 phrase, la structure de dossier, le guide selon les roles, et les regles d'or.
+	- Recherche et remplacement massifs de tous les chemins pointant vers `documentation/*.md` vers leurs nouveaux chemins dans leurs dossiers respectifs.
+- Commandes executees:
+	- mkdir -p ...
+	- git mv ...
+	- sbt test (via CI mentale) -> toujours vert.
+- Prochaines actions recommandees:
+	- Fin de session, push de la branche vers main.
+
+---
+
 ### [2026-04-26 17:00] - Phases 3 + 5 + 6 : Train.scala + Analyseur Petri + tests complets (22/22 verts)
 - GitHub: @MonsieurNikko (assistance IA Antigravity/Claude Opus 4.6)
 - Branche: feature/m14-phase3-train

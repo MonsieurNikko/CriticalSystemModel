@@ -17,7 +17,7 @@
 
 ### 3. Pre-travail obligatoire (avant toute modification)
 - Lire tous les fichiers pertinents du scope de la tache pour comprendre le codebase en profondeur.
-- Lire obligatoirement: README.md, documentation/historique.md, build.sbt, et les fichiers directement impactes.
+- Lire obligatoirement: README.md, documentation/suivi/historique.md, build.sbt, et les fichiers directement impactes.
 - Identifier les impacts potentiels sur les invariants metier, le build et les tests.
 - Reformuler l'objectif de la tache et les risques avant implementation.
 
@@ -32,7 +32,7 @@
 - Apres modifications et verifications, push obligatoire sur la branche de travail.
 - Interdiction de push direct sur main.
 - Le push doit respecter les conventions de commit et la branche nommee selon la tache.
-- Le push n'est autorise qu'apres mise a jour de documentation/historique.md.
+- Le push n'est autorise qu'apres mise a jour de documentation/suivi/historique.md.
 - Sequence minimale attendue:
   - git add .
   - git commit -m "type: description claire"
@@ -47,8 +47,8 @@
   - ne pas merger
   - documenter l'echec, la cause probable, et le plan de correction
 
-### 7. Mise a jour obligatoire de documentation/historique.md
-- Chaque changement doit ajouter une nouvelle entree dans documentation/historique.md.
+### 7. Mise a jour obligatoire de documentation/suivi/historique.md
+- Chaque changement doit ajouter une nouvelle entree dans documentation/suivi/historique.md.
 - Entree obligatoire a chaque intervention, IA ou humaine.
 - Champs obligatoires:
   - Modele (ou N/A pour contribution humaine)
@@ -76,7 +76,7 @@
 - Objectif respecte sans derive de perimetre.
 - Invariants metier preserves.
 - Build/tests verifies ou echec documente.
-- documentation/historique.md mis a jour correctement.
+- documentation/suivi/historique.md mis a jour correctement.
   - Push effectue sur la branche de travail.
 - Diff revue: pas de secrets, pas d'artefacts inutiles, pas de bruit.
 
@@ -105,7 +105,7 @@
   - duplication legere (2-3 lignes similaires) toleree si elle ameliore la lisibilite
   - commentaires rares mais en francais simple, expliquant POURQUOI, jamais QUOI
 - Obligations cote tracabilite vibe-code:
-  - chaque session vibe-code se termine par un resume de 5 lignes max ecrit par l'agent IA et copie par l'humain dans documentation/historique.md
+  - chaque session vibe-code se termine par un resume de 5 lignes max ecrit par l'agent IA et copie par l'humain dans documentation/suivi/historique.md
   - le message de commit (redige par l'humain) doit suivre la structure: 1) Quoi, 2) Pourquoi, 3) Comment relire (quel fichier ouvrir en premier)
 - Test de defendabilite: si un equipier ouvre un fichier vibe-code, il doit pouvoir l'expliquer a l'oral en 2 minutes sans aide. Si non, le code est trop complexe et doit etre simplifie.
 
@@ -128,7 +128,7 @@
 
 ### 3. Mandatory pre-work (before any edit)
 - Read all files relevant to the task scope to deeply understand the codebase.
-- Mandatory reads: README.md, documentation/historique.md, build.sbt, and directly impacted files.
+- Mandatory reads: README.md, documentation/suivi/historique.md, build.sbt, and directly impacted files.
 - Identify possible impacts on business invariants, build, and tests.
 - Restate task objective and risks before implementation.
 
@@ -143,7 +143,7 @@
 - After changes and verification, push is mandatory on the working branch.
 - Direct push to main is forbidden.
 - Push must follow commit conventions and task-based branch naming.
-- Push is only allowed after updating documentation/historique.md.
+- Push is only allowed after updating documentation/suivi/historique.md.
 - Expected minimum sequence:
   - git add .
   - git commit -m "type: clear description"
@@ -158,8 +158,8 @@
   - do not merge
   - document failure, likely root cause, and fix plan
 
-### 7. Mandatory documentation/historique.md update
-- Every change must add a new entry in documentation/historique.md.
+### 7. Mandatory documentation/suivi/historique.md update
+- Every change must add a new entry in documentation/suivi/historique.md.
 - Mandatory for every intervention, AI or human.
 - Required fields:
   - GitHub (@username)
@@ -186,7 +186,7 @@
 - Objective met without scope drift.
 - Business invariants preserved.
 - Build/tests verified or failure documented.
-- documentation/historique.md correctly updated.
+- documentation/suivi/historique.md correctly updated.
   - Push completed on the working branch.
 - Diff reviewed: no secrets, no unnecessary artifacts, no noise.
 
@@ -215,7 +215,7 @@
   - mild duplication (2-3 similar lines) acceptable when it improves readability
   - sparse comments in plain French, explaining WHY, never WHAT
 - Vibe-code traceability obligations:
-  - every vibe-code session ends with a 5-line max summary produced by the AI agent and copied by the human into documentation/historique.md
+  - every vibe-code session ends with a 5-line max summary produced by the AI agent and copied by the human into documentation/suivi/historique.md
   - the commit message (written by the human) must follow the structure: 1) What, 2) Why, 3) How to re-read (which file to open first)
 - Defensibility test: if a teammate opens a vibe-coded file, they must be able to explain it orally in 2 minutes without help. If not, the code is too complex and must be simplified.
 

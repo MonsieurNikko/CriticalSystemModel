@@ -8,7 +8,7 @@
 
 ## 1) Vue d'ensemble
 
-Le reseau modelise le mecanisme d'exclusion mutuelle decrit dans `documentation/recadrage-m14-troncon-critique.md`. Il est volontairement compact (7 places, 6 transitions) pour rester analysable a la main et par un analyseur Scala maison (livrable L5).
+Le reseau modelise le mecanisme d'exclusion mutuelle decrit dans `documentation/contexte/recadrage-m14-troncon-critique.md`. Il est volontairement compact (7 places, 6 transitions) pour rester analysable a la main et par un analyseur Scala maison (livrable L5).
 
 **Scope strict :**
 - 2 trains : T1, T2
@@ -145,7 +145,7 @@ Aucun de ces marquages ne contient simultanement un jeton dans `T1_sur_troncon` 
 
 ## 8) Correspondance avec les messages Akka
 
-Cette table sera reprise et raffinee dans `documentation/comparaison.md` (livrable L6). Premiere ebauche :
+Cette table sera reprise et raffinee dans `documentation/livrables/comparaison.md` (livrable L6). Premiere ebauche :
 
 | Transition Petri          | Message Akka declencheur                       | Acteur emetteur -> recepteur     |
 |---------------------------|------------------------------------------------|----------------------------------|
