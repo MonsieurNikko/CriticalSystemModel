@@ -104,14 +104,14 @@ Confirmer que pour chaque train i ∈ {1, 2}, sur chaque marquage : `M(Ti_hors) 
 
 | Marquage | `T2_hors` | `T2_attente` | `T2_sur_troncon` | Somme |
 |----------|----------:|-------------:|-----------------:|------:|
-| M0       | _ | _ | _ | ? |
-| M1       | _ | _ | _ | ? |
-| M2       | _ | _ | _ | ? |
-| M3       | _ | _ | _ | ? |
-| M4       | _ | _ | _ | ? |
-| M5       | _ | _ | _ | ? |
-| M6       | _ | _ | _ | ? |
-| M7       | _ | _ | _ | ? |
+| M0       | 1 | 0 | 0 | 1 |
+| M1       | 1 | 0 | 0 | 1 |
+| M2       | 0 | 1 | 0 | 1 |
+| M3       | 1 | 0 | 0 | 1 |
+| M4       | 0 | 1 | 0 | 1 |
+| M5       | 0 | 0 | 1 | 1 |
+| M6       | 0 | 1 | 0 | 1 |
+| M7       | 0 | 0 | 1 | 1 |
 
 **A faire** : un membre de l'equipe remplit ce tableau et confirme que toutes les sommes valent 1.
 
@@ -178,9 +178,9 @@ G (T1_attente → F T1_sur_troncon)
 Lecture : "chaque fois que Train 1 est en attente, il finira par etre sur le troncon".
 **Hypothese** : fairness sur l'arbitrage du controleur (il finit toujours par servir Train 1).
 
-**Liveness 2 - Progression de Train 2 (a remplir par l'equipe)** :
+**Liveness 2 - Progression de Train 2** :
 ```
-G (... → F ...)
+G (T2_attente → F T2_sur_troncon)
 ```
 
 ### Justification informelle sur l'espace d'etats fini
@@ -190,8 +190,8 @@ Pour chaque propriete, expliquer en 3-5 phrases pourquoi elle tient ou non sur l
 A remplir :
 - Safety 1 : verifie par enumeration (tache 2). Aucun marquage ne contient les deux jetons. _OK._
 - Safety 2 : equivalent a l'invariant principal. _OK._
-- Liveness 1 : ... _(a remplir)_
-- Liveness 2 : ... _(a remplir)_
+- Liveness 1 : Garanti par l'implementation Akka via file d'attente FIFO du `SectionController`. Le reseau Petri le permet, l'implementation le force. _OK._
+- Liveness 2 : Identique a Liveness 1 par symetrie. _OK._
 
 ---
 
@@ -219,9 +219,9 @@ A remplir par l'equipe en redaction libre (5-10 lignes) :
 - Sur les 3 scenarios retenus, la Liveness est verifiable directement par inspection.
 
 **Ce qu'on ne peut pas affirmer (a assumer comme limite)** :
-- ...
-- ...
-- ...
+- On ne prouve pas formellement les temps d'attente maximum (modele intemporel).
+- On ne verifie pas la robustesse face a des crashs systemes majeurs dans cette modelisation (hors scope).
+- L'analyse du code pour prouver le FIFO n'est faite que par test (Akka TestKit) et non par theoreme prouve (par ex. TLA+).
 
 ### Resultat attendu
 
@@ -291,16 +291,10 @@ Si le code et le carnet divergent, **on debugge le code en priorite** (le carnet
 
 ---
 
-## Repartition possible dans l'equipe
+## Repartition des taches
 
-| Membre        | Taches recommandees |
-|---------------|---------------------|
-| Axelobistro   | Taches 1 (enumeration) + 5 (LTL) |
-| Alicette     | Taches 2 + 3 (verification invariants) + 6 (Liveness sous fairness) |
-| Nikko (toi)  | Code Scala (SectionController, Train, analyseur) - **n'a pas a faire ces taches a la main**, mais relit en Phase 6 |
-| Ostreann     | Taches 4 (deadlock) + 7 (diagramme final) + integration des resultats dans le rapport |
-
-Un membre peut commencer immediatement, sans attendre que les autres aient termine. Les taches 1-2-3-4 sont sequentielles (la 1 produit les marquages que les autres utilisent), les taches 5-6-7 sont independantes apres la tache 1.
+Le travail sur ce carnet est typiquement realise par le **Pole 1 (Preuves Formelles & LTL)**. 
+Les tâches 1-2-3-4 sont séquentielles (l'exploration génère les marquages). Les tâches 5-6-7 sont indépendantes une fois l'espace d'états connu.
 
 ---
 

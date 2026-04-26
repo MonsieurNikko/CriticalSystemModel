@@ -103,7 +103,7 @@ sbt "runMain m14.petri.Analyseur"
 | Tests des 3 scenarios critiques | FAIT (3/3 verts) |
 | Analyseur Petri (BFS + invariants) | FAIT (8 etats, 0 deadlocks) |
 | Rapport de verification | A REDIGER |
-| Preuves manuelles (tableau T2, Liveness) | A COMPLETER |
+| Preuves manuelles (tableau T2, Liveness) | FAIT |
 | Comparaison Akka vs Petri | A FINALISER |
 
 ## Regles d'or (lire avant de coder)
