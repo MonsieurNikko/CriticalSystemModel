@@ -12,52 +12,49 @@ Rotation recommandee chaque semaine pour que tout le monde comprenne tout le pro
 
 ## 2) Repartition proposee
 
-### Axelobistro - Protocole de messages critiques (Akka)
+### Nikko - Lead Dev (Code Akka & Analyseur Scala)
 - Scope:
-  - definition stricte des messages indispensables (demande, autorisation, attente, sortie, liberation)
-  - alignement du vocabulaire Akka/Petri
-  - reduction des messages decoratifs
+  - Architecture et implémentation Akka (`SectionController`, `Train`, `Protocol`)
+  - Développement de l'analyseur Petri en Scala (`PetriNet`, `Analyseur`)
+  - Rédaction des tests unitaires et d'intégration (Akka TestKit)
 - Livrables:
-  - protocole documente et borne
-  - diagramme de sequence du cycle d'acces au troncon
-- Binome relecture: Ostreann
+  - Code fonctionnel et testé (22/22 verts)
+  - Preuves programmatiques d'absence de deadlock et d'exclusion mutuelle
+- Binôme relecture: Alicette (pour la cohérence métier)
 
-### Alicette - Arbitrage de section critique et surete
+### Axelobistro - Modèle Formel & Protocole (Papier)
 - Scope:
-  - logique d'autorisation/refus temporaire d'entree
-  - coherence de l'occupation exclusive du troncon
-  - clarification des hypotheses d'arbitrage (fairness minimale)
+  - Définition stricte des places/transitions du réseau de Petri
+  - Alignement du vocabulaire Akka/Petri (`lexique.md`)
 - Livrables:
-  - specification d'arbitrage claire
-  - scenarios de non-collision et d'attente
-- Binome relecture: Axelobistro
+  - Réseau Petri compact analysable à la main (`petri-troncon.md`)
+  - Mapping explicite message -> transition
+- Binôme relecture: Ostreann
 
-### Nikko - Modele formel (Reseau de Petri minimal + preuves)
+### Alicette - Preuves d'Invariants & Sûreté (Papier)
 - Scope:
-  - modelisation des places/transitions strictement necessaires au mecanisme d'acces
-  - preuve de l'invariant principal de ressource
-  - formulation des proprietes de surete/vivacite realistes
+  - Preuves mathématiques/manuelles de l'exclusion mutuelle
+  - Clarification des hypothèses d'arbitrage (fairness minimale)
 - Livrables:
-  - reseau Petri compact analysable a la main
-  - notes de preuve structurelles et LTL ciblees
-- Binome relecture: Alicette
+  - Carnet de preuves manuelles (`preuves-manuelles.md`)
+  - Validation formelle des 3 scénarios critiques
+- Binôme relecture: Nikko
 
-### Ostreann - Integration, tests et qualite
+### Ostreann - Rédaction du Rapport & LTL (Papier)
 - Scope:
-  - alignement scenario simulation <-> scenario formel
-  - campagne de tests concentree sur 3 scenarios critiques
-  - CI locale (sbt compile, sbt test) et support integration
+  - Formalisation LTL (Safety / Liveness)
+  - Synthèse globale et bibliographie
 - Livrables:
-  - rapport de comparaison Akka/Petri limite au perimetre retenu
-  - suite de tests reproductible sur le protocole critique
-- Binome relecture: Nikko
+  - Rapport final (`rapport.md`) complet et structuré
+  - Tableau de comparaison Akka vs Petri (`comparaison.md`)
+- Binôme relecture: Axelobistro
 
 ## 3) Travail ensemble (important)
 
 Pour eviter le travail en silo, vous partagez 3 zones communes:
-- Contrats de messages critiques (co-rediges par Axelobistro + Alicette + Ostreann)
-- Invariant principal et hypotheses de vivacite (co-rediges par Alicette + Nikko)
-- Scenarios de validation du troncon partage (co-rediges par Axelobistro + Nikko + Ostreann)
+- Contrats de messages critiques (co-redigés par Nikko + Axelobistro)
+- Invariant principal et hypotheses de vivacite (co-redigés par Alicette + Ostreann)
+- Scenarios de validation du troncon partage (co-redigés par toute l'équipe)
 
 Regle pratique: toute PR doit toucher au moins 1 artefact metier ET 1 artefact de validation (test, modele, ou doc de preuve).
 
@@ -78,12 +75,11 @@ Regle pratique: toute PR doit toucher au moins 1 artefact metier ET 1 artefact d
 ## 5) Workflow Git conseille (collaboratif)
 
 - Branches de travail:
-  - feature/m14-critical-messaging (Axelobistro)
-  - feature/m14-section-arbitration (Alicette)
-  - feature/m14-petri-troncon (Nikko)
-  - feature/m14-validation-scenarios (Ostreann)
-- Branche d'integration hebdomadaire:
-  - integration/week-XX
+  - `feature/m14-phase3-train` (Nikko - Code)
+  - `feature/m14-preuves-manuelles` (Alicette/Axelobistro - Docs)
+  - `feature/m14-rapport-final` (Ostreann - Docs)
+- Branche principale:
+  - `main`
 - Regles:
   - PR courtes (< 300 lignes idealement)
   - relecture obligatoire par le binome

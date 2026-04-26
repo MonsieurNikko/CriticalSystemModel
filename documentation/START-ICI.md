@@ -53,30 +53,24 @@ CriticalSystemModel/
 │       └── recadrage-m14-troncon-critique.md
 │
 ├── README.md                  Presentation generale
-├── CLAUDE.md                  Instructions pour agents IA
+
 └── build.sbt                  Config Scala/Akka
 ```
 
 ## Par ou commencer selon ton role
 
-### Axelobistro (Protocole de messages)
-1. Lis `documentation/gouvernance/lexique.md` (vocabulaire)
-2. Lis `src/main/scala/m14/troncon/Protocol.scala` (les 4 messages)
-3. Ta tache : relire les tests dans `SectionControllerSpec.scala`
+### Nikko (Lead Code & Architecture)
+1. Lis `documentation/suivi/PLAN.md`
+2. Ta tache : tu es le responsable de toute la partie implementation Scala (Akka, Analyseur Petri, tests). Le code est de ton ressort.
+3. Prochaine etape : preparer la trame du rapport (`documentation/livrables/rapport.md`).
 
-### Alicette (Arbitrage et surete)
-1. Lis `src/main/scala/m14/troncon/SectionController.scala` (80 lignes)
-2. Lis `documentation/livrables/preuves-manuelles.md` (taches 2-3 a completer)
-3. Ta tache : completer le tableau Train 2 dans preuves-manuelles.md
-
-### Nikko (Modele formel + code)
-1. Lis ce fichier, puis `documentation/suivi/PLAN.md`
-2. Ta tache : rediger `documentation/livrables/rapport.md`
-
-### Ostreann (Tests et qualite)
-1. Lance `sbt test` pour verifier que tout est vert (22/22)
-2. Lis `documentation/livrables/comparaison.md`
-3. Ta tache : inserer la sortie de l'analyseur dans comparaison.md section 6
+### L'Equipe Preuves Formelles (Axelobistro, Alicette, Ostreann)
+Pendant que Nikko gere le code, votre mission est de blinder la theorie, les preuves manuelles, et le rapport.
+1. Lisez `petri/petri-troncon.md` et `documentation/gouvernance/lexique.md` pour maitriser le vocabulaire et le modele.
+2. Vos taches immediates :
+   - **Preuves manuelles** : completer `documentation/livrables/preuves-manuelles.md` (taches 2 a 7).
+   - **Comparaison** : mettre a jour `documentation/livrables/comparaison.md` avec la sortie de l'analyseur.
+   - **Redaction** : avancer sur le rapport final (`documentation/livrables/rapport.md`).
 
 ## Commandes essentielles
 

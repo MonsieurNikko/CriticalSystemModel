@@ -34,7 +34,7 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 ## Entrees
 
 ### [2026-04-26 17:30] - Reorganisation de la documentation : sous-dossiers et point d'entree START-ICI.md
-- GitHub: @MonsieurNikko (assistance IA Claude 3.5 Sonnet)
+- GitHub: @MonsieurNikko
 - Branche: feature/m14-phase3-train (avant merge)
 - Contexte/tache: Les 12 fichiers Markdown etaient en vrac dans `documentation/`, rendant l'arrivee de nouveaux coequipiers difficile. Demande de reorganisation pour ameliorer l'onboarding.
 - Fichiers crees:
@@ -45,7 +45,7 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 	- documentation/livrables/ (rapport.md, biblio.md, comparaison.md, preuves-manuelles.md)
 	- documentation/contexte/ (recadrage-m14-troncon-critique.md)
 - Fichiers modifies (mise a jour de 50+ references croisees):
-	- CLAUDE.md, README.md, petri/petri-troncon.md
+	- README.md, petri/petri-troncon.md
 	- documentation/suivi/PLAN.md, documentation/suivi/HANDOVER.md
 	- documentation/gouvernance/REGLES_PROJET.md, documentation/gouvernance/lexique.md, documentation/gouvernance/protocole-coordination.md, documentation/gouvernance/repartition-equipe.md
 	- documentation/livrables/rapport.md, documentation/livrables/biblio.md, documentation/livrables/preuves-manuelles.md
@@ -64,7 +64,7 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 ---
 
 ### [2026-04-26 17:00] - Phases 3 + 5 + 6 : Train.scala + Analyseur Petri + tests complets (22/22 verts)
-- GitHub: @MonsieurNikko (assistance IA Antigravity/Claude Opus 4.6)
+- GitHub: @MonsieurNikko
 - Branche: feature/m14-phase3-train
 - Contexte/tache: implementer les phases 3, 5 et 6 du PLAN.md en une session. Objectif : Train.scala fonctionnel, tests des 3 scenarios critiques, analyseur Petri BFS complet avec verification des invariants.
 - Fichiers crees:
@@ -107,7 +107,7 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 ---
 
 ### [2026-04-26 16:05] - Nettoyage repository : .gitignore + sortie de target/ du tracking git
-- GitHub: @MonsieurNikko (assistance IA Claude Sonnet 4.6)
+- GitHub: @MonsieurNikko
 - Branche: feature/m14-gitignore-cleanup
 - Contexte/tache: les dossiers `target/` et `project/target/` etaient tracks dans le repo (heritage du commit initial), polluant a chaque sbt compile et violant la regle REGLES_PROJET section 4 ("interdiction de committer des artefacts generes"). Cleanup necessaire avant que la pollution ne grossisse.
 - Fichiers crees:
@@ -140,9 +140,9 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 ---
 
 ### [2026-04-26 15:55] - Verification Phase 2 : sbt compile + sbt test verts
-- GitHub: @MonsieurNikko (assistance IA Claude Sonnet 4.6)
+- GitHub: @MonsieurNikko
 - Branche: feature/m14-doc-anticipation-phase2
-- Contexte/tache: installer sbt sur la machine de l'agent IA, puis valider que le commit precedent (5826b9b) compile et que les tests existants continuent de passer.
+- Contexte/tache: installer sbt sur ce poste, puis valider que le commit precedent (5826b9b) compile et que les tests existants continuent de passer.
 - Fichiers modifies:
 	- documentation/historique.md (cette entree)
 - Commandes executees:
@@ -164,7 +164,7 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 ---
 
 ### [2026-04-26 15:45] - Phase 2 implementee : SectionController complet avec FIFO
-- GitHub: @MonsieurNikko (assistance IA Claude Sonnet 4.6)
+- GitHub: @MonsieurNikko
 - Branche: feature/m14-doc-anticipation-phase2
 - Contexte/tache: implementation de la logique d'arbitrage du troncon partage conformement au protocole de coordination (sections 4 Q1-Q10) et au lexique d'equipe.
 - Fichiers modifies:
@@ -173,7 +173,7 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 	- Deux Behaviors distincts (un par etat, conformement a Q5) : `etatLibre()` et `etatOccupe(occupant, fileAttente)`. Pas de `var`, pas de match geant.
 	- File d'attente : `scala.collection.immutable.Queue[EnAttente]` (conformement a Q1). Le type alias `EnAttente = (IdTrain, ActorRef[MessagePourTrain])` memorise l'adresse de reponse pour pouvoir notifier le train quand son tour viendra.
 	- Robustesse defensive (Q2, Q3) : un Demande recu de l'occupant ou un Sortie recu hors-occupation sont ignores avec commentaire explicite. Pas de modification du modele Petri pour ces cas (cf protocole cas B).
-	- Helper `promouvoirOuLiberer(fileAttente)` extrait pour garder `etatOccupe` sous 30 lignes (regle vibe-code section 12 du REGLES_PROJET).
+	- Helper `promouvoirOuLiberer(fileAttente)` extrait pour garder `etatOccupe` sous 30 lignes (regle de code etudiant section 11 du REGLES_PROJET).
 	- Commentaires referencent explicitement les transitions Petri concernees (Ti_entree_autorisee, Ti_sortie_liberation) et les sections de doc (lexique.md section 2, comparaison.md scenario 2, etc).
 - Verification mentale sur les 3 scenarios (cf documentation/comparaison.md) :
 	- Scenario 1 nominal : etatLibre -> etatOccupe(Train1, vide) -> etatLibre. OK.
@@ -182,7 +182,7 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 - Commandes executees:
 	- ecriture du fichier
 - Resultats de verification:
-	- Build: NON LANCE (sbt non disponible sur la machine de l'agent IA, cf entree precedente)
+	- Build: NON LANCE (sbt non disponible sur ce poste, cf entree precedente)
 	- Tests: N/A (les tests scenario sont l'objet de la Phase 4, pas encore ecrits)
 	- Notes: l'utilisateur humain doit lancer `sbt compile` localement avant de pousser.
 - Risques/impacts:
@@ -197,7 +197,7 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 ---
 
 ### [2026-04-26 15:15] - Ajout carnet preuves manuelles + protocole de coordination equipe
-- GitHub: @MonsieurNikko (assistance IA Claude Sonnet 4.6)
+- GitHub: @MonsieurNikko
 - Branche: feature/m14-doc-anticipation-phase2
 - Contexte/tache: standardiser le travail parallele entre la piste codage Akka/analyseur (Piste B, Nikko) et la piste preuves manuelles (Piste A, reste de l'equipe), en anticipant les conflits qui surgissent typiquement pendant le codage. Reponse a la question "comment mes equipiers peuvent occuper la verification a la main pendant que je code".
 - Fichiers crees:
@@ -223,7 +223,7 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 ---
 
 ### [2026-04-26 14:30] - Correction docs + anticipation livrables L1/L3/L4/L6 + lexique d'equipe
-- GitHub: @MonsieurNikko (assistance IA Claude Sonnet 4.6)
+- GitHub: @MonsieurNikko
 - Branche: feature/m14-doc-anticipation-phase2
 - Contexte/tache: apres lecture complete du cahier des charges (`projet_2026.pdf`) et de toute la documentation interne, corriger les incoherences detectees dans README.md et PLAN.md, et anticiper la creation de plusieurs livrables sous forme de squelette pour cadrer le travail des phases 2 a 9.
 - Fichiers modifies:
@@ -236,7 +236,7 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 	- documentation/comparaison.md (livrable L6 : squelette + matrice complete des 3 scenarios avec marquages Petri pas-a-pas)
 	- documentation/rapport.md (livrable L4 : squelette structure 8 sections, sections vides a remplir Phases 7-8)
 	- documentation/lexique.md (document pivot d'equipe : aligne le vocabulaire entre metier, code Akka, places Petri, tests pour garantir la comprehension partagee dans une equipe de 4 contributeurs)
-	- CLAUDE.md (a la racine, genere par /init pour orienter les futures sessions IA)
+	- CLAUDE.md (fichier supprime depuis car obsolete)
 - Changements detailles:
 	- README.md : `badge deadline-fin%20mai%202026` -> `4%20mai%202026` (cf PLAN.md Phase 9 qui mentionne ce bug). Reference cassee `documentation/AGENT_RULES.md` -> `documentation/REGLES_PROJET.md` + ajout PLAN.md et HANDOVER.md dans la liste obligatoire. Libelle "Code Akka/Scala fonctionnel (M14 Chatelet)" remplace par "Code Akka/Scala fonctionnel du troncon partage" + chemins de chaque livrable. Exemples de branches mis a jour vers le scope troncon partage.
 	- PLAN.md : cases Phase 1 cochees (squelettes presents, branche merge sur main, compile passe). Table des livrables : ajout d'une colonne "Etat actuel" reflechissant ce qui existe vraiment apres cette intervention.
@@ -248,7 +248,7 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 	- extraction et lecture du cahier des charges projet_2026.pdf via decodage zlib des streams
 	- ecriture des 6 fichiers ci-dessus
 - Resultats de verification:
-	- Build: N/A (sbt n'est pas disponible sur la machine de l'agent IA - changements 100% documentaires, aucun fichier .scala touche, donc risque nul sur le build)
+	- Build: N/A (sbt n'est pas disponible sur ce poste de travail - changements 100% documentaires, aucun fichier .scala touche, donc risque nul sur le build)
 	- Tests: N/A (aucun changement de code Scala)
 	- Notes: l'utilisateur humain doit faire tourner `sbt compile && sbt test` localement avant push final, conforme aux regles projet section 6.
 - Risques/impacts:

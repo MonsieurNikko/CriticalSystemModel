@@ -1,10 +1,9 @@
-# AGENT_RULES - CriticalSystemModel
+# REGLES_PROJET - CriticalSystemModel
 
-## FR - Reglement officiel pour agents IA et contributeurs
+## FR - Reglement officiel pour les contributeurs
 
 ### 1. Statut et portee
-- Ce document est obligatoire pour tout agent IA qui intervient sur ce depot.
-- Les humains l'utilisent comme reference de controle et d'audit.
+- Ce document fixe les regles de qualite et de tracabilite pour tout contributeur sur ce depot.
 - En cas de conflit entre habitudes personnelles et ce document, ce document prevaut.
 
 ### 2. Objectifs
@@ -37,7 +36,6 @@
   - git add .
   - git commit -m "type: description claire"
   - git push origin feature/nom-de-la-tache
-- Si un agent IA ne peut pas pousser (permissions/outils), il doit le declarer explicitement.
 
 ### 6. Regles de verification
 - Avant proposition de merge, verifier au minimum:
@@ -49,11 +47,9 @@
 
 ### 7. Mise a jour obligatoire de documentation/suivi/historique.md
 - Chaque changement doit ajouter une nouvelle entree dans documentation/suivi/historique.md.
-- Entree obligatoire a chaque intervention, IA ou humaine.
+- Entree obligatoire a chaque intervention.
 - Champs obligatoires:
-  - Modele (ou N/A pour contribution humaine)
   - GitHub (@username)
-  - Type (IA/Humain)
   - Date
   - Heure locale
   - Branche
@@ -64,13 +60,7 @@
   - Risques/notes
 - Le format doit rester chronologique inverse (plus recent en haut).
 
-  ### 8. Transparence IA
-- L'agent doit expliciter:
-  - ce qu'il a fait
-  - ce qu'il n'a pas fait
-  - les hypotheses prises
-  - les limites connues
-- L'agent ne doit jamais presenter une action non executee comme executee.
+
 
   ### 9. Merge readiness checklist (obligatoire)
 - Objectif respecte sans derive de perimetre.
@@ -91,8 +81,8 @@
 - Date: 2026-03-27
 - Portee: depot CriticalSystemModel
 
-  ### 12. Regles de vibe-code (style etudiant)
-- Le code produit avec assistance IA doit ressembler a du code ecrit par un etudiant: simple, naif, lisible.
+  ### 11. Regles de code (style etudiant)
+- Le code produit doit etre simple, naif, lisible.
 - Interdictions cote style:
   - pas d'implicits, pas de macros, pas de point-free style, pas d'operateurs custom
   - pas de chaines de flatMap/for-yield complexes; preferer if/else et boucles simples
@@ -104,18 +94,16 @@
   - fonctions courtes (<30 lignes), nesting <=3
   - duplication legere (2-3 lignes similaires) toleree si elle ameliore la lisibilite
   - commentaires rares mais en francais simple, expliquant POURQUOI, jamais QUOI
-- Obligations cote tracabilite vibe-code:
-  - chaque session vibe-code se termine par un resume de 5 lignes max ecrit par l'agent IA et copie par l'humain dans documentation/suivi/historique.md
-  - le message de commit (redige par l'humain) doit suivre la structure: 1) Quoi, 2) Pourquoi, 3) Comment relire (quel fichier ouvrir en premier)
-- Test de defendabilite: si un equipier ouvre un fichier vibe-code, il doit pouvoir l'expliquer a l'oral en 2 minutes sans aide. Si non, le code est trop complexe et doit etre simplifie.
+- Obligations cote tracabilite:
+  - le message de commit doit suivre la structure: 1) Quoi, 2) Pourquoi, 3) Comment relire (quel fichier ouvrir en premier)
+- Test de defendabilite: si un equipier ouvre un fichier, il doit pouvoir l'expliquer a l'oral en 2 minutes sans aide. Si non, le code est trop complexe et doit etre simplifie.
 
 ---
 
-## EN - Official policy for AI agents and contributors
+## EN - Official policy for contributors
 
 ### 1. Status and scope
-- This document is mandatory for any AI agent acting on this repository.
-- Humans use it as an audit and control reference.
+- This document sets the quality and traceability rules for any contributor on this repository.
 - If personal habits conflict with this policy, this policy takes precedence.
 
 ### 2. Goals
@@ -148,7 +136,6 @@
   - git add .
   - git commit -m "type: clear description"
   - git push origin feature/task-name
-- If an AI agent cannot push (permissions/tooling), it must state that explicitly.
 
 ### 6. Verification rules
 - Before proposing a merge, verify at minimum:
@@ -160,10 +147,9 @@
 
 ### 7. Mandatory documentation/suivi/historique.md update
 - Every change must add a new entry in documentation/suivi/historique.md.
-- Mandatory for every intervention, AI or human.
+- Mandatory for every intervention.
 - Required fields:
   - GitHub (@username)
-  - Type (AI/Human)
   - Date
   - Local time
   - Branch
@@ -174,13 +160,7 @@
   - Risks/notes
 - Keep reverse chronological order (most recent first).
 
-  ### 8. AI transparency
-- The agent must explicitly state:
-  - what was done
-  - what was not done
-  - assumptions made
-  - known limitations
-- The agent must never claim an unexecuted action as executed.
+
 
   ### 9. Merge readiness checklist (mandatory)
 - Objective met without scope drift.
@@ -201,8 +181,8 @@
 - Date: 2026-03-27
 - Scope: CriticalSystemModel repository
 
-  ### 12. Vibe-code rules (student style)
-- Code produced with AI assistance must look like student-written code: simple, naive, readable.
+  ### 11. Code rules (student style)
+- Code produced must be simple, naive, readable.
 - Style prohibitions:
   - no implicits, no macros, no point-free style, no custom operators
   - no complex flatMap / for-yield chains; prefer if/else and plain loops
@@ -214,10 +194,9 @@
   - short functions (<30 lines), nesting <=3
   - mild duplication (2-3 similar lines) acceptable when it improves readability
   - sparse comments in plain French, explaining WHY, never WHAT
-- Vibe-code traceability obligations:
-  - every vibe-code session ends with a 5-line max summary produced by the AI agent and copied by the human into documentation/suivi/historique.md
-  - the commit message (written by the human) must follow the structure: 1) What, 2) Why, 3) How to re-read (which file to open first)
-- Defensibility test: if a teammate opens a vibe-coded file, they must be able to explain it orally in 2 minutes without help. If not, the code is too complex and must be simplified.
+- Traceability obligations:
+  - the commit message must follow the structure: 1) What, 2) Why, 3) How to re-read (which file to open first)
+- Defensibility test: if a teammate opens a file, they must be able to explain it orally in 2 minutes without help. If not, the code is too complex and must be simplified.
 
   ### 13. Effective date (EN section)
 - Version: 1.1

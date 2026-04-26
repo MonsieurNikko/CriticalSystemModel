@@ -101,7 +101,7 @@ sbt test
 
 ---
 
-## Gouvernance IA (obligatoire)
+## Gouvernance (obligatoire)
 
 Lire et appliquer avant toute contribution:
 
