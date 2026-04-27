@@ -33,6 +33,166 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ## Entrees
 
+### [2026-04-27 22:45] - Mise a jour START-ICI et PLAN pour l'equipe
+- GitHub: @MonsieurNikko
+- Branche: main
+- Contexte/tache: rendre l'entree projet plus claire pour les coequipiers et aligner le plan avec l'etat reel du code, des tests et des demos.
+- Fichiers modifies:
+  - documentation/START-ICI.md
+  - documentation/suivi/PLAN.md
+  - documentation/suivi/historique.md
+- Changements detailles:
+  - Refonte de `START-ICI.md` en guide d'arrivee : commandes a lancer, structure du depot, etat actuel, pistes de travail, verrous de scope et liens d'aide.
+  - Mise a jour du `PLAN.md` : livrables L2/L5 marques complets, phases code 2 a 6 marquees terminees, demo console/HTML et memo commandes integres.
+  - Clarification de la commande de demo : `sbt "runMain m14.Main"` plutot que `sbt run`.
+- Commandes executees:
+  - lecture de `documentation/START-ICI.md`
+  - lecture de `documentation/suivi/PLAN.md`
+  - rg sur les mentions obsoletes (`22 tests`, `sbt run`, `Squelettes vides`)
+- Resultats de verification:
+  - Build: N/A (documentation uniquement)
+  - Tests: N/A (deja verifies precedemment : 19 tests PASS)
+  - Notes: aucun fichier Scala modifie par cette entree.
+- Risques/impacts:
+  - Le plan reste un document vivant : `rapport.md` et `comparaison.md` restent les priorites avant rendu.
+- Prochaines actions recommandees:
+  - Finaliser le rapport et la comparaison Akka/Petri.
+  - Verifier `git status --short` avant commit final pour ne pas inclure de fichiers parasites.
+
+---
+
+### [2026-04-27 22:45] - Ajout du memo des commandes utiles
+- GitHub: @MonsieurNikko
+- Branche: main
+- Contexte/tache: creer un fichier de suivi listant les commandes necessaires pour verifier, lancer et presenter le projet.
+- Fichiers crees:
+  - documentation/suivi/COMMANDES.md
+- Fichiers modifies:
+  - documentation/suivi/historique.md
+- Changements detailles:
+  - Ajout des commandes sbt principales : compile, test, demo console, analyseur Petri.
+  - Ajout des commandes pour ouvrir la demo HTML.
+  - Ajout des commandes Git utiles avant rendu.
+  - Ajout d'une checklist de verification finale et des commandes dangereuses a eviter.
+- Commandes executees:
+  - Get-Date -Format 'yyyy-MM-dd HH:mm'
+- Resultats de verification:
+  - Build: N/A
+  - Tests: N/A
+  - Notes: changement documentaire uniquement.
+- Risques/impacts:
+  - Aucun impact sur le code Scala.
+- Prochaines actions recommandees:
+  - Ajouter un lien vers `documentation/suivi/COMMANDES.md` dans le README si ce memo est garde pour le rendu.
+
+---
+
+### [2026-04-27 22:45] - Prototype demo HTML + trace console Akka/Petri
+- GitHub: @MonsieurNikko
+- Branche: main
+- Contexte/tache: tester la faisabilite d'une double demonstration pour la soutenance : une page HTML/JS autonome et un `Main.scala` plus explicite reliant les messages Akka aux transitions Petri.
+- Fichiers crees:
+  - demo/README.md
+  - demo/index.html
+- Fichiers modifies:
+  - src/main/scala/m14/Main.scala
+  - documentation/suivi/historique.md
+- Changements detailles:
+  - Ajout d'une page `demo/index.html` autonome avec choix de scenario, ordre du premier train, vitesse, lecture/pas-a-pas, affichage des trains, places Petri, transitions tirables, trace messages/transitions et invariants.
+  - Refonte de `Main.scala` pour afficher une trace console des 3 scenarios critiques avec marquages Petri intermediaires et bilan automatique de l'analyseur.
+  - La demo reste alignee sur le scope fige : 2 trains, 1 troncon, 7 places, 6 transitions, aucun ajout de modele metier.
+- Commandes executees:
+  - sbt compile
+  - sbt test
+  - sbt "runMain m14.Main"
+- Resultats de verification:
+  - Build: PASS
+  - Tests: PASS (19 tests, 0 echec)
+  - Demo console: PASS (`runMain m14.Main` affiche les 3 scenarios, 8 etats atteignables, invariant OK, deadlocks 0, collision NON)
+  - Notes: `sbt run` seul peut demander de choisir un main car le projet contient aussi `m14.petri.Analyseur`; utiliser `sbt "runMain m14.Main"`.
+- Risques/impacts:
+  - La page HTML est une aide visuelle, pas une preuve formelle. La preuve reste portee par l'analyseur Scala, les tests et le modele Petri.
+  - Les anciens avertissements SBT/SLF4J restent cosmetiques et n'empechent pas compile/test/run.
+- Prochaines actions recommandees:
+  - Ouvrir `demo/index.html` dans un navigateur pour validation visuelle.
+  - Ajouter une courte mention de la demo dans le README si elle est conservee pour le rendu.
+  - Nettoyer les fichiers non suivis inutiles avant commit final.
+
+---
+
+### [2026-04-27 22:10] - Suppression de StationControl (ancien scope Chatelet) + refonte Main.scala demontrant les 3 scenarios troncon
+- GitHub: @MonsieurNikko
+- Branche: main
+- Contexte/tache: nettoyage de l'ancien scope Chatelet (densite voyageurs / incidents) qui cohabitait avec le scope recadre (troncon partage). StationControl.scala etait du code mort qui pouvait perturber un correcteur, et Main.scala lancait encore cette simulation hors-scope. Execution anticipee de l'axe 8.1 du PLAN.
+- Fichiers supprimes:
+  - src/main/scala/m14/StationControl.scala (162 lignes, ancien acteur de gestion de station avec densite + incidents)
+  - src/test/scala/m14/StationControlSpec.scala (66 lignes, 3 tests dependants)
+- Fichiers modifies:
+  - src/main/scala/m14/Main.scala (reecrit : spawn 1 SectionController par scenario + acteur "loggeur" qui joue le faux train et affiche les reponses ; les 3 scenarios sont deroules sequentiellement avec des println explicites et des Thread.sleep pour l'ordre console)
+  - documentation/START-ICI.md (retrait de la mention StationControl, ligne Main.scala mise a jour, table d'etat ajoute la ligne "Main.scala (demo des 3 scenarios) FAIT", "22 tests" -> "19 tests")
+  - documentation/gouvernance/protocole-coordination.md (Q8 marquee [CADUQUE] avec note de mise a jour, la reponse historique reste pour tracabilite)
+  - documentation/suivi/PLAN.md (section 2 : retrait du bullet "StationControl.scala existant" du Hors coeur, ajout d'une mention generique "Densite voyageurs..." ; section 7 : retrait du bullet "Refondre StationControl.scala" ; section 8.1 : marquee [FAIT 2026-04-27] avec action realisee + cout reel)
+- Changements detailles:
+  - Verification exhaustive des dependances par grep avant suppression : seules dependances reelles = Main.scala (import) + StationControlSpec.scala (test). Aucune autre reference de code.
+  - Ordre des operations choisi : reecriture de Main.scala AVANT suppression de StationControl.scala pour ne jamais avoir d'etat de checkout non compilable.
+  - Choix de design pour Main.scala : utiliser un acteur "loggeur" plutot que le vrai acteur Train, parce que le vrai Train a un cycle infini (hors -> demande -> attente -> sur_troncon -> sortie -> hors -> ...). Le loggeur recoit Autorisation/Attente et ne fait qu'afficher, ce qui rend la sortie console lisible et bornee.
+  - Thread.sleep utilises dans Main pour serialiser l'affichage console (acceptable car ce n'est pas un test, c'est une demo visuelle ; le verrou Q7 du protocole-coordination.md interdit Thread.sleep DANS les tests, pas dans le Main).
+- Commandes executees:
+  - rg/grep multiples pour cartographier toutes les references (StationControl, m14.StationControl, PassengerFlow, ReportIncident, ResolveIncident, GetSnapshot, Platform*, TransferCorridor, chatelet)
+  - Write src/main/scala/m14/Main.scala
+  - rm src/main/scala/m14/StationControl.scala
+  - rm src/test/scala/m14/StationControlSpec.scala
+  - 5 Edits sur documentation (START-ICI x2, protocole-coordination Q8, PLAN x3, historique - cette entree)
+- Resultats de verification:
+  - Build: A LANCER (sbt compile, voir entree de verification suivante)
+  - Tests: A LANCER (sbt test, attendu 19/19 = 3 SectionControllerSpec + 4 TrainSpec + 12 AnalyseurSpec)
+  - Notes: une commande sbt sera lancee dans la foulee de cette entree.
+- Risques/impacts:
+  - Operation destructive (suppression de fichiers de code et tests). Recuperable via git checkout HEAD~1 du fichier en cas de regret avant push, irrecuperable apres push si l'historique est purgue.
+  - Le total de tests passe de 22 a 19 (perte des 3 StationControlSpec). L'historique anterieur mentionnant "22/22" reste lisible et explique l'evolution.
+  - Anticipe l'axe 8.1 du PLAN qui etait prevu pour Phase 9. Reduit la charge de cette phase.
+  - L'ancien scope Chatelet n'apparait plus dans le code mais reste dans les anciennes entrees historiques (lignes 274, 450, 456, 459, 471, 482), ce qui est conforme a la regle "historique fige chronologiquement".
+- Prochaines actions recommandees:
+  - Lancer sbt compile + sbt test pour confirmer que rien n'est casse, ajouter une entree historique de verification.
+  - Lancer sbt run pour verifier visuellement que les 3 scenarios s'affichent correctement.
+  - Synchroniser l'equipe : la Q8 du protocole-coordination est caduque, le Main est passe en demo.
+  - Phase 9 (sam 3 mai) : il ne reste de l'axe 8.1 que la mise a jour de la section "Comment lancer" du README pour ajouter sbt run.
+
+---
+
+### [2026-04-27 21:35] - PLAN section 8 : doctrine "profondeur > complexite" + 4 axes de renforcement verification
+- GitHub: @MonsieurNikko
+- Branche: main
+- Contexte/tache: apres relecture du cahier des charges, ajout dans PLAN.md d'une section formalisant la doctrine "ne pas complexifier le systeme, renforcer la verification". Liste 4 axes concrets (Main.scala, LTL programmatique, graphe d'accessibilite, test integration Akka/Petri) a integrer dans les Phases 7-9 sans toucher au coeur fige.
+- Fichiers modifies:
+  - documentation/suivi/PLAN.md (insertion section 8 + renumerotation 8 -> 9 et 9 -> 10)
+- Changements detailles:
+  - Citation du cahier (§1.4 Risque 1 + §10 Recommandation strategique) sur "modele simple et verifiable plutot que realiste impossible a analyser".
+  - 8.1 Refonte de Main.scala (probleme : lance encore l'ancien StationControl Chatelet ; action : remplacer par demo des 3 scenarios troncon ; Phase 9, ~30 min).
+  - 8.2 Verification LTL programmatique (verifierGSafety + verifierGFLiveness) sur le graphe d'accessibilite deja construit, sans coder un model checker generique. Coherent avec section 7. Phase 7, ~1h.
+  - 8.3 Graphe d'accessibilite avec arcs etiquetes (M_i --transition--> M_j) pour repondre au mot "graphe" du cahier et alimenter la tache 7 des preuves manuelles. Phase 7, ~30 min.
+  - 8.4 Test d'integration Akka <-> Petri programmatique (IntegrationAkkaPetriSpec) qui rejoue la trace de messages d'un scenario Akka comme suite de transitions Petri et compare les marquages. Phase 8, 1-2h.
+  - 8.5 Extension a un second troncon en serie explicitement refusee (violerait verrou 2 trains, 1 troncon, oblige a refaire le carnet de preuves, risque de derive a 7 jours du rendu).
+  - Renumerotation des anciennes sections 8 (Format de rendu) en 9, et 9 (Validation) en 10.
+- Commandes executees:
+  - lecture de cahier des charges.md
+  - edition de documentation/suivi/PLAN.md
+- Resultats de verification:
+  - Build: N/A (changements 100% documentaires)
+  - Tests: N/A
+  - Notes: aucun fichier .scala touche, aucun risque sur le build.
+- Risques/impacts:
+  - Le cahier des charges en local a ete simplifie (~66 lignes) par rapport a la version longue d'ou viennent les references §1.4 et §10. La phrase exacte citee reste la doctrine du projet, mais la reference numerique pourra etre ajustee si besoin selon la version du cahier remise au correcteur.
+  - Les 4 axes ajoutent ~3-4h de travail aux Phases 7-9, a confirmer en synchronisation d'equipe avant Phase 7.
+  - 8.2 (LTL programmatique) frole le verrou "pas de model checker complet" de la section 7 ; la nuance "evaluation directe sur graphe fini" est explicitee dans le PLAN, mais a relire en equipe pour eviter une critique du correcteur.
+- Prochaines actions recommandees:
+  - Synchroniser l'equipe sur la section 8 avant Phase 7.
+  - Phase 7 (jeu 1 mai) : commencer par 8.3 (graphe d'accessibilite, le plus rapide) puis 8.2 (LTL programmatique).
+  - Phase 8 (ven 2 mai) : 8.4 (test integration) en parallele de la redaction rapport.
+  - Phase 9 (sam 3 mai) : 8.1 (refonte Main.scala) en complement du polish README.
+
+---
+
 ### [2026-04-26 17:30] - Reorganisation de la documentation : sous-dossiers et point d'entree START-ICI.md
 - GitHub: @MonsieurNikko
 - Branche: feature/m14-phase3-train (avant merge)

@@ -120,9 +120,11 @@ Voici les questions concretes qui vont **probablement** se poser pendant l'imple
 
 **Reponse** : 1 seconde maximum. Si un message met plus, c'est un bug. Pas de `Thread.sleep`. Probes deterministes.
 
-### Q8 - Le `StationControl.scala` existant doit-il etre modifie ?
+### Q8 - Le `StationControl.scala` existant doit-il etre modifie ? [CADUQUE]
 
-**Reponse** : **non**. Hors scope. Garder tel quel. Les tests existants (`StationControlSpec.scala`) doivent continuer a passer mais ne sont pas etendus.
+**Reponse historique (Phase 2)** : non, hors scope, garder tel quel.
+
+**Mise a jour 2026-04-27** : `StationControl.scala` et `StationControlSpec.scala` ont ete supprimes du repo (entree historique correspondante du 2026-04-27). Le `Main.scala` demontre desormais les 3 scenarios troncon. Cette question n'a plus d'objet.
 
 ### Q9 - Le `Main.scala` doit-il etre adapte pour faire tourner les 3 scenarios ?
 

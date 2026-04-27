@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Demo M14 - Troncon critique</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --ink: #1f2933;
+      --muted: #64748b;
+      --line: #d6dbe3;
+      --panel: #ffffff;
+      --track: #46535f;
+      --section: #f2c14e;
+      --ok: #1f8a70;
+      --warn: #b7791f;
+      --danger: #c2410c;
+      --t1: #2563eb;
+      --t2: #0f766e;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      padding: 18px 24px 12px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      gap: 10px;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    label {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    select,
+    input[type="range"],
+    button {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    button.primary {
+      background: var(--ink);
+      color: #fff;
+      border-color: var(--ink);
+    }
+
+    button:disabled {
+      cursor: default;
+      color: #94a3b8;
+      background: #eef1f5;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(360px, 1.1fr) minmax(340px, 0.9fr);
+      gap: 18px;
+      padding: 18px 24px 24px;
+    }
+
+    section {
+      min-width: 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .section-title {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      font-weight: 700;
+    }
+
+    .stage {
+      position: relative;
+      height: 320px;
+      background: #eef2f6;
+    }
+
+    .track {
+      position: absolute;
+      left: 7%;
+      right: 7%;
+      height: 8px;
+      top: 150px;
+      background: var(--track);
+      border-radius: 999px;
+    }
+
+    .critical-section {
+      position: absolute;
+      left: 42%;
+      width: 16%;
+      top: 118px;
+      height: 72px;
+      border: 3px solid var(--section);
+      border-radius: 8px;
+      background: rgba(242, 193, 78, 0.2);
+    }
+
+    .section-label {
+      position: absolute;
+      left: 40%;
+      width: 20%;
+      top: 198px;
+      text-align: center;
+      color: var(--warn);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .train {
+      position: absolute;
+      width: 96px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 6px;
+      color: #fff;
+      font-weight: 700;
+      transition: left 260ms ease, right 260ms ease, top 260ms ease;
+    }
+
+    .train.t1 {
+      background: var(--t1);
+    }
+
+    .train.t2 {
+      background: var(--t2);
+    }
+
+    .t1.hors {
+      left: 8%;
+      top: 92px;
+    }
+
+    .t1.attente {
+      left: 29%;
+      top: 92px;
+    }
+
+    .t1.sur {
+      left: 44%;
+      top: 92px;
+    }
+
+    .t2.hors {
+      left: calc(92% - 96px);
+      top: 174px;
+    }
+
+    .t2.attente {
+      left: calc(71% - 96px);
+      top: 174px;
+    }
+
+    .t2.sur {
+      left: calc(56% - 96px);
+      top: 174px;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      padding: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .status {
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+    }
+
+    .status strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+
+    .status span {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .status.ok strong {
+      color: var(--ok);
+    }
+
+    .status.bad strong {
+      color: var(--danger);
+    }
+
+    .petri-body {
+      display: grid;
+      gap: 14px;
+      padding: 14px;
+    }
+
+    .places {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .place {
+      min-height: 54px;
+      display: grid;
+      grid-template-columns: 1fr 28px;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      font-size: 13px;
+    }
+
+    .place.active {
+      border-color: var(--ok);
+      background: #f0faf7;
+    }
+
+    .token {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #e2e8f0;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .place.active .token {
+      background: var(--ok);
+      color: #fff;
+    }
+
+    .transitions {
+      display: grid;
+      gap: 6px;
+    }
+
+    .transition {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      font-size: 13px;
+    }
+
+    .transition.enabled {
+      border-color: var(--warn);
+      background: #fff8e5;
+    }
+
+    .log {
+      grid-column: 1 / -1;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      background: #f8fafc;
+    }
+
+    .empty {
+      color: var(--muted);
+    }
+
+    @media (max-width: 900px) {
+      .controls,
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      .stage {
+        height: 280px;
+      }
+
+      .places {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>M14 - Troncon critique partage</h1>
+    <div class="subtitle">Simulation visuelle synchronisee avec les transitions du reseau de Petri</div>
+  </header>
+
+  <div class="controls">
+    <label>
+      Scenario
+      <select id="scenarioSelect">
+        <option value="nominal">Nominal</option>
+        <option value="concurrence">Concurrence</option>
+        <option value="progression">Liberation / progression</option>
+      </select>
+    </label>
+    <label>
+      Premier train
+      <select id="orderSelect">
+        <option value="T1">Train1</option>
+        <option value="T2">Train2</option>
+      </select>
+    </label>
+    <label>
+      Vitesse
+      <input id="speedInput" type="range" min="250" max="1600" value="850" step="50">
+    </label>
+    <button id="resetButton">Reset</button>
+    <button id="prevButton">Precedent</button>
+    <button id="nextButton" class="primary">Suivant</button>
+    <button id="playButton">Lecture</button>
+  </div>
+
+  <main>
+    <section>
+      <div class="section-title">Simulation Akka</div>
+      <div class="stage">
+        <div class="track"></div>
+        <div class="critical-section"></div>
+        <div class="section-label">Troncon critique</div>
+        <div id="train1" class="train t1 hors">Train1</div>
+        <div id="train2" class="train t2 hors">Train2</div>
+      </div>
+      <div class="status-grid">
+        <div id="resourceStatus" class="status ok">
+          <strong>Invariant ressource</strong>
+          <span>OK</span>
+        </div>
+        <div id="collisionStatus" class="status ok">
+          <strong>Collision</strong>
+          <span>NON</span>
+        </div>
+        <div id="deadlockStatus" class="status ok">
+          <strong>Deadlock</strong>
+          <span>NON</span>
+        </div>
+        <div id="stepStatus" class="status">
+          <strong>Etape</strong>
+          <span>M0</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">Reseau de Petri</div>
+      <div class="petri-body">
+        <div id="places" class="places"></div>
+        <div id="transitions" class="transitions"></div>
+      </div>
+    </section>
+
+    <section class="log">
+      <div class="section-title">Trace messages / transitions</div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Evenement Akka</th>
+            <th>Transition Petri</th>
+            <th>Marquage actif</th>
+          </tr>
+        </thead>
+        <tbody id="traceBody"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    const places = [
+      "Troncon_libre",
+      "T1_hors",
+      "T1_attente",
+      "T1_sur_troncon",
+      "T2_hors",
+      "T2_attente",
+      "T2_sur_troncon"
+    ];
+
+    const transitions = {
+      T1_demande: { pre: ["T1_hors"], post: ["T1_attente"] },
+      T2_demande: { pre: ["T2_hors"], post: ["T2_attente"] },
+      T1_entree_autorisee: { pre: ["T1_attente", "Troncon_libre"], post: ["T1_sur_troncon"] },
+      T2_entree_autorisee: { pre: ["T2_attente", "Troncon_libre"], post: ["T2_sur_troncon"] },
+      T1_sortie_liberation: { pre: ["T1_sur_troncon"], post: ["T1_hors", "Troncon_libre"] },
+      T2_sortie_liberation: { pre: ["T2_sur_troncon"], post: ["T2_hors", "Troncon_libre"] }
+    };
+
+    const scenarioSelect = document.getElementById("scenarioSelect");
+    const orderSelect = document.getElementById("orderSelect");
+    const speedInput = document.getElementById("speedInput");
+    const resetButton = document.getElementById("resetButton");
+    const prevButton = document.getElementById("prevButton");
+    const nextButton = document.getElementById("nextButton");
+    const playButton = document.getElementById("playButton");
+    const train1 = document.getElementById("train1");
+    const train2 = document.getElementById("train2");
+    const placesRoot = document.getElementById("places");
+    const transitionsRoot = document.getElementById("transitions");
+    const traceBody = document.getElementById("traceBody");
+    const resourceStatus = document.getElementById("resourceStatus");
+    const collisionStatus = document.getElementById("collisionStatus");
+    const deadlockStatus = document.getElementById("deadlockStatus");
+    const stepStatus = document.getElementById("stepStatus");
+
+    let stepIndex = -1;
+    let playing = false;
+    let timerId = null;
+
+    function initialMarking() {
+      return {
+        Troncon_libre: 1,
+        T1_hors: 1,
+        T1_attente: 0,
+        T1_sur_troncon: 0,
+        T2_hors: 1,
+        T2_attente: 0,
+        T2_sur_troncon: 0
+      };
+    }
+
+    function otherTrain(firstTrain) {
+      return firstTrain === "T1" ? "T2" : "T1";
+    }
+
+    function transitionName(train, action) {
+      if (action === "demande") return train + "_demande";
+      if (action === "entree") return train + "_entree_autorisee";
+      return train + "_sortie_liberation";
+    }
+
+    function trainLabel(train) {
+      return train === "T1" ? "Train1" : "Train2";
+    }
+
+    function buildScenario() {
+      const first = orderSelect.value;
+      const second = otherTrain(first);
+      const scenario = scenarioSelect.value;
+
+      if (scenario === "nominal") {
+        return [
+          { message: trainLabel(first) + " -> Controleur : Demande", transition: transitionName(first, "demande") },
+          { message: "Controleur -> " + trainLabel(first) + " : Autorisation", transition: transitionName(first, "entree") },
+          { message: trainLabel(first) + " -> Controleur : Sortie", transition: transitionName(first, "sortie") }
+        ];
+      }
+
+      if (scenario === "concurrence") {
+        return [
+          { message: trainLabel(first) + " -> Controleur : Demande", transition: transitionName(first, "demande") },
+          { message: "Controleur -> " + trainLabel(first) + " : Autorisation", transition: transitionName(first, "entree") },
+          { message: trainLabel(second) + " -> Controleur : Demande", transition: transitionName(second, "demande") },
+          { message: "Controleur -> " + trainLabel(second) + " : Attente", transition: null }
+        ];
+      }
+
+      return [
+        { message: trainLabel(first) + " -> Controleur : Demande", transition: transitionName(first, "demande") },
+        { message: "Controleur -> " + trainLabel(first) + " : Autorisation", transition: transitionName(first, "entree") },
+        { message: trainLabel(second) + " -> Controleur : Demande", transition: transitionName(second, "demande") },
+        { message: "Controleur -> " + trainLabel(second) + " : Attente", transition: null },
+        { message: trainLabel(first) + " -> Controleur : Sortie", transition: transitionName(first, "sortie") },
+        { message: "Controleur -> " + trainLabel(second) + " : Autorisation", transition: transitionName(second, "entree") },
+        { message: trainLabel(second) + " -> Controleur : Sortie", transition: transitionName(second, "sortie") }
+      ];
+    }
+
+    function isEnabled(marking, transitionKey) {
+      return transitions[transitionKey].pre.every((place) => marking[place] >= 1);
+    }
+
+    function fire(marking, transitionKey) {
+      if (!transitionKey) return { ...marking };
+      if (!isEnabled(marking, transitionKey)) return { ...marking, invalid: true };
+
+      const next = { ...marking };
+      transitions[transitionKey].pre.forEach((place) => {
+        next[place] -= 1;
+      });
+      transitions[transitionKey].post.forEach((place) => {
+        next[place] += 1;
+      });
+      return next;
+    }
+
+    function markingAt(index) {
+      const events = buildScenario();
+      let marking = initialMarking();
+      for (let i = 0; i <= index; i += 1) {
+        marking = fire(marking, events[i].transition);
+      }
+      return marking;
+    }
+
+    function activePlaces(marking) {
+      return places.filter((place) => marking[place] > 0).join(", ");
+    }
+
+    function trainState(marking, train) {
+      if (marking[train + "_sur_troncon"] > 0) return "sur";
+      if (marking[train + "_attente"] > 0) return "attente";
+      return "hors";
+    }
+
+    function setStatus(element, ok, value) {
+      element.classList.toggle("ok", ok);
+      element.classList.toggle("bad", !ok);
+      element.querySelector("span").textContent = value;
+    }
+
+    function renderPlaces(marking) {
+      placesRoot.innerHTML = "";
+      places.forEach((place) => {
+        const node = document.createElement("div");
+        node.className = "place" + (marking[place] > 0 ? " active" : "");
+        node.innerHTML = "<span>" + place + "</span><span class=\"token\">" + marking[place] + "</span>";
+        placesRoot.appendChild(node);
+      });
+    }
+
+    function renderTransitions(marking) {
+      transitionsRoot.innerHTML = "";
+      Object.keys(transitions).forEach((name) => {
+        const enabled = isEnabled(marking, name);
+        const node = document.createElement("div");
+        node.className = "transition" + (enabled ? " enabled" : "");
+        node.innerHTML = "<span>" + name + "</span><strong>" + (enabled ? "tirable" : "bloquee") + "</strong>";
+        transitionsRoot.appendChild(node);
+      });
+    }
+
+    function renderTrace() {
+      const events = buildScenario();
+      traceBody.innerHTML = "";
+
+      if (stepIndex < 0) {
+        const row = document.createElement("tr");
+        row.innerHTML = "<td colspan=\"4\" class=\"empty\">M0 : " + activePlaces(initialMarking()) + "</td>";
+        traceBody.appendChild(row);
+        return;
+      }
+
+      for (let i = 0; i <= stepIndex; i += 1) {
+        const row = document.createElement("tr");
+        const marking = markingAt(i);
+        row.innerHTML =
+          "<td>" + (i + 1) + "</td>" +
+          "<td>" + events[i].message + "</td>" +
+          "<td>" + (events[i].transition || "Aucune transition") + "</td>" +
+          "<td>" + activePlaces(marking) + "</td>";
+        traceBody.appendChild(row);
+      }
+    }
+
+    function render() {
+      const events = buildScenario();
+      const marking = markingAt(stepIndex);
+      const enabledCount = Object.keys(transitions).filter((name) => isEnabled(marking, name)).length;
+      const resourceSum = marking.T1_sur_troncon + marking.T2_sur_troncon + marking.Troncon_libre;
+      const collision = marking.T1_sur_troncon > 0 && marking.T2_sur_troncon > 0;
+
+      train1.className = "train t1 " + trainState(marking, "T1");
+      train2.className = "train t2 " + trainState(marking, "T2");
+
+      setStatus(resourceStatus, resourceSum === 1, resourceSum === 1 ? "OK" : "ECHEC");
+      setStatus(collisionStatus, !collision, collision ? "OUI" : "NON");
+      setStatus(deadlockStatus, enabledCount > 0, enabledCount > 0 ? "NON" : "OUI");
+      stepStatus.querySelector("span").textContent = stepIndex < 0 ? "M0" : "M" + (stepIndex + 1);
+
+      prevButton.disabled = stepIndex < 0;
+      nextButton.disabled = stepIndex >= events.length - 1;
+
+      renderPlaces(marking);
+      renderTransitions(marking);
+      renderTrace();
+    }
+
+    function stopPlayback() {
+      playing = false;
+      playButton.textContent = "Lecture";
+      if (timerId) {
+        clearTimeout(timerId);
+        timerId = null;
+      }
+    }
+
+    function playNext() {
+      const events = buildScenario();
+      if (!playing || stepIndex >= events.length - 1) {
+        stopPlayback();
+        return;
+      }
+      stepIndex += 1;
+      render();
+      timerId = setTimeout(playNext, Number(speedInput.value));
+    }
+
+    resetButton.addEventListener("click", () => {
+      stopPlayback();
+      stepIndex = -1;
+      render();
+    });
+
+    prevButton.addEventListener("click", () => {
+      stopPlayback();
+      stepIndex = Math.max(-1, stepIndex - 1);
+      render();
+    });
+
+    nextButton.addEventListener("click", () => {
+      stopPlayback();
+      const events = buildScenario();
+      stepIndex = Math.min(events.length - 1, stepIndex + 1);
+      render();
+    });
+
+    playButton.addEventListener("click", () => {
+      if (playing) {
+        stopPlayback();
+      } else {
+        playing = true;
+        playButton.textContent = "Pause";
+        playNext();
+      }
+    });
+
+    scenarioSelect.addEventListener("change", () => {
+      stopPlayback();
+      stepIndex = -1;
+      render();
+    });
+
+    orderSelect.addEventListener("change", () => {
+      stopPlayback();
+      stepIndex = -1;
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

@@ -1,121 +1,224 @@
-# START ICI - Guide d'arrivee sur le projet
+# START ICI - Guide rapide du projet
 
-> Tu viens d'arriver sur le repo ? Lis ce fichier en 5 minutes et tu sauras exactement quoi faire.
+> Nouveau sur le repo ? Lis cette page avant de coder. Elle dit quoi lancer, quoi lire, quoi modifier, et ce qu'il ne faut pas casser.
 
 ---
 
-## Le projet en une phrase
+## 1) Le projet en une phrase
 
-On prouve qu'un **systeme de metro automatique (M14)** ne peut pas avoir 2 trains sur le meme troncon en meme temps. On le fait avec du code Scala/Akka ET un modele formel (reseau de Petri).
+On modelise un sous-systeme critique inspire de la M14 : **deux trains automatiques veulent acceder a un meme troncon partage, et on prouve qu'ils ne peuvent jamais etre dessus en meme temps**.
 
-## Structure du depot
+Le projet combine :
 
-```
-CriticalSystemModel/
-├── src/main/scala/m14/
-│   ├── troncon/               <- LE COEUR DU PROJET
-│   │   ├── Protocol.scala       Messages entre trains et controleur
-│   │   ├── SectionController.scala  Arbitre du troncon (FIFO)
-│   │   └── Train.scala          Machine a etats du train
-│   ├── petri/                 <- ANALYSEUR DE PREUVES
-│   │   ├── PetriNet.scala       Reseau de Petri encode en dur
-│   │   └── Analyseur.scala      BFS + verification invariants
-│   ├── StationControl.scala   (hors scope, ne pas toucher)
-│   └── Main.scala             Point d'entree
-│
-├── src/test/scala/m14/        <- TESTS (22 tests, tous verts)
-│   ├── troncon/
-│   │   ├── SectionControllerSpec.scala  3 scenarios critiques
-│   │   └── TrainSpec.scala              Tests du train
-│   └── petri/
-│       └── AnalyseurSpec.scala          Tests de l'analyseur
-│
-├── petri/
-│   └── petri-troncon.md       SOURCE DE VERITE du modele formel
-│
-├── documentation/             <- TU ES ICI
-│   ├── START-ICI.md             Ce fichier
-│   ├── suivi/                   Ou en est-on ?
-│   │   ├── PLAN.md                Sprint et phases
-│   │   ├── HANDOVER.md            Guide technique de reprise
-│   │   └── historique.md          Journal de tous les changements
-│   ├── gouvernance/             Comment on travaille ?
-│   │   ├── REGLES_PROJET.md       Regles de code et de commit
-│   │   ├── repartition-equipe.md  Qui fait quoi
-│   │   ├── protocole-coordination.md  Contrat code/preuves
-│   │   └── lexique.md            Vocabulaire partage
-│   ├── livrables/               Ce qu'on rend le 4 mai
-│   │   ├── rapport.md            L4 - Rapport de verification
-│   │   ├── biblio.md             L1 - Bibliographie commentee
-│   │   ├── comparaison.md        L6 - Akka vs Petri
-│   │   └── preuves-manuelles.md  Carnet de preuves a la main
-│   └── contexte/                Pourquoi ce projet
-│       └── recadrage-m14-troncon-critique.md
-│
-├── README.md                  Presentation generale
+- **Akka / Scala** : simulation distribuee par acteurs ;
+- **Reseau de Petri** : modele formel du protocole ;
+- **Analyseur Scala maison** : exploration des marquages, invariants, deadlocks ;
+- **Demo HTML** : visualisation pas-a-pas pour la soutenance.
 
-└── build.sbt                  Config Scala/Akka
+Invariant central :
+
+```text
+T1_sur_troncon + T2_sur_troncon + Troncon_libre = 1
 ```
 
-## Par ou commencer (Poles d'activites)
+---
 
-Nous avons 3 grands poles restants pour terminer le projet. Choisissez un pole selon vos affinites et coordonnez-vous :
+## 2) A lancer en premier
 
-### Pole 1 : Preuves Formelles & LTL (Charge : Moyenne)
-- **Objectif** : Blinder la theorie et les preuves mathematiques.
-- **Actions** :
-  1. Lire `petri/petri-troncon.md`.
-  2. Completer le carnet de preuves : `documentation/livrables/preuves-manuelles.md` (taches 2 a 7).
-  3. Rediger la formalisation LTL (Safety/Liveness).
-
-### Pole 2 : Comparaison & Tests (Charge : Faible)
-- **Objectif** : Prouver que notre code Scala correspond au reseau de Petri.
-- **Actions** :
-  1. Lancer l'analyseur : `sbt "runMain m14.petri.Analyseur"`.
-  2. Inserer les resultats dans `documentation/livrables/comparaison.md`.
-  3. Mettre a jour le mapping explicite entre Messages Akka et Transitions Petri.
-
-### Pole 3 : Redaction du Rapport & Biblio (Charge : Forte)
-- **Objectif** : Assembler le livrable final (8-15 pages).
-- **Actions** :
-  1. Relire `documentation/suivi/PLAN.md` (Phases 7 et 8).
-  2. Completer la bibliographie dans `documentation/livrables/biblio.md`.
-  3. Rediger le rapport final `documentation/livrables/rapport.md` en integrant le travail des poles 1 et 2.
-
-## Commandes essentielles
+Depuis la racine du projet :
 
 ```bash
-# Verifier que tout compile
 sbt compile
-
-# Lancer tous les tests (22 tests)
 sbt test
-
-# Lancer l'analyseur Petri (voir la preuve formelle)
-sbt "runMain m14.petri.Analyseur"
+sbt "runMain m14.Main"
 ```
 
-## Etat actuel (mis a jour le 26 avril 2026)
+Resultat attendu :
 
-| Quoi | Etat |
-|------|------|
-| Code Akka (Train + SectionController) | FAIT |
-| Tests des 3 scenarios critiques | FAIT (3/3 verts) |
-| Analyseur Petri (BFS + invariants) | FAIT (8 etats, 0 deadlocks) |
-| Rapport de verification | A REDIGER |
-| Preuves manuelles (tableau T2, Liveness) | FAIT |
-| Comparaison Akka vs Petri | A FINALISER |
+- `sbt compile` passe ;
+- `sbt test` affiche 19 tests reussis ;
+- `runMain m14.Main` affiche les 3 scenarios + le bilan Petri.
 
-## Regles d'or (lire avant de coder)
+Toutes les commandes utiles sont centralisees ici :
 
-1. **Jamais de push sans `sbt test` vert.**
-2. **Jamais de push sans mise a jour de `documentation/suivi/historique.md`.**
-3. **Jamais de nouveau message Akka** (les 4 sont verrouilles : Demande, Sortie, Autorisation, Attente).
-4. **En cas de doute** : lis `documentation/gouvernance/protocole-coordination.md` section 4 (FAQ).
+```text
+documentation/suivi/COMMANDES.md
+```
 
-## Besoin d'aide ?
+---
 
-- Comprendre un terme ? → `documentation/gouvernance/lexique.md`
-- Comprendre le planning ? → `documentation/suivi/PLAN.md`
-- Comprendre le code ? → `documentation/suivi/HANDOVER.md`
-- Comprendre le modele Petri ? → `petri/petri-troncon.md`
+## 3) Structure du depot
+
+```text
+CriticalSystemModel/
+├── src/main/scala/m14/
+│   ├── troncon/                  <- coeur Akka
+│   │   ├── Protocol.scala          messages Demande / Sortie / Autorisation / Attente
+│   │   ├── SectionController.scala arbitre FIFO du troncon
+│   │   └── Train.scala             machine a etats d'un train
+│   ├── petri/                    <- analyse formelle en Scala
+│   │   ├── PetriNet.scala          7 places, 6 transitions
+│   │   └── Analyseur.scala         BFS + invariants + deadlocks
+│   └── Main.scala                <- demo console Akka + Petri
+│
+├── src/test/scala/m14/           <- tests ScalaTest / Akka TestKit
+│   ├── troncon/
+│   │   ├── SectionControllerSpec.scala
+│   │   └── TrainSpec.scala
+│   └── petri/
+│       └── AnalyseurSpec.scala
+│
+├── petri/
+│   └── petri-troncon.md          <- source de verite du modele Petri
+│
+├── demo/
+│   ├── index.html                <- demo visuelle autonome
+│   └── README.md
+│
+├── documentation/
+│   ├── START-ICI.md              <- cette page
+│   ├── suivi/
+│   │   ├── COMMANDES.md           commandes utiles
+│   │   ├── PLAN.md                plan de fin de projet
+│   │   ├── HANDOVER.md            guide technique de reprise
+│   │   └── historique.md          journal des changements
+│   ├── gouvernance/
+│   │   ├── REGLES_PROJET.md
+│   │   ├── repartition-equipe.md
+│   │   ├── protocole-coordination.md
+│   │   └── lexique.md
+│   ├── livrables/
+│   │   ├── rapport.md             rapport final a terminer
+│   │   ├── biblio.md              bibliographie commentee
+│   │   ├── comparaison.md         Akka vs Petri
+│   │   └── preuves-manuelles.md   preuves a la main
+│   └── contexte/
+│       └── recadrage-m14-troncon-critique.md
+│
+├── README.md
+└── build.sbt
+```
+
+---
+
+## 4) Etat actuel
+
+Mis a jour le 27 avril 2026.
+
+| Element | Etat |
+|---|---|
+| Code Akka `Train` + `SectionController` | FAIT |
+| Protocole de messages | FAIT, verrouille a 4 messages |
+| Reseau de Petri | FAIT, 7 places / 6 transitions |
+| Analyseur Petri | FAIT, 8 marquages, 0 deadlock |
+| Tests | FAIT, 19 tests verts |
+| Demo console | FAIT avec `sbt "runMain m14.Main"` |
+| Demo HTML | Prototype FAIT dans `demo/index.html` |
+| Comparaison Akka vs Petri | A finaliser avec sortie analyseur |
+| Rapport final | A rediger / completer en priorite |
+
+---
+
+## 5) Qui fait quoi maintenant
+
+### Piste A - Preuves et LTL
+
+Objectif : rendre les preuves defendables a l'oral.
+
+Fichiers a lire :
+
+- `petri/petri-troncon.md`
+- `documentation/livrables/preuves-manuelles.md`
+- `documentation/gouvernance/lexique.md`
+
+Actions prioritaires :
+
+1. Verifier que les 8 marquages sont bien expliques.
+2. Completer les cases restantes du carnet de preuves.
+3. Clarifier la limite : la liveness depend d'une hypothese de fairness / FIFO.
+
+### Piste B - Comparaison et tests
+
+Objectif : montrer que le code Akka correspond au modele Petri.
+
+Fichiers a lire :
+
+- `documentation/livrables/comparaison.md`
+- `src/test/scala/m14/troncon/SectionControllerSpec.scala`
+- `src/main/scala/m14/Main.scala`
+
+Actions prioritaires :
+
+1. Lancer `sbt "runMain m14.Main"`.
+2. Lancer `sbt "runMain m14.petri.Analyseur"`.
+3. Copier les resultats utiles dans `comparaison.md`.
+4. Ajouter plus tard un test d'integration Akka/Petri si le temps le permet.
+
+### Piste C - Rapport et biblio
+
+Objectif : transformer le travail technique en livrable lisible par la prof.
+
+Fichiers a lire :
+
+- `documentation/livrables/rapport.md`
+- `documentation/livrables/biblio.md`
+- `documentation/contexte/recadrage-m14-troncon-critique.md`
+
+Actions prioritaires :
+
+1. Remplacer tous les blocs "A rediger".
+2. Expliquer pourquoi le modele est volontairement petit.
+3. Citer la bibliographie dans le corps du rapport.
+4. Ajouter les limites : pas de pannes, pas de temps reel, pas de N trains.
+
+### Piste D - Demo et soutenance
+
+Objectif : rendre le projet facile a comprendre en 2 minutes.
+
+Fichiers a lire :
+
+- `demo/index.html`
+- `src/main/scala/m14/Main.scala`
+- `documentation/suivi/COMMANDES.md`
+
+Actions prioritaires :
+
+1. Tester la demo HTML en pas-a-pas.
+2. Preparer une phrase simple pour chaque scenario.
+3. Montrer l'invariant qui reste OK pendant la simulation.
+
+---
+
+## 6) Ce qu'il ne faut pas changer sans accord
+
+Ces choix sont verrouilles pour eviter de casser les preuves :
+
+- pas plus de 2 trains ;
+- pas plus de 1 troncon partage ;
+- pas de nouveau message Akka ;
+- pas de nouveau modele Petri sans mettre a jour les preuves ;
+- pas de generalisation a N trains ;
+- pas de pannes ou timeouts dans le coeur du projet.
+
+La demo HTML peut etre amelioree visuellement, mais elle doit rester alignee sur le modele actuel.
+
+---
+
+## 7) Regles d'or
+
+1. Avant de push : `sbt compile`, `sbt test`.
+2. Pour la demo console : `sbt "runMain m14.Main"`, pas `sbt run`.
+3. Toute modification importante doit etre tracee dans `documentation/suivi/historique.md`.
+4. Ne pas commiter `target/`, `.bloop/`, `.metals/`, `demo-out.txt` ou des fichiers temporaires.
+5. Si le code et le modele Petri divergent, le fichier de reference est `petri/petri-troncon.md`.
+
+---
+
+## 8) Besoin d'aide ?
+
+- Commandes : `documentation/suivi/COMMANDES.md`
+- Planning : `documentation/suivi/PLAN.md`
+- Reprise technique : `documentation/suivi/HANDOVER.md`
+- Vocabulaire : `documentation/gouvernance/lexique.md`
+- Regles de contribution : `documentation/gouvernance/REGLES_PROJET.md`
+- Modele Petri : `petri/petri-troncon.md`
