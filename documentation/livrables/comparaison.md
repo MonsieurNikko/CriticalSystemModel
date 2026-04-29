@@ -130,20 +130,95 @@ Les 3 scenarios couvrent **9 transitions sur 12**. Les 3 non couvertes sont stri
 
 ---
 
-## 6) Resultats de l'analyseur Petri (a completer en Phase D)
+## 6) Resultats de l'analyseur Petri (Phase D - sortie reelle)
 
-Cette section sera remplie quand l'analyseur Scala etendu (livrable L5) sera operationnel. A inserer apres execution de `sbt "runMain m14.petri.Analyseur"` :
+Sortie obtenue le 2026-04-29 via `sbt "runMain m14.petri.Analyseur"` sur la branche `extension` (commit a jour). Reproduit ici verbatim pour tracabilite.
 
-- [ ] Sortie listant tous les marquages atteignables (cible : 15-18).
-- [ ] Confirmation des **3 invariants de ressource** sur tous les marquages :
-  - canton : `T1_sur_canton + T2_sur_canton + Canton_libre = 1`
-  - quai : `T1_a_quai + T2_a_quai + Quai_libre = 1`
-  - portes : `Portes_fermees + Portes_ouvertes = 1`
-- [ ] Confirmation des **2 invariants critiques de surete PSD** :
-  - PSD-Open : pour tout M atteignable, `M(Portes_ouvertes)=1 => M(T1_a_quai)+M(T2_a_quai)=1`
-  - PSD-Departure : pour tout M atteignable et tout train Ti, si `Ti_depart_quai` tirable depuis M alors `M(Portes_fermees)=1`
-- [ ] Confirmation de l'absence de deadlock.
-- [ ] Comparaison entre marquages atteints par la simulation Akka (scenarios 1 et 2) et marquages calcules par l'analyseur : doivent coincider exactement.
+### 6.1 Sortie console brute
+
+```
+=== Analyseur Petri - Canton + Quai + Portes palieres (M14) ===
+
+Nombre de marquages atteignables : 20
+
+--- Marquages atteignables ---
+  M0  = (Canton_libre, Portes_fermees, Quai_libre, T1_hors, T2_hors)
+  M1  = (Canton_libre, Portes_fermees, Quai_libre, T1_attente, T2_hors)
+  M2  = (Canton_libre, Portes_fermees, Quai_libre, T1_hors, T2_attente)
+  M3  = (Portes_fermees, Quai_libre, T1_sur_canton, T2_hors)
+  M4  = (Canton_libre, Portes_fermees, Quai_libre, T1_attente, T2_attente)
+  M5  = (Portes_fermees, Quai_libre, T1_hors, T2_sur_canton)
+  M6  = (Canton_libre, Portes_fermees, T1_a_quai, T2_hors)
+  M7  = (Portes_fermees, Quai_libre, T1_sur_canton, T2_attente)
+  M8  = (Portes_fermees, Quai_libre, T1_attente, T2_sur_canton)
+  M9  = (Canton_libre, Portes_fermees, T1_hors, T2_a_quai)
+  M10 = (Canton_libre, Portes_fermees, T1_a_quai, T2_attente)
+  M11 = (Canton_libre, Portes_ouvertes, T1_a_quai, T2_hors)
+  M12 = (Canton_libre, Portes_fermees, T1_attente, T2_a_quai)
+  M13 = (Canton_libre, Portes_ouvertes, T1_hors, T2_a_quai)
+  M14 = (Portes_fermees, T1_a_quai, T2_sur_canton)
+  M15 = (Canton_libre, Portes_ouvertes, T1_a_quai, T2_attente)
+  M16 = (Portes_fermees, T1_sur_canton, T2_a_quai)
+  M17 = (Canton_libre, Portes_ouvertes, T1_attente, T2_a_quai)
+  M18 = (Portes_ouvertes, T1_a_quai, T2_sur_canton)
+  M19 = (Portes_ouvertes, T1_sur_canton, T2_a_quai)
+
+--- Invariants ---
+  Invariant canton  (5.1)         : PASSE
+  Invariant quai    (5.2)         : PASSE
+  Invariant portes  (5.3)         : PASSE
+  Invariants par train            : PASSE
+  PSD-Open Safety  (6.1) CRITIQUE : PASSE
+  PSD-Departure    (6.2) CRITIQUE : PASSE
+
+Deadlocks : AUCUN (le systeme peut toujours progresser)
+
+Exclusion mutuelle canton : PASSE
+Exclusion mutuelle quai   : PASSE
+
+=== Fin de l'analyse ===
+```
+
+### 6.2 Lecture des resultats
+
+- **20 marquages atteignables** (M0..M19) au lieu des 15-18 estimes a la main en Phase A. L'ecart est explique par l'**independance partielle** entre l'etat des portes et la file d'attente du quai : un train peut etre `a_quai` avec portes ouvertes pendant que l'autre est dans n'importe lequel de ses 4 etats compatibles. La cible documentaire de `preuves-manuelles.md` tache 1 a ete sous-estimee et doit etre corrigee a 20.
+- **3 invariants de ressource PASSE** sur les 20 marquages : verification automatique de `verifierInvariantCanton`, `verifierInvariantQuai`, `verifierInvariantPortes` (cf `Analyseur.scala`).
+- **2 invariants critiques de surete PSD PASSE** :
+  - `PSD-Open` : aucun marquage parmi M11, M13, M15, M17, M18, M19 (les seuls avec `Portes_ouvertes`) n'a `T1_a_quai = T2_a_quai = 0`. Verifiable visuellement : chacun de ces 6 marquages contient `Ti_a_quai` pour au moins un i.
+  - `PSD-Departure` : pour tout marquage avec `Ti_a_quai`, la transition `Ti_depart_quai` n'est tirable que si `Portes_fermees=1`. Aucune violation detectee.
+- **0 deadlock** : depuis chaque marquage atteignable, au moins une transition est tirable.
+- **Exclusion mutuelle canton et quai PASSE** : aucun marquage n'a `T1_sur_canton + T2_sur_canton > 1` ou `T1_a_quai + T2_a_quai > 1`.
+
+### 6.3 Correspondance avec les scenarios
+
+Les marquages observes a chaque etape des scenarios 1 et 2 (sections 2 et 3) sont tous presents dans la liste M0..M19 :
+
+| Scenario  | Marquage etape  | Identifiant analyseur |
+|-----------|-----------------|------------------------|
+| Scenario 1 etape 0 (initial) | `(Canton_libre, Quai_libre, Portes_fermees, T1_hors, T2_hors)` | M0  |
+| Scenario 1 etape 1 | `(Canton_libre, Quai_libre, Portes_fermees, T1_attente, T2_hors)` | M1  |
+| Scenario 1 etape 2 | `(Quai_libre, Portes_fermees, T1_sur_canton, T2_hors)` | M3  |
+| Scenario 1 etape 3 | `(Canton_libre, Portes_fermees, T1_a_quai, T2_hors)` | M6  |
+| Scenario 1 etape 4 | `(Canton_libre, Portes_ouvertes, T1_a_quai, T2_hors)` | M11 |
+| Scenario 1 etape 5 | `(Canton_libre, Portes_fermees, T1_a_quai, T2_hors)` | M6 (retour) |
+| Scenario 1 etape 6 | `(Canton_libre, Quai_libre, Portes_fermees, T1_hors, T2_hors)` | M0 (cycle ferme) |
+| Scenario 2 etape 4 | `(Canton_libre, Portes_fermees, T1_a_quai, T2_attente)` | M10 |
+| Scenario 2 etape 5 | `(Portes_fermees, T1_a_quai, T2_sur_canton)` | M14 |
+| Scenario 2 etape 6 | `(Portes_ouvertes, T1_a_quai, T2_sur_canton)` | M18 |
+
+Tous les marquages produits par les simulations Akka des scenarios 1 et 2 appartiennent a l'espace d'etats calcule par l'analyseur. **Convergence simulation/modele formel confirmee.**
+
+### 6.4 Marquages "interessants" pour la surete PSD
+
+Les 6 marquages avec `Portes_ouvertes` (M11, M13, M15, M17, M18, M19) sont les temoins critiques de la propriete PSD-Open. Pour chacun, on verifie a la main que `T1_a_quai` ou `T2_a_quai` est present :
+- M11 : T1_a_quai. OK
+- M13 : T2_a_quai. OK
+- M15 : T1_a_quai (T2 en attente, hors quai). OK
+- M17 : T2_a_quai (T1 en attente, hors quai). OK
+- M18 : T1_a_quai (T2 sur canton, hors quai). OK
+- M19 : T2_a_quai (T1 sur canton, hors quai). OK
+
+Aucun marquage n'a `Portes_ouvertes` sans train a quai. **Surete PSD-Open programmatiquement confirmee.**
 
 ---
 

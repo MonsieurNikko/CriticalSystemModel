@@ -187,12 +187,12 @@ Ordre d'implementation impose : Protocol -> QuaiController -> Train -> Gestionna
 - [x] D.1 — `sbt clean compile` PASS
 - [x] D.2 — `sbt test` : **39 tests verts**
 - [x] D.3 — `sbt "runMain m14.petri.Analyseur"` : **20 marquages** atteignables (M0..M19), 5 invariants PASS, 0 deadlock
-- [ ] D.4 — Remplir les sections narratives du `rapport.md` (1, 2, 3, 4, 7, 8) avec les sorties reelles de l'analyseur
-- [ ] D.5 — Remplir la section 6 de `comparaison.md` avec les sorties analyseur
+- [x] D.4 — Sections narratives du `rapport.md` (1, 2, 3, 4, 6, 7, 8) remplies avec la sortie reelle de l'analyseur (29/04/2026)
+- [x] D.5 — Section 6 de `comparaison.md` remplie : sortie console reproduite verbatim + tableau de correspondance scenarios <-> marquages M0..M19 (29/04/2026)
 - [x] D.6 — Commit atomique Phase B+C + entree `historique.md`
 - [ ] D.7 — Merge `extension` -> `main` avec `--no-ff` (apres relecture equipe)
 - [x] D.8 — Push branche `extension` : 34dc087
-- **Verification globale** : `sbt test` vert (39/39) + 5 invariants PASS + `preuves-manuelles.md` taches 2bis a remplir (D.4)
+- **Verification globale** : `sbt test` vert (39/39) + 5 invariants PASS + rapport.md et comparaison.md finalises avec sortie reelle. Reste D.7 (merge) et Phase 7 (LTL programmatique).
 
 ---
 

@@ -3,713 +3,754 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Demo M14 - Troncon critique</title>
+  <title>Demo M14 - Canton + Quai + Portes palieres (PSD)</title>
   <style>
     :root {
-      --bg: #f6f7f9;
+      --bg: #f5f7fa;
       --ink: #1f2933;
       --muted: #64748b;
       --line: #d6dbe3;
       --panel: #ffffff;
-      --track: #46535f;
-      --section: #f2c14e;
-      --ok: #1f8a70;
-      --warn: #b7791f;
-      --danger: #c2410c;
+      --rail: #46535f;
+      --canton-bg: rgba(242, 193, 78, 0.18);
+      --canton-fg: #b45309;
+      --canton-edge: #f2c14e;
+      --quai-bg: rgba(110, 231, 183, 0.22);
+      --quai-fg: #047857;
+      --quai-edge: #6ee7b7;
+      --portes-fermees: #94a3b8;
+      --portes-ouvertes: #22c55e;
+      --ok: #16a34a;
+      --danger: #dc2626;
       --t1: #2563eb;
       --t2: #0f766e;
+      --akka: #7c3aed;
+      --petri: #ea580c;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
       min-height: 100vh;
       background: var(--bg);
       color: var(--ink);
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: "Segoe UI", Arial, Helvetica, sans-serif;
     }
 
     header {
-      padding: 18px 24px 12px;
+      padding: 16px 24px 12px;
       border-bottom: 1px solid var(--line);
       background: var(--panel);
     }
-
-    h1 {
-      margin: 0;
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: 0;
-    }
-
-    .subtitle {
-      margin-top: 4px;
-      color: var(--muted);
-      font-size: 14px;
-    }
+    h1 { margin: 0; font-size: 22px; font-weight: 700; }
+    .subtitle { margin-top: 4px; color: var(--muted); font-size: 13px; }
 
     .controls {
       display: grid;
-      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      grid-template-columns: 2fr 1fr auto auto auto;
       gap: 10px;
-      padding: 14px 24px;
+      padding: 12px 24px;
       border-bottom: 1px solid var(--line);
       background: var(--panel);
+      align-items: end;
     }
-
     label {
-      display: grid;
-      gap: 5px;
+      display: grid; gap: 5px;
       color: var(--muted);
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
     }
-
-    select,
-    input[type="range"],
-    button {
-      min-height: 38px;
+    select, button {
+      min-height: 36px;
       border: 1px solid var(--line);
       border-radius: 6px;
       background: #fff;
       color: var(--ink);
       font: inherit;
+      padding: 0 14px;
     }
+    button { cursor: pointer; font-weight: 700; }
+    button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+    button:disabled { cursor: default; color: #94a3b8; background: #eef1f5; }
 
-    button {
-      cursor: pointer;
-      font-weight: 700;
+    /* Bandeau invariants (4 cartes) */
+    .invariants {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding: 10px 24px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
     }
-
-    button.primary {
-      background: var(--ink);
-      color: #fff;
-      border-color: var(--ink);
+    .inv {
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      font-size: 12px;
+      display: grid;
+      grid-template-columns: 14px 1fr;
+      align-items: center;
+      gap: 8px;
+      background: #f0faf4;
     }
-
-    button:disabled {
-      cursor: default;
-      color: #94a3b8;
-      background: #eef1f5;
-    }
+    .inv .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--ok); }
+    .inv.bad { border-color: var(--danger); background: #fef2f2; }
+    .inv.bad .dot { background: var(--danger); }
 
     main {
       display: grid;
-      grid-template-columns: minmax(360px, 1.1fr) minmax(340px, 0.9fr);
-      gap: 18px;
-      padding: 18px 24px 24px;
+      grid-template-columns: minmax(480px, 1.3fr) minmax(340px, 0.7fr);
+      gap: 16px;
+      padding: 16px 24px 24px;
     }
 
-    section {
-      min-width: 0;
+    section.card {
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
       overflow: hidden;
+      min-width: 0;
     }
-
-    .section-title {
-      padding: 12px 14px;
+    .card-title {
+      padding: 10px 14px;
       border-bottom: 1px solid var(--line);
       font-weight: 700;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
+    .card-title .meta { font-weight: 400; color: var(--muted); font-size: 12px; }
 
+    /* ============================================================== */
+    /* SCENE                                                            */
+    /* ============================================================== */
+    /*
+       Une scene unique avec 5 zones HORIZONTALES partagees par les deux trains :
+         |  hors-G  |  attente-G  |  CANTON  |  QUAI  |  attente-D  |  hors-D  |
+       T1 entre par la gauche (hors-G) et sort par la droite (hors-D).
+       T2 entre par la droite (hors-D) et sort par la gauche (hors-G).
+       T1 et T2 sont sur deux voies visuelles superposees (top fixes), mais ils
+       partagent les MEMES coordonnees x pour chaque zone (canton et quai sont
+       des ressources UNIQUES dans le modele).
+    */
     .stage {
       position: relative;
-      height: 320px;
-      background: #eef2f6;
+      height: 280px;
+      background: linear-gradient(180deg, #eef2f6 0%, #e2e8f0 100%);
+      overflow: hidden;
     }
+    /* Une seule voie partagee : canton et quai sont des ressources UNIQUES */
+    .rail { position: absolute; left: 2%; right: 2%; height: 4px; top: 142px; background: var(--rail); border-radius: 999px; opacity: 0.6; }
 
-    .track {
+    /* Zones (coordonnees uniques, partagees entre T1 et T2) */
+    .zone {
       position: absolute;
-      left: 7%;
-      right: 7%;
-      height: 8px;
-      top: 150px;
-      background: var(--track);
-      border-radius: 999px;
-    }
-
-    .critical-section {
-      position: absolute;
-      left: 42%;
-      width: 16%;
-      top: 118px;
-      height: 72px;
-      border: 3px solid var(--section);
-      border-radius: 8px;
-      background: rgba(242, 193, 78, 0.2);
-    }
-
-    .section-label {
-      position: absolute;
-      left: 40%;
-      width: 20%;
-      top: 198px;
-      text-align: center;
-      color: var(--warn);
-      font-size: 13px;
+      top: 36px;
+      height: 208px;
+      border-radius: 10px;
+      border: 2px dashed transparent;
+      display: grid;
+      align-content: end;
+      justify-items: center;
+      padding-bottom: 6px;
+      color: var(--muted);
+      font-size: 10px;
       font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
     }
+    .zone.hors-amont { left: 2%;  width: 14%; }
+    .zone.attente    { left: 18%; width: 14%; border-color: var(--canton-edge); color: var(--canton-fg); background: rgba(242,193,78,0.07); }
+    .zone.canton     { left: 34%; width: 16%; border-color: var(--canton-edge); color: var(--canton-fg); background: var(--canton-bg); }
+    .zone.quai       { left: 52%; width: 22%; border-color: var(--quai-edge);   color: var(--quai-fg);   background: var(--quai-bg); }
+    .zone.hors-aval  { left: 76%; width: 22%; }
 
+    /* Portes palieres : 2 panneaux qui glissent au-dessus du quai */
+    .portes {
+      position: absolute;
+      left: 52%; width: 22%;
+      top: 22px; height: 14px;
+      pointer-events: none;
+      z-index: 4;
+    }
+    .portes .panneau {
+      position: absolute;
+      top: 0; height: 14px; width: 50%;
+      background: var(--portes-fermees);
+      transition: transform 360ms ease, background 360ms ease;
+      border-radius: 2px;
+    }
+    .portes .panneau.gauche { left: 0; }
+    .portes .panneau.droite { right: 0; }
+    .portes.ouvertes .panneau { background: var(--portes-ouvertes); }
+    .portes.ouvertes .panneau.gauche { transform: translateX(-90%); }
+    .portes.ouvertes .panneau.droite { transform: translateX(90%); }
+
+    /* Trains : meme x pour une zone donnee, top different (deux voies) */
     .train {
       position: absolute;
-      width: 96px;
-      height: 42px;
-      display: grid;
-      place-items: center;
+      width: 88px; height: 38px;
+      display: grid; place-items: center;
       border-radius: 6px;
-      color: #fff;
-      font-weight: 700;
-      transition: left 260ms ease, right 260ms ease, top 260ms ease;
+      color: #fff; font-weight: 700; font-size: 13px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.22);
+      transition: left 600ms cubic-bezier(.4,1.2,.5,1);
+      z-index: 5;
+      left: var(--x, 4%);
+      transform: translateX(-50%);
+    }
+    .train { top: 124px; }
+    .train.t1 { background: var(--t1); }
+    .train.t2 { background: var(--t2); }
+
+    /* Overlay violation */
+    .overlay-violation {
+      position: absolute;
+      inset: 0;
+      background: rgba(220,38,38,0.0);
+      display: grid; place-items: center;
+      pointer-events: none;
+      transition: background 200ms;
+      z-index: 10;
+    }
+    .overlay-violation.actif {
+      background: rgba(220,38,38,0.20);
+      animation: blink 0.5s infinite alternate;
+    }
+    .overlay-violation .badge {
+      background: var(--danger); color: #fff;
+      padding: 12px 20px; border-radius: 8px;
+      font-weight: 800; font-size: 16px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+      opacity: 0;
+      transform: scale(0.85);
+      transition: opacity 200ms, transform 200ms;
+    }
+    .overlay-violation.actif .badge { opacity: 1; transform: scale(1); }
+    @keyframes blink {
+      from { background: rgba(220,38,38,0.10); }
+      to   { background: rgba(220,38,38,0.30); }
     }
 
-    .train.t1 {
-      background: var(--t1);
-    }
-
-    .train.t2 {
-      background: var(--t2);
-    }
-
-    .t1.hors {
-      left: 8%;
-      top: 92px;
-    }
-
-    .t1.attente {
-      left: 29%;
-      top: 92px;
-    }
-
-    .t1.sur {
-      left: 44%;
-      top: 92px;
-    }
-
-    .t2.hors {
-      left: calc(92% - 96px);
-      top: 174px;
-    }
-
-    .t2.attente {
-      left: calc(71% - 96px);
-      top: 174px;
-    }
-
-    .t2.sur {
-      left: calc(56% - 96px);
-      top: 174px;
-    }
-
-    .status-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      padding: 14px;
-      border-top: 1px solid var(--line);
-    }
-
-    .status {
-      padding: 10px;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      background: #fff;
-    }
-
-    .status strong {
-      display: block;
-      margin-bottom: 4px;
+    /* Description scenario */
+    .scenario-desc {
+      padding: 10px 14px;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--line);
       font-size: 13px;
-    }
-
-    .status span {
       color: var(--muted);
-      font-size: 14px;
     }
+    .scenario-desc strong { color: var(--ink); }
 
-    .status.ok strong {
-      color: var(--ok);
-    }
-
-    .status.bad strong {
-      color: var(--danger);
-    }
-
-    .petri-body {
+    /* Timeline */
+    .timeline {
+      padding: 10px 14px;
+      border-top: 1px solid var(--line);
+      background: #fafbfc;
       display: grid;
-      gap: 14px;
-      padding: 14px;
+      gap: 4px;
+      max-height: 200px;
+      overflow-y: auto;
     }
-
-    .places {
+    .timeline-step {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: 28px 1fr;
       gap: 8px;
+      padding: 5px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      align-items: start;
+      border-left: 3px solid transparent;
     }
+    .timeline-step.actif { background: #e0e7ff; font-weight: 600; border-left-color: var(--ink); }
+    .timeline-step.passe { color: var(--muted); }
+    .timeline-step.violation .num { color: var(--danger); font-weight: 700; }
+    .timeline-step .num { color: var(--muted); font-variant-numeric: tabular-nums; }
 
+    /* Petri */
+    .petri-body { display: grid; gap: 12px; padding: 12px 14px; }
+    .petri-section-title {
+      font-size: 11px; font-weight: 700;
+      color: var(--muted); text-transform: uppercase;
+      margin-bottom: -4px;
+    }
+    .places { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
     .place {
-      min-height: 54px;
       display: grid;
-      grid-template-columns: 1fr 28px;
+      grid-template-columns: 1fr 26px;
       align-items: center;
-      gap: 8px;
-      padding: 9px 10px;
+      gap: 6px;
+      padding: 5px 8px;
       border: 1px solid var(--line);
       border-radius: 6px;
       background: #fff;
-      font-size: 13px;
+      font-size: 12px;
+      transition: background 200ms, border-color 200ms;
     }
-
-    .place.active {
-      border-color: var(--ok);
-      background: #f0faf7;
-    }
-
+    .place.active { border-color: var(--ok); background: #f0faf4; }
+    .place .nom { font-family: "Consolas", monospace; font-size: 11px; }
     .token {
-      width: 24px;
-      height: 24px;
-      display: grid;
-      place-items: center;
+      width: 22px; height: 22px;
+      display: grid; place-items: center;
       border-radius: 50%;
       background: #e2e8f0;
       color: var(--muted);
       font-weight: 700;
-    }
-
-    .place.active .token {
-      background: var(--ok);
-      color: #fff;
-    }
-
-    .transitions {
-      display: grid;
-      gap: 6px;
-    }
-
-    .transition {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 8px 10px;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      background: #fff;
-      font-size: 13px;
-    }
-
-    .transition.enabled {
-      border-color: var(--warn);
-      background: #fff8e5;
-    }
-
-    .log {
-      grid-column: 1 / -1;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-
-    th,
-    td {
-      padding: 9px 10px;
-      border-bottom: 1px solid var(--line);
-      text-align: left;
-      vertical-align: top;
-    }
-
-    th {
-      color: var(--muted);
       font-size: 12px;
-      text-transform: uppercase;
-      background: #f8fafc;
+      transition: background 200ms, color 200ms, transform 200ms;
+    }
+    .token.on { background: #1f2933; color: #fff; transform: scale(1.1); }
+
+    .transition-banner {
+      padding: 8px 12px;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-radius: 6px;
+      font-size: 13px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+    .transition-banner .label { font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700; }
+    .transition-banner .nom { font-family: "Consolas", monospace; font-weight: 700; color: var(--petri); font-size: 13px; }
+    .transition-banner.violation { background: #fef2f2; border-color: #fecaca; }
+    .transition-banner.violation .nom { color: var(--danger); }
+    .transition-banner.idle { background: #f1f5f9; border-color: var(--line); }
+    .transition-banner.idle .nom { color: var(--muted); font-style: italic; }
+
+    /* Popups Akka */
+    .popups {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      display: grid;
+      gap: 8px;
+      max-width: 360px;
+      z-index: 100;
+      pointer-events: none;
+    }
+    .popup {
+      background: var(--akka);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      animation: slideIn 200ms ease, fadeOut 400ms ease 1500ms forwards;
+    }
+    .popup.violation { background: var(--danger); }
+    .popup .head {
+      font-size: 10px; opacity: 0.85;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+    .popup .body { font-family: "Consolas", monospace; font-size: 12px; }
+    @keyframes slideIn {
+      from { transform: translateX(120%); opacity: 0; }
+      to   { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to   { opacity: 0; transform: translateY(-10px); }
     }
 
-    .empty {
-      color: var(--muted);
-    }
-
-    @media (max-width: 900px) {
-      .controls,
-      main {
-        grid-template-columns: 1fr;
-      }
-
-      .stage {
-        height: 280px;
-      }
-
-      .places {
-        grid-template-columns: 1fr;
-      }
+    @media (max-width: 980px) {
+      main { grid-template-columns: 1fr; }
+      .controls { grid-template-columns: 1fr 1fr; }
+      .invariants { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>M14 - Troncon critique partage</h1>
-    <div class="subtitle">Simulation visuelle synchronisee avec les transitions du reseau de Petri</div>
+    <h1>Demo M14 - Canton + Quai + Portes palieres</h1>
+    <div class="subtitle">Simulation animee rejouant les traces produites par le code Scala (<code>m14.demo.GenererTraces</code>).</div>
   </header>
 
   <div class="controls">
     <label>
       Scenario
       <select id="scenarioSelect">
-        <option value="nominal">Nominal</option>
-        <option value="concurrence">Concurrence</option>
-        <option value="progression">Liberation / progression</option>
-      </select>
-    </label>
-    <label>
-      Premier train
-      <select id="orderSelect">
-        <option value="T1">Train1</option>
-        <option value="T2">Train2</option>
+        <option value="nominal">A - Cycle nominal complet</option>
+        <option value="concurrence">B - Concurrence canton + quai</option>
+        <option value="violation">C - Tentative PSD invalide (CRITIQUE)</option>
       </select>
     </label>
     <label>
       Vitesse
-      <input id="speedInput" type="range" min="250" max="1600" value="850" step="50">
+      <select id="vitesseSelect">
+        <option value="2000">Lente (2 s)</option>
+        <option value="1200" selected>Normale (1.2 s)</option>
+        <option value="600">Rapide (0.6 s)</option>
+        <option value="0">Pas-a-pas (manuel)</option>
+      </select>
     </label>
-    <button id="resetButton">Reset</button>
-    <button id="prevButton">Precedent</button>
-    <button id="nextButton" class="primary">Suivant</button>
-    <button id="playButton">Lecture</button>
+    <button id="btnPlay" class="primary">Lecture</button>
+    <button id="btnStep">Pas suivant</button>
+    <button id="btnReset">Reset</button>
+  </div>
+
+  <div class="invariants" id="invariants">
+    <div class="inv" data-inv="canton"><span class="dot"></span><span>Canton (mut. excl.)</span></div>
+    <div class="inv" data-inv="quai"><span class="dot"></span><span>Quai (mut. excl.)</span></div>
+    <div class="inv" data-inv="portes"><span class="dot"></span><span>Portes (1 etat)</span></div>
+    <div class="inv" data-inv="psdOpen"><span class="dot"></span><span>PSD-Open (CRITIQUE)</span></div>
   </div>
 
   <main>
-    <section>
-      <div class="section-title">Simulation Akka</div>
-      <div class="stage">
-        <div class="track"></div>
-        <div class="critical-section"></div>
-        <div class="section-label">Troncon critique</div>
-        <div id="train1" class="train t1 hors">Train1</div>
-        <div id="train2" class="train t2 hors">Train2</div>
+    <section class="card">
+      <div class="card-title">
+        <span>Vue physique</span>
+        <span class="meta">Voie unique unidirectionnelle (gauche &rarr; droite) &mdash; T2 suit T1 dans la file</span>
       </div>
-      <div class="status-grid">
-        <div id="resourceStatus" class="status ok">
-          <strong>Invariant ressource</strong>
-          <span>OK</span>
+      <div class="scenario-desc" id="scenarioDesc"></div>
+      <div class="stage" id="stage">
+        <div class="rail"></div>
+
+        <div class="zone hors-amont">Hors (amont)</div>
+        <div class="zone attente">Attente</div>
+        <div class="zone canton">Canton</div>
+        <div class="zone quai">Quai</div>
+        <div class="zone hors-aval">Hors (aval)</div>
+
+        <div class="portes" id="portes">
+          <div class="panneau gauche"></div>
+          <div class="panneau droite"></div>
         </div>
-        <div id="collisionStatus" class="status ok">
-          <strong>Collision</strong>
-          <span>NON</span>
-        </div>
-        <div id="deadlockStatus" class="status ok">
-          <strong>Deadlock</strong>
-          <span>NON</span>
-        </div>
-        <div id="stepStatus" class="status">
-          <strong>Etape</strong>
-          <span>M0</span>
+
+        <div class="train t1" id="trainT1">T1</div>
+        <div class="train t2" id="trainT2">T2</div>
+
+        <div class="overlay-violation" id="overlayViolation">
+          <div class="badge">TENTATIVE BLOQUEE par garde de surete</div>
         </div>
       </div>
+      <div class="timeline" id="timeline"></div>
     </section>
 
-    <section>
-      <div class="section-title">Reseau de Petri</div>
+    <section class="card">
+      <div class="card-title">
+        <span>Reseau de Petri</span>
+        <span class="meta">12 places, 12 transitions</span>
+      </div>
       <div class="petri-body">
-        <div id="places" class="places"></div>
-        <div id="transitions" class="transitions"></div>
-      </div>
-    </section>
+        <div class="transition-banner idle" id="transitionBanner">
+          <span class="label">Transition</span>
+          <span class="nom">-</span>
+        </div>
 
-    <section class="log">
-      <div class="section-title">Trace messages / transitions</div>
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Evenement Akka</th>
-            <th>Transition Petri</th>
-            <th>Marquage actif</th>
-          </tr>
-        </thead>
-        <tbody id="traceBody"></tbody>
-      </table>
+        <div>
+          <div class="petri-section-title">Ressources globales</div>
+          <div class="places" id="placesGlobales"></div>
+        </div>
+        <div>
+          <div class="petri-section-title">Train 1</div>
+          <div class="places" id="placesT1"></div>
+        </div>
+        <div>
+          <div class="petri-section-title">Train 2</div>
+          <div class="places" id="placesT2"></div>
+        </div>
+      </div>
     </section>
   </main>
 
-  <script>
-    const places = [
-      "Troncon_libre",
-      "T1_hors",
-      "T1_attente",
-      "T1_sur_troncon",
-      "T2_hors",
-      "T2_attente",
-      "T2_sur_troncon"
-    ];
+  <div class="popups" id="popups"></div>
 
-    const transitions = {
-      T1_demande: { pre: ["T1_hors"], post: ["T1_attente"] },
-      T2_demande: { pre: ["T2_hors"], post: ["T2_attente"] },
-      T1_entree_autorisee: { pre: ["T1_attente", "Troncon_libre"], post: ["T1_sur_troncon"] },
-      T2_entree_autorisee: { pre: ["T2_attente", "Troncon_libre"], post: ["T2_sur_troncon"] },
-      T1_sortie_liberation: { pre: ["T1_sur_troncon"], post: ["T1_hors", "Troncon_libre"] },
-      T2_sortie_liberation: { pre: ["T2_sur_troncon"], post: ["T2_hors", "Troncon_libre"] }
+  <script>
+    "use strict";
+
+    // ===================================================================
+    // Constantes : places (miroir de PetriNet.scala) et coordonnees
+    // ===================================================================
+    const PLACES = {
+      globales: ["Canton_libre", "Quai_libre", "Portes_fermees", "Portes_ouvertes"],
+      T1: ["T1_hors", "T1_attente", "T1_sur_canton", "T1_a_quai"],
+      T2: ["T2_hors", "T2_attente", "T2_sur_canton", "T2_a_quai"]
     };
 
-    const scenarioSelect = document.getElementById("scenarioSelect");
-    const orderSelect = document.getElementById("orderSelect");
-    const speedInput = document.getElementById("speedInput");
-    const resetButton = document.getElementById("resetButton");
-    const prevButton = document.getElementById("prevButton");
-    const nextButton = document.getElementById("nextButton");
-    const playButton = document.getElementById("playButton");
-    const train1 = document.getElementById("train1");
-    const train2 = document.getElementById("train2");
-    const placesRoot = document.getElementById("places");
-    const transitionsRoot = document.getElementById("transitions");
-    const traceBody = document.getElementById("traceBody");
-    const resourceStatus = document.getElementById("resourceStatus");
-    const collisionStatus = document.getElementById("collisionStatus");
-    const deadlockStatus = document.getElementById("deadlockStatus");
-    const stepStatus = document.getElementById("stepStatus");
+    // Centre de chaque zone (left + width/2). Voir CSS .zone ci-dessus.
+    // VOIE UNIDIRECTIONNELLE : tous les trains vont de gauche a droite.
+    //   horsAmont -> attente -> canton -> quai -> horsAval
+    const CENTRES = {
+      horsAmont: 9,    //  2 + 14/2
+      attente:   25,   // 18 + 14/2
+      canton:    42,   // 34 + 16/2
+      quai:      63,   // 52 + 22/2
+      horsAval:  87    // 76 + 22/2
+    };
 
-    let stepIndex = -1;
-    let playing = false;
-    let timerId = null;
+    // Quand les deux trains sont dans la MEME zone "hors" au depart,
+    // on les decale legerement pour qu'ils ne se chevauchent pas :
+    //   T1 devant (plus pres de attente), T2 derriere.
+    const OFFSET_FILE = 6; // en % (largeur d'un train ~= 5%)
 
-    function initialMarking() {
-      return {
-        Troncon_libre: 1,
-        T1_hors: 1,
-        T1_attente: 0,
-        T1_sur_troncon: 0,
-        T2_hors: 1,
-        T2_attente: 0,
-        T2_sur_troncon: 0
-      };
-    }
-
-    function otherTrain(firstTrain) {
-      return firstTrain === "T1" ? "T2" : "T1";
-    }
-
-    function transitionName(train, action) {
-      if (action === "demande") return train + "_demande";
-      if (action === "entree") return train + "_entree_autorisee";
-      return train + "_sortie_liberation";
-    }
-
-    function trainLabel(train) {
-      return train === "T1" ? "Train1" : "Train2";
-    }
-
-    function buildScenario() {
-      const first = orderSelect.value;
-      const second = otherTrain(first);
-      const scenario = scenarioSelect.value;
-
-      if (scenario === "nominal") {
-        return [
-          { message: trainLabel(first) + " -> Controleur : Demande", transition: transitionName(first, "demande") },
-          { message: "Controleur -> " + trainLabel(first) + " : Autorisation", transition: transitionName(first, "entree") },
-          { message: trainLabel(first) + " -> Controleur : Sortie", transition: transitionName(first, "sortie") }
-        ];
+    // Etat -> position centrale (en %, sans suffixe).
+    function positionPour(idTrain, etat, autreTrain) {
+      switch (etat) {
+        case "attente": return CENTRES.attente;
+        case "canton":  return CENTRES.canton;
+        case "quai":    return CENTRES.quai;
+        case "hors": {
+          // Si le train a deja franchi le quai dans ce scenario => hors aval.
+          if (aFiniCycle[idTrain]) return CENTRES.horsAval;
+          // Sinon il est encore amont. S'il y a deux trains en hors-amont,
+          // T1 devant, T2 derriere (file d'attente avant la section).
+          if (autreTrain === "hors" && !aFiniCycle["T1"] && !aFiniCycle["T2"]) {
+            return idTrain === "T1"
+              ? CENTRES.horsAmont + OFFSET_FILE / 2
+              : CENTRES.horsAmont - OFFSET_FILE / 2;
+          }
+          return CENTRES.horsAmont;
+        }
       }
-
-      if (scenario === "concurrence") {
-        return [
-          { message: trainLabel(first) + " -> Controleur : Demande", transition: transitionName(first, "demande") },
-          { message: "Controleur -> " + trainLabel(first) + " : Autorisation", transition: transitionName(first, "entree") },
-          { message: trainLabel(second) + " -> Controleur : Demande", transition: transitionName(second, "demande") },
-          { message: "Controleur -> " + trainLabel(second) + " : Attente", transition: null }
-        ];
-      }
-
-      return [
-        { message: trainLabel(first) + " -> Controleur : Demande", transition: transitionName(first, "demande") },
-        { message: "Controleur -> " + trainLabel(first) + " : Autorisation", transition: transitionName(first, "entree") },
-        { message: trainLabel(second) + " -> Controleur : Demande", transition: transitionName(second, "demande") },
-        { message: "Controleur -> " + trainLabel(second) + " : Attente", transition: null },
-        { message: trainLabel(first) + " -> Controleur : Sortie", transition: transitionName(first, "sortie") },
-        { message: "Controleur -> " + trainLabel(second) + " : Autorisation", transition: transitionName(second, "entree") },
-        { message: trainLabel(second) + " -> Controleur : Sortie", transition: transitionName(second, "sortie") }
-      ];
     }
 
-    function isEnabled(marking, transitionKey) {
-      return transitions[transitionKey].pre.every((place) => marking[place] >= 1);
-    }
+    // Memorise si chaque train a deja effectue son cycle (pour distinguer
+    // hors-amont de hors-aval). Reset a chaque chargement de scenario.
+    const aFiniCycle = { T1: false, T2: false };
 
-    function fire(marking, transitionKey) {
-      if (!transitionKey) return { ...marking };
-      if (!isEnabled(marking, transitionKey)) return { ...marking, invalid: true };
-
-      const next = { ...marking };
-      transitions[transitionKey].pre.forEach((place) => {
-        next[place] -= 1;
-      });
-      transitions[transitionKey].post.forEach((place) => {
-        next[place] += 1;
-      });
-      return next;
-    }
-
-    function markingAt(index) {
-      const events = buildScenario();
-      let marking = initialMarking();
-      for (let i = 0; i <= index; i += 1) {
-        marking = fire(marking, events[i].transition);
-      }
-      return marking;
-    }
-
-    function activePlaces(marking) {
-      return places.filter((place) => marking[place] > 0).join(", ");
-    }
-
-    function trainState(marking, train) {
-      if (marking[train + "_sur_troncon"] > 0) return "sur";
-      if (marking[train + "_attente"] > 0) return "attente";
+    // ===================================================================
+    // Helpers : derivations a partir d'un marquage
+    // ===================================================================
+    function etatTrain(m, id) {
+      if (m[id + "_a_quai"] === 1)      return "quai";
+      if (m[id + "_sur_canton"] === 1)  return "canton";
+      if (m[id + "_attente"] === 1)     return "attente";
       return "hors";
     }
 
-    function setStatus(element, ok, value) {
-      element.classList.toggle("ok", ok);
-      element.classList.toggle("bad", !ok);
-      element.querySelector("span").textContent = value;
+    function portesOuvertes(m) {
+      return m["Portes_ouvertes"] === 1;
     }
 
-    function renderPlaces(marking) {
-      placesRoot.innerHTML = "";
-      places.forEach((place) => {
-        const node = document.createElement("div");
-        node.className = "place" + (marking[place] > 0 ? " active" : "");
-        node.innerHTML = "<span>" + place + "</span><span class=\"token\">" + marking[place] + "</span>";
-        placesRoot.appendChild(node);
+    // Verification des invariants en JS (miroir simplifie de Analyseur.scala).
+    // PSD-Departure n'est pas un invariant local sur un seul marquage : il
+    // s'exprime au niveau temporel (LTL) et est garanti structurellement par
+    // la pre-condition de Ti_depart_quai (Portes_fermees=1). On n'affiche
+    // donc que les 4 invariants verifiables localement.
+    function verifierInvariants(m) {
+      const canton = (m.T1_sur_canton + m.T2_sur_canton + m.Canton_libre) === 1;
+      const quai   = (m.T1_a_quai + m.T2_a_quai + m.Quai_libre) === 1;
+      const portes = (m.Portes_fermees + m.Portes_ouvertes) === 1;
+      const psdOpen = m.Portes_ouvertes === 0 || (m.T1_a_quai + m.T2_a_quai) >= 1;
+      return { canton, quai, portes, psdOpen };
+    }
+
+    // ===================================================================
+    // Construction du DOM des places (une seule fois au chargement)
+    // ===================================================================
+    function creerPlaces(containerId, noms) {
+      const c = document.getElementById(containerId);
+      c.innerHTML = "";
+      for (const nom of noms) {
+        const div = document.createElement("div");
+        div.className = "place";
+        div.id = "place-" + nom;
+        div.innerHTML = `<span class="nom">${nom}</span><span class="token" id="tok-${nom}">0</span>`;
+        c.appendChild(div);
+      }
+    }
+    creerPlaces("placesGlobales", PLACES.globales);
+    creerPlaces("placesT1", PLACES.T1);
+    creerPlaces("placesT2", PLACES.T2);
+
+    const TOUTES_PLACES = [...PLACES.globales, ...PLACES.T1, ...PLACES.T2];
+
+    // ===================================================================
+    // Application d'un marquage : trains, portes, jetons, invariants
+    // ===================================================================
+    function appliquerMarquage(m) {
+      // Jetons
+      for (const p of TOUTES_PLACES) {
+        const v = m[p] | 0;
+        const tok = document.getElementById("tok-" + p);
+        const place = document.getElementById("place-" + p);
+        tok.textContent = v;
+        tok.classList.toggle("on", v >= 1);
+        place.classList.toggle("active", v >= 1);
+      }
+      // Trains : voie unique unidirectionnelle (canton et quai = ressources mutex,
+      // T2 SUIT T1 dans la file). Les flags aFiniCycle sont positionnes par
+      // lecteur.appliquer() en scannant la trace, ce qui permet aussi le retour arriere.
+      const etatT1 = etatTrain(m, "T1");
+      const etatT2 = etatTrain(m, "T2");
+      const xT1 = positionPour("T1", etatT1, etatT2);
+      const xT2 = positionPour("T2", etatT2, etatT1);
+      document.getElementById("trainT1").style.setProperty("--x", xT1 + "%");
+      document.getElementById("trainT2").style.setProperty("--x", xT2 + "%");
+      // Portes
+      document.getElementById("portes").classList.toggle("ouvertes", portesOuvertes(m));
+      // Invariants
+      const inv = verifierInvariants(m);
+      document.querySelectorAll(".inv").forEach(el => {
+        el.classList.toggle("bad", !inv[el.dataset.inv]);
       });
     }
 
-    function renderTransitions(marking) {
-      transitionsRoot.innerHTML = "";
-      Object.keys(transitions).forEach((name) => {
-        const enabled = isEnabled(marking, name);
-        const node = document.createElement("div");
-        node.className = "transition" + (enabled ? " enabled" : "");
-        node.innerHTML = "<span>" + name + "</span><strong>" + (enabled ? "tirable" : "bloquee") + "</strong>";
-        transitionsRoot.appendChild(node);
+    // ===================================================================
+    // Popup Akka
+    // ===================================================================
+    function popup(akka, isViolation) {
+      const c = document.getElementById("popups");
+      const p = document.createElement("div");
+      p.className = "popup" + (isViolation ? " violation" : "");
+      p.innerHTML = `
+        <div class="head">${isViolation ? "Refuse par garde" : "Message Akka"}</div>
+        <div class="body">${akka.de} &rarr; ${akka.vers} : <strong>${akka.libelle}</strong></div>`;
+      c.appendChild(p);
+      setTimeout(() => p.remove(), 2000);
+    }
+
+    // ===================================================================
+    // Lecteur de trace
+    // ===================================================================
+    const lecteur = {
+      trace: null,
+      i: 0,
+      timer: null,
+
+      async charger(id) {
+        this.pause();
+        const r = await fetch("trace-" + id + ".json?t=" + Date.now());
+        if (!r.ok) throw new Error("Echec chargement trace-" + id + ".json (HTTP " + r.status + ")");
+        this.trace = await r.json();
+        this.i = 0;
+        // Reset des flags de cycle a chaque nouveau scenario.
+        aFiniCycle.T1 = false;
+        aFiniCycle.T2 = false;
+        document.getElementById("scenarioDesc").innerHTML =
+          `<strong>${this.trace.titre}</strong> &mdash; ${this.trace.description}`;
+        construireTimeline(this.trace);
+        this.appliquer(0);
+        majBoutons();
+      },
+
+      appliquer(i) {
+        this.i = i;
+        // Recalcule aFiniCycle depuis le debut : un train a "fini son cycle"
+        // s'il est passe par "quai" dans une etape <= i.
+        aFiniCycle.T1 = false;
+        aFiniCycle.T2 = false;
+        for (let k = 0; k <= i; k++) {
+          const mk = this.trace.etapes[k].marquage;
+          if (mk.T1_a_quai === 1) aFiniCycle.T1 = true;
+          if (mk.T2_a_quai === 1) aFiniCycle.T2 = true;
+        }
+        const e = this.trace.etapes[i];
+        appliquerMarquage(e.marquage);
+        majBanniere(e);
+        if (e.akka) popup(e.akka, !!e.violation);
+        majOverlay(!!e.violation);
+        majTimeline(i);
+      },
+
+      suivant() {
+        if (!this.trace) return;
+        if (this.i + 1 >= this.trace.etapes.length) { this.pause(); return; }
+        this.appliquer(this.i + 1);
+        majBoutons();
+      },
+
+      lecture() {
+        if (!this.trace) return;
+        const v = +document.getElementById("vitesseSelect").value;
+        if (v === 0) { this.suivant(); return; }
+        this.pause();
+        this.timer = setInterval(() => this.suivant(), v);
+        majBoutons();
+      },
+
+      pause() {
+        if (this.timer) { clearInterval(this.timer); this.timer = null; }
+        majBoutons();
+      },
+
+      reset() {
+        this.pause();
+        aFiniCycle.T1 = false;
+        aFiniCycle.T2 = false;
+        if (this.trace) this.appliquer(0);
+      },
+
+      enLecture() { return this.timer !== null; },
+      termine()   { return this.trace && this.i + 1 >= this.trace.etapes.length; }
+    };
+
+    function construireTimeline(trace) {
+      const t = document.getElementById("timeline");
+      t.innerHTML = "";
+      trace.etapes.forEach((e, i) => {
+        const div = document.createElement("div");
+        div.className = "timeline-step" + (e.violation ? " violation" : "");
+        div.id = "step-" + i;
+        div.innerHTML = `<span class="num">${String(i).padStart(2, "0")}</span><span>${e.label}</span>`;
+        div.addEventListener("click", () => { lecteur.pause(); lecteur.appliquer(i); });
+        t.appendChild(div);
       });
     }
 
-    function renderTrace() {
-      const events = buildScenario();
-      traceBody.innerHTML = "";
-
-      if (stepIndex < 0) {
-        const row = document.createElement("tr");
-        row.innerHTML = "<td colspan=\"4\" class=\"empty\">M0 : " + activePlaces(initialMarking()) + "</td>";
-        traceBody.appendChild(row);
-        return;
-      }
-
-      for (let i = 0; i <= stepIndex; i += 1) {
-        const row = document.createElement("tr");
-        const marking = markingAt(i);
-        row.innerHTML =
-          "<td>" + (i + 1) + "</td>" +
-          "<td>" + events[i].message + "</td>" +
-          "<td>" + (events[i].transition || "Aucune transition") + "</td>" +
-          "<td>" + activePlaces(marking) + "</td>";
-        traceBody.appendChild(row);
-      }
-    }
-
-    function render() {
-      const events = buildScenario();
-      const marking = markingAt(stepIndex);
-      const enabledCount = Object.keys(transitions).filter((name) => isEnabled(marking, name)).length;
-      const resourceSum = marking.T1_sur_troncon + marking.T2_sur_troncon + marking.Troncon_libre;
-      const collision = marking.T1_sur_troncon > 0 && marking.T2_sur_troncon > 0;
-
-      train1.className = "train t1 " + trainState(marking, "T1");
-      train2.className = "train t2 " + trainState(marking, "T2");
-
-      setStatus(resourceStatus, resourceSum === 1, resourceSum === 1 ? "OK" : "ECHEC");
-      setStatus(collisionStatus, !collision, collision ? "OUI" : "NON");
-      setStatus(deadlockStatus, enabledCount > 0, enabledCount > 0 ? "NON" : "OUI");
-      stepStatus.querySelector("span").textContent = stepIndex < 0 ? "M0" : "M" + (stepIndex + 1);
-
-      prevButton.disabled = stepIndex < 0;
-      nextButton.disabled = stepIndex >= events.length - 1;
-
-      renderPlaces(marking);
-      renderTransitions(marking);
-      renderTrace();
-    }
-
-    function stopPlayback() {
-      playing = false;
-      playButton.textContent = "Lecture";
-      if (timerId) {
-        clearTimeout(timerId);
-        timerId = null;
-      }
-    }
-
-    function playNext() {
-      const events = buildScenario();
-      if (!playing || stepIndex >= events.length - 1) {
-        stopPlayback();
-        return;
-      }
-      stepIndex += 1;
-      render();
-      timerId = setTimeout(playNext, Number(speedInput.value));
-    }
-
-    resetButton.addEventListener("click", () => {
-      stopPlayback();
-      stepIndex = -1;
-      render();
-    });
-
-    prevButton.addEventListener("click", () => {
-      stopPlayback();
-      stepIndex = Math.max(-1, stepIndex - 1);
-      render();
-    });
-
-    nextButton.addEventListener("click", () => {
-      stopPlayback();
-      const events = buildScenario();
-      stepIndex = Math.min(events.length - 1, stepIndex + 1);
-      render();
-    });
-
-    playButton.addEventListener("click", () => {
-      if (playing) {
-        stopPlayback();
+    function majBanniere(e) {
+      const banner = document.getElementById("transitionBanner");
+      const nom = banner.querySelector(".nom");
+      banner.classList.remove("idle", "violation");
+      if (e.transition) {
+        if (e.violation) {
+          banner.classList.add("violation");
+          nom.textContent = "[NON TIREE] " + e.transition;
+        } else {
+          nom.textContent = e.transition;
+        }
       } else {
-        playing = true;
-        playButton.textContent = "Pause";
-        playNext();
+        banner.classList.add("idle");
+        nom.textContent = e.akka ? "(notification, pas de tir)" : "(etat initial)";
       }
-    });
+    }
 
-    scenarioSelect.addEventListener("change", () => {
-      stopPlayback();
-      stepIndex = -1;
-      render();
-    });
+    function majOverlay(actif) {
+      const overlay = document.getElementById("overlayViolation");
+      overlay.classList.toggle("actif", actif);
+      if (actif) setTimeout(() => overlay.classList.remove("actif"), 1500);
+    }
 
-    orderSelect.addEventListener("change", () => {
-      stopPlayback();
-      stepIndex = -1;
-      render();
-    });
+    function majTimeline(i) {
+      document.querySelectorAll(".timeline-step").forEach((s, j) => {
+        s.classList.toggle("actif", j === i);
+        s.classList.toggle("passe", j < i);
+      });
+      const actif = document.getElementById("step-" + i);
+      if (actif) actif.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
 
-    render();
+    function majBoutons() {
+      document.getElementById("btnPlay").textContent = lecteur.enLecture() ? "Pause" : "Lecture";
+      document.getElementById("btnStep").disabled = !lecteur.trace || lecteur.termine();
+    }
+
+    // ===================================================================
+    // Event listeners
+    // ===================================================================
+    document.getElementById("scenarioSelect").addEventListener("change", e => {
+      lecteur.charger(e.target.value).catch(err => alert(err.message));
+    });
+    document.getElementById("vitesseSelect").addEventListener("change", () => {
+      if (lecteur.enLecture()) lecteur.lecture();
+    });
+    document.getElementById("btnPlay").addEventListener("click", () => {
+      if (lecteur.enLecture()) lecteur.pause();
+      else if (lecteur.termine()) { lecteur.reset(); lecteur.lecture(); }
+      else lecteur.lecture();
+    });
+    document.getElementById("btnStep").addEventListener("click", () => {
+      lecteur.pause();
+      lecteur.suivant();
+    });
+    document.getElementById("btnReset").addEventListener("click", () => lecteur.reset());
+
+    // Chargement initial
+    lecteur.charger("nominal").catch(err => alert(err.message));
   </script>
 </body>
 </html>

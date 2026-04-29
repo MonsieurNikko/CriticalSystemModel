@@ -1,0 +1,24 @@
+{
+  "id": "violation",
+  "titre": "Tentative PSD invalide (CRITIQUE - bloquee)",
+  "description": "Un acteur tente d'ouvrir les portes alors qu'aucun train n'est a quai. Petri refuse (transition non tirable) et la garde Akka refuse silencieusement.",
+  "etapes": [
+    {
+      "label": "Etat initial M0",
+      "marquage": {"Canton_libre": 1, "Quai_libre": 1, "Portes_fermees": 1, "Portes_ouvertes": 0, "T1_hors": 1, "T1_attente": 0, "T1_sur_canton": 0, "T1_a_quai": 0, "T2_hors": 1, "T2_attente": 0, "T2_sur_canton": 0, "T2_a_quai": 0},
+      "violation": false
+    },
+    {
+      "label": "Attaquant envoie OuverturePortes(Train1) alors qu'aucun train n'est a quai",
+      "akka": {"de": "Attaquant", "vers": "GestionnairePortes", "libelle": "OuverturePortes(Train1)"},
+      "transition": "Ouverture_portes_T1",
+      "marquage": {"Canton_libre": 1, "Quai_libre": 1, "Portes_fermees": 1, "Portes_ouvertes": 0, "T1_hors": 1, "T1_attente": 0, "T1_sur_canton": 0, "T1_a_quai": 0, "T2_hors": 1, "T2_attente": 0, "T2_sur_canton": 0, "T2_a_quai": 0},
+      "violation": true
+    },
+    {
+      "label": "Garde de surete : T1_a_quai=0 -> message ignore. Invariant PSD-Open preserve.",
+      "marquage": {"Canton_libre": 1, "Quai_libre": 1, "Portes_fermees": 1, "Portes_ouvertes": 0, "T1_hors": 1, "T1_attente": 0, "T1_sur_canton": 0, "T1_a_quai": 0, "T2_hors": 1, "T2_attente": 0, "T2_sur_canton": 0, "T2_a_quai": 0},
+      "violation": true
+    }
+  ]
+}

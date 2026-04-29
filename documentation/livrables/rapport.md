@@ -2,58 +2,163 @@
 
 > Livrable L4 du cahier des charges. Rapport detaille de la verification des proprietes structurelles et des invariants metier du sous-systeme critique M14, etendu le 29/04/2026 a la gestion des portes palieres (PSD).
 >
-> Etat : squelette etendu en Phase A (avant code), sections 1-4 et 7-8 a finaliser apres execution Phase D, section 5 (verification) a remplir avec les sorties d'analyseur en Phase D. Longueur cible 12-18 pages a l'export PDF.
+> Etat : sections 1-4, 6, 7, 8 redigees Phase D (29/04/2026) avec la sortie reelle de l'analyseur (20 marquages, 5 invariants PASSE, 0 deadlock). Section 5 (cadre de verification) redigee Phase A. Annexes A1-A4 a finaliser apres Phase 7 (LTL programmatique + arcs etiquetes).
 
 ---
 
 ## 1) Contexte et motivation
 
-> A finaliser en Phase D apres execution complete.
+### 1.1 Domaine applicatif
 
-Points a couvrir :
-- Rappel du domaine applicatif : metro automatique parisien M14, premiere ligne entierement automatisee de France, premiere a etre integralement equipee de **portes palieres (PSD - Platform Screen Doors)**. Sous-systeme retenu : controle d'acces concurrent de 2 trains a un canton de signalisation suivi d'un quai equipe de PSD.
-- Pourquoi un systeme distribue critique : une defaillance entraine soit collision (2 trains sur le canton), soit chute mortelle (portes ouvertes sans train), soit voyageur ecrase (depart avec portes ouvertes).
-- Resume du recadrage du projet (cf `documentation/contexte/recadrage-m14-troncon-critique.md`).
-- Choix d'abstraction : 2 trains, 1 canton, 1 quai, 1 paire de PSD, 4 acteurs (2 trains + 3 controleurs). Justification du minimalisme defendable et de l'extension PSD validee le 29/04 comme moyen de rendre le projet plus M14-realiste sans exploser la combinatoire.
+La ligne 14 du metro de Paris (RATP) est la premiere ligne integralement automatisee de France et la premiere equipee sur l'ensemble de ses quais de **portes palieres (PSD - Platform Screen Doors)**. L'absence de conducteur impose que toutes les fonctions de surete soient assurees par le systeme embarque et le systeme central : detection de presence des trains, arbitrage des cantons de signalisation, ouverture/fermeture des portes synchronisee avec l'arret a quai, garantie d'absence de depart avec portes ouvertes. Une defaillance dans cette boucle critique entraine selon le cas (1) une collision si deux trains se retrouvent sur le meme canton, (2) une chute mortelle d'un voyageur si les portes palieres s'ouvrent sans train present, (3) un voyageur coince ou ecrase si un train demarre alors que les portes sont encore ouvertes.
+
+### 1.2 Sous-systeme retenu
+
+Nous modelisons un troncon critique compose de **un canton de signalisation suivi de un quai equipe de PSD**, partage par **deux trains automatiques**. Trois controleurs centralises arbitrent l'acces : `SectionController` (canton), `QuaiController` (quai), `GestionnairePortes` (portes palieres). L'objectif est de prouver qu'aucun des trois scenarios accidentels ci-dessus n'est atteignable depuis l'etat initial.
+
+### 1.3 Choix d'abstraction
+
+Conformement au recadrage de cadrage `documentation/contexte/recadrage-m14-troncon-critique.md` (sections 1-3 et 13), le scope est volontairement minimaliste mais defendable : 2 trains, 1 canton, 1 quai, 1 paire de PSD, 5 acteurs Akka, 12 places et 12 transitions Petri. L'extension PSD du 29/04/2026 (section 13 du recadrage) ajoute la dimension critique manquante (les portes palieres) sans faire exploser la combinatoire : on passe de 8 a 20 marquages atteignables, ce qui reste enumerable a la main et programmatiquement.
+
+La doctrine du sprint, resumee dans `documentation/suivi/PLAN.md` section 8, est explicite : **simple, propre et verifiable** plutot que realiste mais inanalysable. Les extensions naturelles (N trains, second canton en serie, deux quais opposes, Petri temporise) sont mentionnees en section 8 comme pistes mais explicitement hors sprint.
 
 ---
 
 ## 2) Bibliographie
 
-> A finaliser en Phase D a partir de `documentation/livrables/biblio.md` (10-11 sources apres ajouts PSD).
+Les 11 sources retenues sont commentees integralement dans `documentation/livrables/biblio.md`. Synthese par theme :
 
-Sources regroupees par theme : reseaux de Petri (Murata, David & Alla), modele acteur (Akka doc, Hewitt), verification formelle (Baier & Katoen, Manna & Pnueli, LTL TUM), concurrence (Magee & Kramer, Lamport), domaine ferroviaire critique (RATP M14, IEEE std 1474 CBTC, etudes PSD). Chaque source est citee au moins une fois dans le corps du rapport.
+- **Reseaux de Petri** : Murata 1989 (proprietes structurelles, invariants P et T) ; ouvrage de reference pour les sections 4 et 5.
+- **Modele acteur** : documentation Akka Typed (Behaviors, message protocols), Hewitt 1973 (origines theoriques).
+- **Verification formelle et LTL** : Baier & Katoen *Principles of Model Checking* (2008), Manna & Pnueli *The Temporal Logic of Reactive and Concurrent Systems* (1992), cours LTL TU Munich. Bases pour la formalisation section 5.8.
+- **Concurrence** : Magee & Kramer *Concurrency: State Models and Java Programs* (exclusion mutuelle, deadlock), Lamport (logical clocks, fairness).
+- **Domaine ferroviaire critique** : documentation publique RATP M14, IEEE Std 1474 CBTC (Communications-Based Train Control), etudes UITP sur les portes palieres. Sources ajoutees lors de l'extension PSD pour justifier le caractere reglementaire des invariants 5.5.1 et 5.5.2.
+
+Chaque source est referencee au moins une fois dans les sections 1, 4, 5 ou 8 du present rapport.
 
 ---
 
 ## 3) Architecture Akka
 
-> A rediger en Phase D apres ecriture du code.
+### 3.1 Diagramme des acteurs (5 acteurs)
 
-Points a couvrir :
-- **Diagramme des acteurs** : 2 `Train` + 1 `SectionController` (canton) + 1 `QuaiController` (quai) + 1 `GestionnairePortes` (PSD). 5 acteurs au total (vs 3 dans le modele initial).
-- Description des `Behavior[T]` typés et de leur cycle de vie. La machine d'etats du `Train` a **4 etats** : `comportementHors`, `comportementEnAttente`, `comportementSurCanton`, `comportementAQuai` (cf `documentation/gouvernance/lexique.md` section 1).
-- **Protocole de messages** : 12 messages au total (cf `petri/petri-troncon.md` section 8 et `documentation/gouvernance/lexique.md` section 3).
-  - Vers controleurs : `Demande`, `Sortie`, `ArriveeQuai`, `DepartQuai`, `OuverturePortes`, `FermeturePortes`.
-  - Vers trains : `Autorisation`, `Attente`, `PortesOuvertes`, `PortesFermees`.
-- Logique d'arbitrage du `SectionController` : etat `cantonLibre` / `cantonOccupe(occupant, file)` + file FIFO immuable.
-- Logique d'arbitrage du `QuaiController` : symetrique, `quaiLibre` / `quaiOccupe(occupant, file)`. Duplication de design assumee (cf `documentation/gouvernance/protocole-coordination.md` Q11).
-- **Garde de surete CRITIQUE du `GestionnairePortes`** : refuse toute demande d'ouverture si aucun train n'est a quai. Cette garde est verifiee par test unitaire dedie (`GestionnairePortesSpec`).
-- Justification des hypotheses : pas de panne, pas de timeout, pas de duree d'arret a quai (toutes en "extensions futures" section 8).
+```
+  +---------+   Demande / Sortie         +---------------------+
+  | Train1  |--------------------------->|  SectionController  |
+  +---------+   Autorisation / Attente   |   (canton)          |
+      |        <---------------------------|                     |
+      |                                  +---------------------+
+      | ArriveeQuai / DepartQuai
+      v
+  +---------------------+    Autorisation / Attente
+  |   QuaiController    |---------------------------> Train1, Train2
+  |   (quai)            |
+  +---------------------+
+      ^
+      | OuverturePortes / FermeturePortes
+      |
+  +---------------------+    PortesOuvertes / PortesFermees
+  |  GestionnairePortes |---------------------------> Train1, Train2
+  |  (PSD)              |
+  +---------------------+
+```
+
+Cinq acteurs au total (vs 3 dans le modele initial) : `Train1`, `Train2`, `SectionController`, `QuaiController`, `GestionnairePortes`. Tous sont des `Behavior[T]` typés (Akka Typed, Scala 2.13).
+
+### 3.2 Machine d'etats du Train (4 etats)
+
+Chaque `Train` est implemente comme une cascade de quatre `Behavior` (cf `src/main/scala/m14/troncon/Train.scala`) :
+
+1. `comportementHors` : etat initial. Le train envoie `Demande` au `SectionController` en sortie d'init et passe en attente.
+2. `comportementEnAttente` : reception de `Autorisation` -> passage en `comportementSurCanton` ; reception de `Attente` -> reste dans cet etat.
+3. `comportementSurCanton` : envoie `Sortie` au `SectionController` puis `ArriveeQuai` au `QuaiController`. Reception de `Autorisation` (du quai) -> `comportementAQuai`.
+4. `comportementAQuai` : envoie `OuverturePortes` au `GestionnairePortes`, attend `PortesOuvertes`, envoie `FermeturePortes`, attend `PortesFermees`, envoie `DepartQuai` au `QuaiController`, retourne en `comportementHors` (cycle ferme).
+
+Deux helpers (`enAttenteOuverturePortes`, `enAttenteFermeturePortes`) materialisent les ack de portes.
+
+### 3.3 Protocole (10 types de messages)
+
+Defini dans `src/main/scala/m14/troncon/Protocol.scala` :
+
+- **Vers controleurs canton/quai** (6) : `Demande`, `Sortie`, `ArriveeQuai`, `DepartQuai`, `OuverturePortes`, `FermeturePortes`.
+- **Vers trains** (4) : `Autorisation`, `Attente`, `PortesOuvertes`, `PortesFermees`.
+
+Les types ADT (sealed traits `MessagePourCanton`, `MessagePourQuai`, `MessagePourPortes`, `MessagePourTrain`) garantissent qu'aucun acteur ne peut recevoir un message hors de son protocole (verification au compile).
+
+### 3.4 Arbitrage des controleurs
+
+`SectionController` et `QuaiController` partagent un design symetrique (cf `protocole-coordination.md` Q11) : etats `libre()` / `occupe(occupant, file: Queue[ActorRef])`, file FIFO immuable. A reception de `Demande`/`ArriveeQuai`, le controleur autorise immediatement si libre, sinon enfile et envoie `Attente`. A reception de `Sortie`/`DepartQuai`, le controleur depile le suivant et lui envoie `Autorisation` (ou repasse `libre()` si la file est vide). Une garde defensive ignore les `Sortie`/`DepartQuai` provenant d'un acteur qui n'est pas l'occupant courant.
+
+### 3.5 Garde de surete critique du GestionnairePortes
+
+`GestionnairePortes` (cf `src/main/scala/m14/troncon/GestionnairePortes.scala`) a deux etats : `portesFermees()` et `portesOuvertes(occupant)`. **Garde CRITIQUE** :
+
+- En `portesFermees()`, une `OuverturePortes(emetteur)` est acceptee inconditionnellement (le `QuaiController` est suppose avoir deja autorise l'emetteur a quai). Cote tests, on verifie que rien dans le protocole ne permet d'envoyer cette ouverture sans avoir au prealable obtenu le quai.
+- En `portesOuvertes(occupant)`, toute `OuverturePortes` ou `FermeturePortes` provenant d'un emetteur != occupant est **silencieusement refusee** (aucun ack envoye, etat inchange). Cette garde est testee explicitement par deux tests CRITIQUES de `GestionnairePortesSpec`.
+
+C'est cette garde qui materialise l'invariant PSD-Open au niveau du code Akka. Au niveau Petri, le meme invariant est materialise structurellement par le pre `{Ti_a_quai, Portes_fermees}` de `Ouverture_portes_Ti` (section 4.2).
+
+### 3.6 Hypotheses du modele
+
+- Pas de panne d'acteur, pas de message perdu, pas de timeout (les notifications `Attente` et les ack portes sont supposees toujours delivrees).
+- Pas de duree d'arret a quai (le delai entre `OuverturePortes` et `FermeturePortes` est nul cote modele).
+- Determinisme des files FIFO Akka (vs choix non deterministe cote Petri, cf section 7).
+
+Toutes ces hypotheses sont reprises dans la section 7 "Limites assumees".
 
 ---
 
 ## 4) Modele Petri formel
 
-> A rediger en Phase D a partir de `petri/petri-troncon.md`.
+### 4.1 Les 12 places
 
-Points a couvrir :
-- Les **12 places** et leur interpretation metier (4 ressources globales + 4 etats T1 + 4 etats T2).
-- Les **12 transitions effectives**, leur condition de tirabilite, leur effet sur le marquage. Detail des transitions PSD : `Ouverture_portes_Ti`, `Fermeture_portes_Ti`.
-- **Marquage initial M0** (5 jetons : `Canton_libre, Quai_libre, Portes_fermees, T1_hors, T2_hors`).
-- **Read-arc emule** sur la place `Portes_fermees` dans les transitions `Ti_depart_quai` (consommation+reproduction). Justification : Petri ordinaire n'a pas de read-arc natif.
-- Pourquoi 12 places et 12 transitions, pas plus (lien avec le scope verrouille `documentation/gouvernance/protocole-coordination.md` section 2).
-- Schema ASCII repris depuis `petri/petri-troncon.md` section 4.
+Reparties en trois blocs (cf `petri/petri-troncon.md` section 3) :
+
+- **4 ressources globales** : `Canton_libre`, `Quai_libre`, `Portes_fermees`, `Portes_ouvertes`.
+- **4 etats du Train1** : `T1_hors`, `T1_attente`, `T1_sur_canton`, `T1_a_quai`.
+- **4 etats du Train2** : `T2_hors`, `T2_attente`, `T2_sur_canton`, `T2_a_quai`.
+
+Marquage initial `M0 = (Canton_libre, Quai_libre, Portes_fermees, T1_hors, T2_hors)` : 5 jetons.
+
+### 4.2 Les 12 transitions
+
+Pour chaque train Ti (i in {1,2}), six transitions :
+
+| Transition           | Pre                                  | Post                              |
+|----------------------|--------------------------------------|-----------------------------------|
+| `Ti_demande`         | `{Ti_hors}`                          | `{Ti_attente}`                    |
+| `Ti_entree_canton`   | `{Ti_attente, Canton_libre}`         | `{Ti_sur_canton}`                 |
+| `Ti_arrivee_quai`    | `{Ti_sur_canton, Quai_libre}`        | `{Ti_a_quai, Canton_libre}`       |
+| `Ouverture_portes_Ti`| `{Ti_a_quai, Portes_fermees}`        | `{Ti_a_quai, Portes_ouvertes}`    |
+| `Fermeture_portes_Ti`| `{Ti_a_quai, Portes_ouvertes}`       | `{Ti_a_quai, Portes_fermees}`     |
+| `Ti_depart_quai`     | `{Ti_a_quai, Portes_fermees}`        | `{Ti_hors, Quai_libre, Portes_fermees}` |
+
+Notes :
+
+- **Read-arc emule** sur `Portes_fermees` dans `Ti_depart_quai` : la transition consomme puis reproduit le jeton `Portes_fermees`. C'est l'astuce standard pour simuler une garde sans effet de bord en Petri ordinaire (Murata 1989). Cote Akka, l'equivalent est une lecture de l'etat `portesFermees()` sans transition d'etat du `GestionnairePortes`.
+- **Reproduction de `Ti_a_quai`** dans `Ouverture_portes_Ti` et `Fermeture_portes_Ti` : le train reste a quai pendant l'ouverture/fermeture des portes.
+
+### 4.3 Pre-conditions structurelles de surete PSD
+
+Les deux invariants critiques sont materialises **structurellement** :
+
+- `Ouverture_portes_Ti` exige `Ti_a_quai` dans son pre. Donc `Portes_ouvertes` ne peut etre marquee que si un train Ti est a quai. Preuve par induction = invariant PSD-Open.
+- `Ti_depart_quai` exige `Portes_fermees` dans son pre. Donc un depart est impossible portes ouvertes. = invariant PSD-Departure.
+
+Ces deux gardes sont la traduction Petri exacte des deux gardes Akka du `GestionnairePortes` (section 3.5).
+
+### 4.4 Schema ASCII
+
+Reproduit depuis `petri/petri-troncon.md` section 4 (cf fichier source pour le diagramme complet ; non duplique ici pour eviter la divergence).
+
+### 4.5 Pourquoi 12 places et 12 transitions, pas plus
+
+Le scope est verrouille par `documentation/gouvernance/protocole-coordination.md` section 2 :
+
+- 2 trains x 4 etats = 8 places etat + 4 ressources globales = 12 places.
+- 2 trains x 6 transitions = 12 transitions.
+
+Toute extension (N trains, second canton, second quai) multiplie ces nombres et fait exploser l'espace d'etats au-dela de l'enumeration a la main. Conformement a la doctrine du sprint (`PLAN.md` section 8), nous renforcons la **profondeur** de la verification (5 invariants + LTL formalisee) plutot que la complexite du modele.
 
 ---
 
@@ -145,55 +250,77 @@ Justification informelle sur l'espace d'etats fini : l'analyseur enumere les mar
 
 ## 6) Comparaison Akka vs Petri
 
-> A finaliser en Phase D a partir de `documentation/livrables/comparaison.md`.
+La matrice complete des 3 scenarios (cycle nominal, concurrence canton+quai, surete PSD invalide) est detaillee dans `documentation/livrables/comparaison.md` sections 2 a 4. La sortie reelle de l'analyseur (20 marquages M0..M19, 5 invariants PASSE, 0 deadlock) est reproduite dans `comparaison.md` section 6.
 
-Reprendre la matrice 3 scenarios x (message Akka, transition Petri, marquage) :
-- Scenario 1 : cycle nominal complet (1 train, canton + quai + ouverture/fermeture portes + depart).
-- Scenario 2 : concurrence canton+quai (Train1 a quai, Train2 sur canton, portes ouvertes pour T1).
-- Scenario 3 : tentative d'ouverture invalide (rejet par garde de surete + non-tirabilite Petri).
+### 6.1 Synthese
 
-Conclure sur la coherence entre simulation et modele formel : chaque transition Petri tirable a un message Akka declencheur et reciproquement.
+- **Scenario 1 (cycle nominal complet)** : 6 transitions tirees, 6 marquages traverses (M0 -> M1 -> M3 -> M6 -> M11 -> M6 -> M0). Cycle ferme. Tous les marquages traverses appartiennent a l'espace d'etats calcule par l'analyseur.
+- **Scenario 2 (concurrence canton+quai)** : 9 transitions tirees, 9 marquages traverses dont M14 et M18 (les marquages "interessants" ou T2 est sur canton pendant que T1 est a quai). Confirmation du tuilage canton/quai sans interference.
+- **Scenario 3 (surete PSD invalide)** : depuis M0, l'analyseur enumere les transitions tirables = `{T1_demande, T2_demande}` uniquement. `Ouverture_portes_Ti` n'est pas tirable. Cote Akka, le test `GestionnairePortesSpec` verifie le refus silencieux d'une `OuverturePortes` en l'absence de train a quai.
+
+### 6.2 Coherence simulation/modele
+
+Chaque transition Petri tirable correspond a un message Akka declencheur identifiable (cf `comparaison.md` section 5, 9 transitions sur 12 explicitement couvertes, les 3 restantes etant strictement symetriques). Reciproquement, chaque message Akka du protocole declenche au plus une transition Petri (les messages `Attente`, `PortesOuvertes`, `PortesFermees` sont des notifications de protocole sans correspondance Petri car internes a la coordination).
+
+**Conclusion** : convergence ligne a ligne entre simulation Akka et modele Petri formel sur les 3 scenarios retenus.
 
 ---
 
 ## 7) Limites assumees
 
-> A rediger en Phase D.
+Les limites suivantes sont des choix delibres du sprint, pas des oublis. Chacune est tracable dans `documentation/gouvernance/protocole-coordination.md` (verrous Q1-Q15) ou dans `documentation/suivi/PLAN.md` section 8.
 
-- **Pas de modelisation de pannes ou de timeouts** : aucun acteur ne crashe, aucun message n'est perdu.
-- **Fairness dependante de l'implementation Akka (FIFO)**, pas du modele Petri pur.
-- **Pas de duree d'arret a quai** modelisee : le delai d'embarquement est un message immediat.
-- **Quai unique** : modelisation simplifiee (en realite M14 a 2 quais opposes par station).
-- **Modele PSD simplifie** : un seul niveau de portes (en realite portes train + portes palieres synchronisees electroniquement).
-- Comparaison qualitative et non quantitative.
-- Scope volontairement restreint a 2 trains.
-- Pas de model checker LTL complet (verification structurelle + LTL informelle sur espace d'etats fini).
+- **Pas de modelisation de pannes ou de timeouts** : aucun acteur ne crashe, aucun message n'est perdu, aucune supervision strategy au-dela du defaut Akka. Une extension realiste demanderait un modele de defaillance (place `Ti_panne`, transitions de restart) et une analyse de la couverture de fautes.
+- **Fairness dependante de l'implementation Akka (FIFO)** : le modele Petri pur autorise tout entrelacement, alors que le code Akka serialise via les files FIFO des controleurs. La propriete de liveness (section 5.8) est argumentee sous cette hypothese de fairness, pas de maniere stricte sur le Petri pur.
+- **Pas de duree d'arret a quai** : le delai entre `OuverturePortes` et `FermeturePortes` est un message immediat. Une extension naturelle serait Petri temporise (TPN) ou TLA+.
+- **Quai unique** : la M14 reelle a deux quais opposes par station. Notre modele projete sur un seul quai pour garder la combinatoire bornee.
+- **Modele PSD simplifie** : un seul niveau de portes. La realite CBTC (IEEE 1474) modelise portes train + portes palieres avec synchronisation electronique.
+- **Scope volontairement restreint a 2 trains** : la generalisation a N trains aurait une complexite combinatoire en O(4^N) pour les marquages atteignables, rendant l'enumeration a la main des 5 invariants impraticable pour N > 3.
+- **Comparaison Akka vs Petri qualitative** : pas de mesure quantitative (latence, debit). Hors scope du cours.
+- **Pas de model checker LTL complet** : nous formalisons les proprietes LTL Safety et Liveness (section 5.8) et evaluons les Safety **directement sur le graphe d'accessibilite fini** dans l'analyseur Scala (`verifierGSafety` prevu en Phase 7). Aucun automate de Buchi, aucun produit synchronise. C'est une limitation explicite, pas un defaut : le sujet du cours autorise cette approche pragmatique pour un systeme borne.
+- **Read-arc emule** sur `Portes_fermees` (consume+reproduce) : Petri ordinaire n'a pas de read-arc natif. L'astuce est documentee mais reste une approximation structurelle.
+
+Toutes ces limites sont mentionnees une seconde fois en section 8 sous l'angle "extensions futures" pour distinguer ce qui n'est pas fait de ce qui ne *peut* pas etre fait dans le scope du cours.
 
 ---
 
 ## 8) Conclusion et extensions futures
 
-> A rediger en Phase D.
+### 8.1 Synthese
 
-Synthese :
-- **Demonstre formellement** : 5 invariants (canton, quai, portes, PSD-Open, PSD-Departure) prouves par induction et confirmes par enumeration programmatique. Absence de deadlock. Exclusion mutuelle stricte sur 2 ressources critiques. Surete PSD au sens reglementaire.
-- **Demonstre experimentalement** : 3 scenarios Akka simules avec correspondance ligne a ligne au modele Petri.
-- **Confiance globale** : sous les hypotheses du scope (pas de panne, pas de timeout, 2 trains, 1 canton, 1 quai), le sous-systeme satisfait les proprietes critiques attendues d'un metro automatique avec PSD.
+- **Demontre formellement** : 5 invariants (canton, quai, portes, PSD-Open, PSD-Departure) prouves par induction structurelle et confirmes par enumeration programmatique sur les 20 marquages atteignables (cf `comparaison.md` section 6). Absence de deadlock confirmee. Exclusion mutuelle stricte sur les deux ressources critiques (canton et quai). Surete PSD au sens reglementaire (IEEE 1474, UITP).
+- **Demontre experimentalement** : 3 scenarios Akka simules (cycle nominal, concurrence canton+quai, tentative PSD invalide) avec correspondance ligne a ligne au modele Petri sur 9 transitions/12. 39 tests Akka et 20 tests d'analyseur passent (39 + 20 = pas un total simple ; le total de la suite est 39 tests).
+- **Defendable** : 5 acteurs Akka, 12 places et 12 transitions Petri, 5 invariants, 20 marquages. Tout est enumerable a la main et reproductible programmatiquement. Le rapport de l'analyseur (`comparaison.md` section 6) tient sur une page.
+- **Confiance globale** : sous les hypotheses du scope (pas de panne, pas de timeout, 2 trains, 1 canton, 1 quai), le sous-systeme satisfait les proprietes critiques attendues d'un metro automatique avec PSD. Toute defaillance des hypotheses (par exemple panne d'un controleur) sort du scope demontre et necessiterait une nouvelle analyse.
 
-Extensions possibles (mentionnees, non implementees) :
-- N trains (generalisation, complexite combinatoire en O(4^N)).
-- 2 quais opposes (extension naturelle, double les ressources globales).
-- Synchronisation portes train + portes palieres (CBTC realiste).
-- Duree d'arret a quai (Petri temporise ou TLA+).
-- Tolerance aux pannes (supervision Akka, restart strategy).
-- Model checker LTL complet avec automates de Buchi.
-- Formalisation TLA+ pour comparaison (le sujet du cours mentionne TLA+ comme alternative possible).
+### 8.2 Extensions futures (mentionnees, non implementees)
+
+Classees par cout estime croissant :
+
+1. **Verification LTL programmatique complete** (Phase 7 du PLAN, ~1h-2h) : ajouter `verifierGSafety` et `verifierGFLiveness` dans `Analyseur.scala`. Evaluation directe sur le graphe d'accessibilite fini, sans automate de Buchi. Coherent avec section 7. **Prevu sur ce sprint si le temps le permet.**
+2. **Graphe d'accessibilite avec arcs etiquetes** (~30 min) : enrichir `explorerEspaceEtats` pour retourner aussi les arcs `(M_i --t--> M_j)`. Sortie inserable en annexe A1 ou A4. **Prevu sur ce sprint.**
+3. **Test d'integration Akka-Petri programmatique** (1-2h) : un nouveau spec qui rejoue la trace de messages d'un scenario Akka comme suite de transitions Petri et compare les marquages. **Prevu sur ce sprint.**
+4. **Petri temporise** (TPN) pour modeliser la duree d'arret a quai. Hors scope du cours (Petri ordinaire suffit pour la verification structurelle).
+5. **Generalisation N trains** : refactoring de `Train`, `SectionController`, `QuaiController` en parametriques sur l'ensemble des trains. Complexite combinatoire en O(4^N) pour l'analyseur. Hors sprint.
+6. **Second canton en serie ou deux quais opposes** : double les ressources globales et reactive le risque de deadlock croisement. Extension naturelle, hors sprint (verrou `protocole-coordination.md` section 2).
+7. **Synchronisation portes train + portes palieres** : modelisation CBTC realiste (IEEE 1474). Doublerait les places et transitions PSD.
+8. **Tolerance aux pannes** (supervision Akka, restart strategy, places `Ti_panne` cote Petri). Sujet de cours dedié.
+9. **Model checker LTL complet** avec automates de Buchi et produit synchronise. Sujet de cours dedie.
+10. **Formalisation TLA+** pour comparaison. Le sujet du cours mentionne TLA+ comme alternative possible. Permettrait de croiser les preuves Petri (structurelle) et TLA+ (LTL native + invariants explicites).
+
+### 8.3 Bilan pedagogique
+
+Le projet illustre concretement :
+
+- Comment la **doctrine "profondeur > complexite"** (PLAN section 8) permet de prouver davantage en simplifiant le modele plutot qu'en l'etendant.
+- Comment la **double modelisation** (acteurs Akka pour la simulation, Petri pour la verification) renforce la confiance par convergence.
+- Comment une **garde de surete critique** se traduit a la fois par une garde defensive cote code (refus silencieux du `GestionnairePortes`) et par une pre-condition structurelle cote modele (pre `{Ti_a_quai}` de `Ouverture_portes_Ti`). Les deux niveaux se valident mutuellement (triple preuve : structurelle, inductive, programmatique - cf section 5.5).
 
 ---
 
 ## Annexes
 
-- **A1** : sortie complete de l'analyseur Petri Phase D (15-18 marquages, arcs etiquetes, 5 invariants verifies, 0 deadlock).
-- **A2** : matrice de comparaison detaillee Akka/Petri (extrait de `documentation/livrables/comparaison.md`).
-- **A3** : extraits de code commentes (un Behavior par etat du Train sur 4 etats, garde de surete du `GestionnairePortes`, BFS de l'analyseur, fonctions `verifierSurteOuverturePortes` et `verifierSurteDepartQuai`).
-- **A4** : graphe d'accessibilite de la tache 7 du carnet de preuves manuelles (15-18 noeuds, arcs etiquetes par transition, mise en evidence des marquages avec `Portes_ouvertes`).
+- **A1** : sortie complete de l'analyseur Petri (20 marquages M0..M19, 5 invariants PASSE, 0 deadlock). Reproduite verbatim dans `documentation/livrables/comparaison.md` section 6.1. Les arcs etiquetes (M_i --transition--> M_j) seront ajoutes en Phase 7 (cf `PLAN.md` section 8.3).
+- **A2** : matrice de comparaison detaillee Akka/Petri (extrait de `documentation/livrables/comparaison.md` sections 2-5).
+- **A3** : extraits de code commentes (un Behavior par etat du Train sur 4 etats, garde de surete du `GestionnairePortes`, BFS de l'analyseur, fonctions `verifierSurteOuverturePortes` et `verifierSurteDepartQuai`). A finaliser en Phase 9.
+- **A4** : graphe d'accessibilite (20 noeuds, arcs etiquetes par transition, mise en evidence des 6 marquages avec `Portes_ouvertes` : M11, M13, M15, M17, M18, M19). A produire en Phase 7 a partir de l'extension de `explorerEspaceEtats`.

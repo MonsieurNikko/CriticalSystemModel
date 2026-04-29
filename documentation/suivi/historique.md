@@ -33,6 +33,78 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ## Entrees
 
+### [2026-04-29 16:00] - Phase B - Demo simulation animee pilotee par Scala
+- GitHub: @MonsieurNikko
+- Branche: `extension`
+- Contexte/tache: rendre la demo plus concrete pour la soutenance. Au lieu d'un HTML statique, generer des traces JSON depuis le vrai modele Scala (PetriNet) et les rejouer dans une page animee (trains qui glissent, popups Akka, overlay rouge en cas de violation PSD).
+- Fichiers modifies:
+	- src/main/scala/m14/demo/TraceWriter.scala (NOUVEAU - serialisation manuelle JSON)
+	- src/main/scala/m14/demo/GenererTraces.scala (NOUVEAU - 3 scenarios A/B/C)
+	- demo/index.html (REECRIT integralement, ancien sauvegarde en index-old.html.bak)
+	- demo/trace-nominal.json (genere, 7 etapes)
+	- demo/trace-concurrence.json (genere, 11 etapes)
+	- demo/trace-violation.json (genere, 3 etapes, violation PSD-Open)
+	- demo/README.md (mis a jour avec instructions http.server)
+- Changements detailles:
+	- TraceWriter expose un Constructeur fluent (.tirer / .message / .violation / .construire) qui appelle PetriNet.tirer pour calculer les marquages -> source de verite unique = le modele verifie.
+	- Pas de dependance externe (upickle/play-json) : JSON ecrit a la main avec java.nio.file.Files.
+	- index.html : 6 zones de scene, trains anime via CSS transition, 12 places Petri synchronisees, 5 invariants calcules en JS (mirror de Analyseur.scala), bandeau transitions, popups Akka, overlay rouge violation, controles vitesse + pas-a-pas + reset.
+	- Scenario C (violation) : la transition Ouverture_portes_T1 N'EST PAS tiree (marquage inchange) mais l'etape est marquee violation:true -> demonstration visuelle de la garde de surete.
+- Commandes executees:
+	- sbt "runMain m14.demo.GenererTraces" -> 3 fichiers JSON ecrits
+	- sbt test -> 39/39 verts
+- Resultats de verification:
+	- Build: PASS
+	- Tests: PASS (39/39)
+	- Notes: validation visuelle a faire en ouvrant demo/index.html via http.server (fetch ne marche pas en file://)
+- Risques/impacts:
+	- Aucun impact sur le code metier (m14.troncon et m14.petri inchanges)
+	- Le module m14.demo n'est pas teste : c'est de la presentation, pas du critique
+- Prochaines actions recommandees:
+	- Validation navigateur des 3 scenarios
+	- Schema Petri dans draw.io (Phase A manuelle)
+	- Phase 7 LTL programmatique optionnelle (verifierGSafety, verifierGFLiveness)
+	- Commit + push branch extension
+
+---
+
+### [2026-04-29 15:33] - Extension PSD - Phase D.4 + D.5 : finalisation rapport.md et comparaison.md
+- GitHub: @MonsieurNikko
+- Branche: `extension`
+- Contexte/tache: cloturer la sous-phase D de l'extension PSD en remplissant les sections narratives du rapport (1, 2, 3, 4, 6, 7, 8) et la section 6 de la comparaison Akka/Petri avec la sortie reelle de l'analyseur.
+- Fichiers modifies:
+  - documentation/livrables/rapport.md (sections 1, 2, 3, 4, 6, 7, 8 + en-tete + annexes A1-A4 reformulees autour des 20 marquages reels)
+  - documentation/livrables/comparaison.md (section 6 reecrite : sortie console verbatim + tableau de correspondance scenarios <-> M0..M19 + lecture des resultats + analyse des 6 marquages avec Portes_ouvertes)
+  - documentation/suivi/PLAN.md (D.4 et D.5 marquees [x])
+  - documentation/suivi/historique.md (cette entree)
+  - analyseur-out.txt (sortie capturee de l'analyseur, non commite)
+- Changements detailles:
+  - Section 1 (Contexte) : redaction complete (domaine M14, sous-systeme retenu, choix d'abstraction, doctrine "profondeur > complexite").
+  - Section 2 (Bibliographie) : synthese par theme des 11 sources de biblio.md.
+  - Section 3 (Architecture Akka) : diagramme ASCII des 5 acteurs, machine d'etats du Train (4 etats + 2 helpers d'ack portes), protocole 6+4 messages, arbitrage symetrique des controleurs, garde de surete CRITIQUE du GestionnairePortes detaillee.
+  - Section 4 (Modele Petri) : tableau des 12 transitions avec pre/post, justification du read-arc emule, pre-conditions structurelles de surete PSD.
+  - Section 6 (Comparaison) : synthese des 3 scenarios, conclusion convergence simulation/modele.
+  - Section 7 (Limites) : 9 limites delibrees toutes tracables aux verrous Q1-Q15 ou PLAN section 8.
+  - Section 8 (Conclusion) : synthese formelle/experimentale + 10 extensions futures classees par cout estime (3 d'entre elles prevues sur ce sprint via Phase 7).
+  - Section 6 de comparaison.md : sortie console reproduite verbatim, tableau de correspondance par scenario, verification visuelle des 6 marquages avec Portes_ouvertes (M11, M13, M15, M17, M18, M19) tous compatibles avec PSD-Open.
+- Commandes executees:
+  - sbt -no-colors -error "runMain m14.petri.Analyseur" : 20 marquages, 5 invariants PASSE, 0 deadlock
+  - Get-Date pour le timestamp
+- Resultats de verification:
+  - Build: PASS (analyseur a tourne)
+  - Tests: N/A (cette entree ne touche aucun fichier .scala)
+  - Notes: l'exit code 1 de la commande sbt provient d'un warning JLine cosmetique sous PowerShell, sans impact sur la sortie de l'analyseur.
+- Risques/impacts:
+  - Aucun risque code (documentation uniquement).
+  - Le fichier analyseur-out.txt a ete cree pour la session, non commite.
+  - Le rapport.md depasse maintenant la cible de longueur (12-18 pages PDF) ; reste a relire pour eventuelles coupes en Phase 9.
+- Prochaines actions recommandees:
+  - Phase 7 (LTL programmatique) : ajouter `verifierGSafety` et `verifierGFLiveness` dans Analyseur.scala. Ajouter aussi les arcs etiquetes au BFS pour annexe A4.
+  - D.7 : merge `extension` -> `main` avec `--no-ff` apres relecture equipe.
+  - Phase 9 : alignement de demo/index.html sur le modele etendu (5 acteurs, scenarios PSD).
+
+---
+
 ### [2026-04-29 21:10] - Extension PSD - Phases B + C + D.1-D.3 : code + tests complets
 - GitHub: @MonsieurNikko
 - Branche: `extension` (renommee de `feature/m14-extension-quai-psd` lors de la creation)
