@@ -33,6 +33,52 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ## Entrees
 
+### [2026-04-29 21:10] - Extension PSD - Phases B + C + D.1-D.3 : code + tests complets
+- GitHub: @MonsieurNikko
+- Branche: `extension` (renommee de `feature/m14-extension-quai-psd` lors de la creation)
+- Contexte/tache: implementation complete de la sous-phase B (8 fichiers Scala) et C (5 fichiers de tests). Compilation, execution des tests, execution de l'analyseur, commit et push.
+- Fichiers modifies (Phase B - code) :
+  - `src/main/scala/m14/troncon/Protocol.scala` : reecrit. Nouveaux traits `MessagePourQuai` (ArriveeQuai, DepartQuai), `MessagePourPortes` (OuverturePortes, FermeturePortes avec repondreA). `MessagePourTrain` etendu avec PortesOuvertes, PortesFermees.
+  - `src/main/scala/m14/troncon/QuaiController.scala` : cree. Etats `quaiLibre()` / `quaiOccupe(occupant, file: Queue)`. Arbitrage FIFO. Garde : DepartQuai ignore si emetteur != occupant.
+  - `src/main/scala/m14/troncon/GestionnairePortes.scala` : cree. Etats `portesFermees()` / `portesOuvertes(occupant)`. Garde CRITIQUE : OuverturePortes/FermeturePortes d'un train non-occupant silencieusement refusees.
+  - `src/main/scala/m14/troncon/Train.scala` : reecrit. 4 etats + 2 helpers pour ack portes. Constructeur : `apply(id, sectionController, quaiController, gestionnairePortes)`. Sequence : Demande -> (ArriveeQuai + Autorisation) -> Sortie + OuverturePortes -> FermeturePortes -> DepartQuai -> cycle.
+  - `src/main/scala/m14/troncon/SectionController.scala` : commentaires alignes (canton).
+  - `src/main/scala/m14/petri/PetriNet.scala` : reecrit. 12 places, 12 transitions, M0 = 5 jetons. Read-arc emule sur Portes_fermees dans t1/t2DepartQuai.
+  - `src/main/scala/m14/petri/Analyseur.scala` : reecrit. `ResultatAnalyse` avec 5 champs invariants. Fonctions `verifierInvariantCanton/Quai/Portes`, `verifierInvariantsParTrain`, `verifierSurteOuverturePortes`, `verifierSurteDepartQuai`.
+  - `src/main/scala/m14/Main.scala` : reecrit. 3 scenarios (cycle nominal complet, concurrence canton+quai, tentative PSD invalide bloquee). Import qualifie pour resoudre l'ambiguite Protocol.PortesFermees vs PetriNet.PortesFermees.
+- Fichiers modifies (Phase C - tests) :
+  - `src/test/scala/m14/troncon/TrainSpec.scala` : reecrit. 6 tests (constructeur 4 args). Couvre les 4 etats + ack portes + cycle complet.
+  - `src/test/scala/m14/troncon/SectionControllerSpec.scala` : inchange, 3 tests toujours verts.
+  - `src/test/scala/m14/troncon/QuaiControllerSpec.scala` : cree. 5 tests (autorisation, attente, promotion, garde occupant, reutilisation).
+  - `src/test/scala/m14/troncon/GestionnairePortesSpec.scala` : cree. 5 tests dont 2 CRITIQUES verifiant le refus silencieux PSD-Open.
+  - `src/test/scala/m14/petri/AnalyseurSpec.scala` : reecrit. 20 tests (12P/12T, 20 marquages, 5 invariants, 0 deadlock, exclusions mutuelles, instantiation PSD-Open).
+- Changements detailles :
+  - Modele Petri passe de 7 places / 6 transitions / 8 marquages a 12 places / 12 transitions / **20 marquages** (M0..M19). La cible documentaire de "15-18" etait sous-estimee ; les 20 marquages resultent de l'independance partielle entre l'etat des portes et la file d'attente quai.
+  - Architecture Akka : 3 acteurs -> 5 acteurs. Protocole : 4 messages -> 10 messages.
+  - Incoherence d'import resolue : `PortesFermees` et `PortesOuvertes` existent dans `Protocol` (messages) et dans `PetriNet` (places). `Main.scala` utilise des imports selectifs pour eviter l'ambiguite.
+  - Tests : 22 -> **39 tests verts**. Suites : TrainSpec (6), SectionControllerSpec (3), QuaiControllerSpec (5), GestionnairePortesSpec (5), AnalyseurSpec (20).
+- Commandes executees :
+  - `sbt clean compile` : PASS
+  - `sbt compile` (apres correction import) : PASS
+  - `sbt -no-colors -error "runMain m14.petri.Analyseur"` : 20 marquages, 5 invariants PASSE, 0 deadlock
+  - `sbt test` : 39/39 verts, 768 ms
+  - `git add -A && git commit -m "Extension PSD : canton + quai + portes palieres ..."` : 26 fichiers, 4017 insertions, 798 suppressions
+  - `git push origin extension` : 0aae8a4..34dc087
+- Resultats de verification :
+  - Build: PASS
+  - Tests: PASS (39/39, 0 echec, 0 annulation)
+  - Analyseur: 20 marquages, invariant canton PASSE, invariant quai PASSE, invariant portes PASSE, PSD-Open Safety PASSE, PSD-Departure Safety PASSE, deadlocks : 0, exclusion mutuelle canton PASSE, exclusion mutuelle quai PASSE
+- Risques/impacts :
+  - Aucun risque sur main : la branche `extension` est isolee.
+  - La cible "15-18 marquages" dans les anciens docs est maintenant obsolete (reel : 20). Mis a jour dans PLAN.md.
+- Prochaines actions recommandees :
+  - D.4 : remplir les sections narratives de `rapport.md` (1, 2, 3, 4, 7, 8) avec la sortie reelle de l'analyseur (20 marquages, copie de M0..M19).
+  - D.5 : inserer les sorties de l'analyseur dans `comparaison.md` section 6.
+  - D.7 : merge `extension` -> `main` avec `--no-ff` apres relecture equipe.
+  - Phase 7 : verification LTL programmatique (Safety + Liveness) sur le graphe etendu (20 marquages).
+
+---
+
 ### [2026-04-29 17:30] - Extension PSD - Phase A documentation complete
 - GitHub: @MonsieurNikko
 - Branche: feature/m14-extension-quai-psd (cree depuis main 0aae8a4)

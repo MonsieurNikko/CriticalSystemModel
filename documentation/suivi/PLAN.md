@@ -138,7 +138,7 @@ Hors coeur (mentionnes "extensions futures" dans le rapport, pas implementes) :
 - [x] Memo commandes : `documentation/suivi/COMMANDES.md`
 - [ ] Test d'integration end-to-end Akka/Petri (a faire en Phase Extension — sous-phase D)
 - **Verification (modele initial)** : 8 etats atteignables, aucun deadlock, 1 invariant tient partout
-- **Cible apres Phase Extension (modele etendu)** : 15-18 etats, 5 invariants, 0 deadlock
+- **Resultat apres Phase Extension (modele etendu)** : **20 etats**, 5 invariants PASSE, 0 deadlock
 
 ---
 
@@ -146,7 +146,7 @@ Hors coeur (mentionnes "extensions futures" dans le rapport, pas implementes) :
 
 Extension decidee pour rendre le projet M14-realiste sans exploser la combinatoire. Justification complete dans `documentation/contexte/recadrage-m14-troncon-critique.md` section 13.
 
-Branche de travail : `feature/m14-extension-quai-psd` — a merger sur `main` avec `--no-ff` en fin de sous-phase D.
+Branche de travail : `extension` — a merger sur `main` avec `--no-ff` en fin de sous-phase D.
 
 #### Sous-phase A : Documentation — source de verite avant le code (TERMINEE)
 
@@ -159,40 +159,40 @@ Branche de travail : `feature/m14-extension-quai-psd` — a merger sur `main` av
 - [x] A.7 — Etendre `documentation/livrables/biblio.md` : +IEEE 1474 CBTC, +UITP/PSD (11 sources au total)
 - **Verification** : coherence documentaire validee. Aucun fichier Scala modifie. Tests 22/22 toujours verts.
 
-#### Sous-phase B : Code Scala — 8 fichiers (A FAIRE)
+#### Sous-phase B : Code Scala — 8 fichiers (TERMINEE)
 
 Ordre d'implementation impose : Protocol -> QuaiController -> Train -> GestionnairePortes -> SectionController -> PetriNet -> Analyseur -> Main.
 
-- [ ] B.1 — Etendre `Protocol.scala` : +6 types de messages (`ArriveeQuai`, `DepartQuai`, `OuverturePortes`, `FermeturePortes`, `PortesOuvertes`, `PortesFermees`) + types `ActorRef` des nouveaux controleurs
-- [ ] B.2 — Creer `QuaiController.scala` : clone structurel de `SectionController`, etats `quaiLibre` / `quaiOccupe(occupant, file)`, arbitrage FIFO
-- [ ] B.3 — Etendre `Train.scala` : 4 etats `comportementHors`, `comportementEnAttente`, `comportementSurCanton`, `comportementAQuai` (renommer `surTroncon` -> `surCanton`)
-- [ ] B.4 — Creer `GestionnairePortes.scala` : etats `portesFermees` / `portesOuvertes(occupant)`, **garde de surete CRITIQUE** (refuse toute ouverture si aucun train a quai)
-- [ ] B.5 — Adapter `SectionController.scala` : liberation canton sur `Sortie`, le train transite ensuite vers le quai
-- [ ] B.6 — Etendre `PetriNet.scala` : +5 places, +6 transitions (total 12 places, 12 transitions)
-- [ ] B.7 — Etendre `Analyseur.scala` : +`verifierInvariantQuai`, +`verifierInvariantPortes`, +`verifierSurteOuverturePortes` (CRITIQUE), +`verifierSurteDepartQuai`, +arcs etiquetes dans le BFS
-- [ ] B.8 — Mettre a jour `Main.scala` : 3 nouveaux scenarios pour la demo console (cycle complet, concurrence, tentative PSD invalide)
-- **Verification** : `sbt clean compile` PASS. Aucune regression sur les tests existants.
+- [x] B.1 — Etendre `Protocol.scala` : +6 types de messages (`ArriveeQuai`, `DepartQuai`, `OuverturePortes`, `FermeturePortes`, `PortesOuvertes`, `PortesFermees`) + types `ActorRef` des nouveaux controleurs
+- [x] B.2 — Creer `QuaiController.scala` : clone structurel de `SectionController`, etats `quaiLibre` / `quaiOccupe(occupant, file)`, arbitrage FIFO
+- [x] B.3 — Etendre `Train.scala` : 4 etats `comportementHors`, `comportementEnAttente`, `comportementSurCanton`, `comportementAQuai`
+- [x] B.4 — Creer `GestionnairePortes.scala` : etats `portesFermees` / `portesOuvertes(occupant)`, **garde de surete CRITIQUE** (refus silencieux OuverturePortes/FermeturePortes d'un train non-occupant)
+- [x] B.5 — Adapter `SectionController.scala` : commentaires alignes (canton)
+- [x] B.6 — Etendre `PetriNet.scala` : 12 places, 12 transitions, M0 = 5 jetons
+- [x] B.7 — Etendre `Analyseur.scala` : 5 invariants (canton, quai, portes, PSD-Open CRITIQUE, PSD-Departure CRITIQUE) + invariants par train + detection deadlock
+- [x] B.8 — Mettre a jour `Main.scala` : 3 scenarios (cycle complet, concurrence canton+quai, tentative PSD invalide bloquee)
+- **Verification** : `sbt clean compile` PASS. `sbt compile` PASS. Aucune regression.
 
-#### Sous-phase C : Tests — 5 fichiers (A FAIRE apres B)
+#### Sous-phase C : Tests — 5 fichiers (TERMINEE)
 
-- [ ] C.1 — Adapter `TrainSpec.scala` : 4 etats, transitions `canton -> quai -> portes -> depart`
-- [ ] C.2 — Adapter `SectionControllerSpec.scala` : liberation canton via `Sortie` quand le train transite vers le quai
-- [ ] C.3 — Creer `QuaiControllerSpec.scala` : symetrique de `SectionControllerSpec`
-- [ ] C.4 — Creer `GestionnairePortesSpec.scala` : **test CRITIQUE** — refus d'ouverture si aucun train a quai
-- [ ] C.5 — Adapter `AnalyseurSpec.scala` : +invariants quai/portes, +verification PSD, cible 15-18 marquages
-- **Verification** : `sbt test` cible 25-30 verts (vs 22 actuels)
+- [x] C.1 — Adapter `TrainSpec.scala` : 6 tests (4 etats + ack portes + cycle complet, nouveau constructeur a 4 args)
+- [x] C.2 — `SectionControllerSpec.scala` : 3 tests inchanges, toujours verts
+- [x] C.3 — Creer `QuaiControllerSpec.scala` : 5 tests (autorisation, attente, promotion, garde occupant, reutilisation)
+- [x] C.4 — Creer `GestionnairePortesSpec.scala` : 5 tests dont 2 CRITIQUES verifient le refus silencieux PSD-Open (OuverturePortes et FermeturePortes d'un train non-occupant)
+- [x] C.5 — Adapter `AnalyseurSpec.scala` : 20 tests (12P/12T, exactement 20 marquages, 5 invariants PASSE, 0 deadlock, exclusions mutuelles canton+quai, instantiation explicite PSD-Open)
+- **Verification** : `sbt test` : **39/39 verts** (vs 22 avant extension)
 
-#### Sous-phase D : Execution + finalisation (A FAIRE apres C)
+#### Sous-phase D : Execution + finalisation (EN COURS)
 
-- [ ] D.1 — `sbt clean compile` PASS
-- [ ] D.2 — `sbt test` : 25-30 tests verts
-- [ ] D.3 — `sbt "runMain m14.petri.Analyseur"` : 15-18 marquages, 5 invariants PASS, 0 deadlock
+- [x] D.1 — `sbt clean compile` PASS
+- [x] D.2 — `sbt test` : **39 tests verts**
+- [x] D.3 — `sbt "runMain m14.petri.Analyseur"` : **20 marquages** atteignables (M0..M19), 5 invariants PASS, 0 deadlock
 - [ ] D.4 — Remplir les sections narratives du `rapport.md` (1, 2, 3, 4, 7, 8) avec les sorties reelles de l'analyseur
 - [ ] D.5 — Remplir la section 6 de `comparaison.md` avec les sorties analyseur
-- [ ] D.6 — Commit atomique par sous-phase + entree `historique.md`
-- [ ] D.7 — Merge `feature/m14-extension-quai-psd` -> `main` avec `--no-ff`
-- [ ] D.8 — Push
-- **Verification globale** : `sbt test` vert + 5 invariants PASS + `preuves-manuelles.md` taches 2bis remplies
+- [x] D.6 — Commit atomique Phase B+C + entree `historique.md`
+- [ ] D.7 — Merge `extension` -> `main` avec `--no-ff` (apres relecture equipe)
+- [x] D.8 — Push branche `extension` : 34dc087
+- **Verification globale** : `sbt test` vert (39/39) + 5 invariants PASS + `preuves-manuelles.md` taches 2bis a remplir (D.4)
 
 ---
 
@@ -205,8 +205,8 @@ Ordre d'implementation impose : Protocol -> QuaiController -> Train -> Gestionna
   - Safety PSD-Departure : `G ( (Ti_a_quai AND X(Ti_hors)) -> Portes_fermees )`
   - Liveness canton : `G (Ti_attente -> F Ti_sur_canton)` (sous fairness FIFO)
   - Liveness PSD : `G (Ti_a_quai -> F Portes_ouvertes)`
-- [ ] Verification programmatique LTL Safety sur graphe etendu (`verifierGSafety` dans `Analyseur.scala`) — cible en Phase Extension B.7
-- [ ] Verification programmatique LTL Liveness sur graphe etendu (`verifierGFLiveness`) — cible en Phase Extension B.7
+- [ ] Verification programmatique LTL Safety sur graphe etendu (`verifierGSafety` dans `Analyseur.scala`)
+- [ ] Verification programmatique LTL Liveness sur graphe etendu (`verifierGFLiveness`)
 - [ ] Graphe d'accessibilite avec arcs etiquetes (`M_i --transition--> M_j`) — sortie inserable en annexe A1 du rapport
 - **Verification** : Safety renvoie `true` sur 15-18 marquages. Liveness renvoie `true` sous hypothese FIFO documentee.
 
@@ -215,7 +215,7 @@ Ordre d'implementation impose : Protocol -> QuaiController -> Train -> Gestionna
 ### Phase 8 : Bibliographie + rapport final (EN COURS)
 
 - [x] `documentation/livrables/biblio.md` : **11 references commentees** (Murata 1989, Akka, LTL TUM, Magee/Kramer, Lamport, RATP, Hewitt, Baier/Katoen, Manna/Pnueli, IEEE 1474 CBTC, UITP/PSD)
-- [ ] `documentation/livrables/rapport.md` complet — sections narratives a remplir apres Phase Extension D.4 :
+- [ ] `documentation/livrables/rapport.md` complet — sections narratives a remplir (Phase Extension D.4) :
   - Section 1 : Contexte et motivation (M14, PSD, sous-systeme retenu)
   - Section 3 : Architecture Akka (5 acteurs, protocole 6+4 messages)
   - Section 4 : Modele Petri formel (12 places, 12 transitions, read-arc emule)
