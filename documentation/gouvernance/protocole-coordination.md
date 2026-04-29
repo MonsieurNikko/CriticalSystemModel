@@ -12,17 +12,19 @@
 
 Chaque information du projet a **une seule** source de verite. En cas de conflit, ce tableau dit qui gagne.
 
-| Information                             | Source de verite                                  | Qui edite        | Qui doit relire   |
-|-----------------------------------------|---------------------------------------------------|------------------|-------------------|
-| Modele formel (places, transitions)     | `petri/petri-troncon.md`                          | Piste A (Nikko)  | Toute l'equipe    |
-| Vocabulaire metier <-> code <-> Petri   | `documentation/gouvernance/lexique.md`                        | Piste A          | Piste B avant chaque commit |
-| Protocole de messages Akka              | `src/main/scala/m14/troncon/Protocol.scala`       | Piste B          | Piste A           |
-| Logique d'arbitrage du controleur       | `src/main/scala/m14/troncon/SectionController.scala` | Piste B       | Piste A pour validation FIFO |
-| Machine a etats du train                | `src/main/scala/m14/troncon/Train.scala`          | Piste B          | Piste A           |
-| Preuves d'invariants a la main          | `documentation/livrables/preuves-manuelles.md`              | Piste A          | Piste B en Phase 6 |
-| Correspondance scenarios <-> transitions | `documentation/livrables/comparaison.md`                   | Piste A + Piste B (co-redige) | Toute l'equipe |
-| Sortie programmatique de l'analyseur    | `src/main/scala/m14/petri/` + log de sortie       | Piste B          | Piste A en Phase 6 |
-| Rapport final                           | `documentation/livrables/rapport.md`                        | Toute l'equipe   | Toute l'equipe |
+| Information                                | Source de verite                                                | Qui edite                     | Qui doit relire             |
+|--------------------------------------------|-----------------------------------------------------------------|-------------------------------|-----------------------------|
+| Modele formel (places, transitions, PSD)   | `petri/petri-troncon.md`                                        | Piste A                       | Toute l'equipe              |
+| Vocabulaire metier <-> code <-> Petri      | `documentation/gouvernance/lexique.md`                          | Piste A                       | Piste B avant chaque commit |
+| Protocole de messages Akka (8+4 messages)  | `src/main/scala/m14/troncon/Protocol.scala`                     | Piste B                       | Piste A                     |
+| Arbitrage du canton                        | `src/main/scala/m14/troncon/SectionController.scala`            | Piste B                       | Piste A pour validation FIFO|
+| Arbitrage du quai (NEW)                    | `src/main/scala/m14/troncon/QuaiController.scala`               | Piste B                       | Piste A pour validation FIFO|
+| Garde de surete des portes (NEW, CRITIQUE) | `src/main/scala/m14/troncon/GestionnairePortes.scala`           | Piste B                       | Piste A obligatoire         |
+| Machine a etats du train (4 etats)         | `src/main/scala/m14/troncon/Train.scala`                        | Piste B                       | Piste A                     |
+| Preuves d'invariants a la main             | `documentation/livrables/preuves-manuelles.md`                  | Piste A                       | Piste B en Phase D          |
+| Correspondance scenarios <-> transitions   | `documentation/livrables/comparaison.md`                        | Piste A + Piste B (co-redige) | Toute l'equipe              |
+| Sortie programmatique de l'analyseur       | `src/main/scala/m14/petri/` + log                               | Piste B                       | Piste A en Phase D          |
+| Rapport final                              | `documentation/livrables/rapport.md`                            | Toute l'equipe                | Toute l'equipe              |
 
 **Regle** : si tu modifies un fichier, tu es responsable de notifier les autres editeurs concernes via une entree dans `documentation/suivi/historique.md` **dans la meme session**.
 
@@ -30,14 +32,22 @@ Chaque information du projet a **une seule** source de verite. En cas de conflit
 
 ## 2) Liste gelee - Ce qui NE change PAS sans reunion d'equipe
 
-Les decisions suivantes sont verrouillees. Toute modification necessite un accord explicite des 4 contributeurs (a tracer dans historique.md).
+Les decisions suivantes sont verrouillees apres l'extension PSD du 29 avril 2026. Toute modification necessite un accord explicite des 4 contributeurs (a tracer dans historique.md).
 
-- [LOCKED] **7 places, 6 transitions** dans le reseau de Petri. Pas plus, pas moins.
-- [LOCKED] **4 messages Akka** : `Demande`, `Sortie`, `Autorisation`, `Attente`. Aucun nouveau message.
+- [LOCKED] **12 places, 12 transitions** dans le reseau de Petri etendu (canton + quai + portes). Pas plus, pas moins.
+- [LOCKED] **8 messages Akka cote controleurs** : `Demande`, `Sortie`, `ArriveeQuai`, `DepartQuai`, `OuverturePortes`, `FermeturePortes`, plus `Autorisation`, `Attente`, `PortesOuvertes`, `PortesFermees` cote trains. Aucun nouveau message.
 - [LOCKED] **2 trains** dans le scope. Pas de generalisation a N trains.
-- [LOCKED] **Marquage initial** : `Troncon_libre=1, T1_hors=1, T2_hors=1`. Aucune autre place a 1.
-- [LOCKED] **Invariant principal** : `T1_sur_troncon + T2_sur_troncon + Troncon_libre = 1`. C'est la pierre angulaire du projet.
-- [LOCKED] **3 scenarios de validation** : Nominal, Concurrence, Liberation/Progression. Aucun 4e scenario sans accord.
+- [LOCKED] **Marquage initial M0** : `Canton_libre=1, Quai_libre=1, Portes_fermees=1, T1_hors=1, T2_hors=1`. Toute autre place a 0. 5 jetons en circulation.
+- [LOCKED] **3 invariants de ressource** :
+  - canton : `T1_sur_canton + T2_sur_canton + Canton_libre = 1`
+  - quai : `T1_a_quai + T2_a_quai + Quai_libre = 1`
+  - portes : `Portes_fermees + Portes_ouvertes = 1`
+- [LOCKED] **2 invariants critiques de surete PSD** :
+  - PSD-Open : `Portes_ouvertes = 1 => T1_a_quai + T2_a_quai = 1`
+  - PSD-Departure : `Ti_depart_quai tirable => Portes_fermees = 1`
+- [LOCKED] **3 scenarios de validation** : Nominal cycle complet, Concurrence canton+quai, Surete PSD (tentative invalide). Aucun 4e scenario sans accord.
+
+**Decision archivee 26/04** : verrouillage initial a 7 places / 6 transitions / 4 messages, abandonne le 29/04 lors de l'extension PSD (cf historique.md). Cette extension a ete validee par l'utilisateur comme moyen de rendre le projet plus M14-realiste.
 
 Si pendant le codage une de ces verrous semble bloquer, **stop** : on en discute avant de toucher quoi que ce soit. Probablement le code peut s'adapter sans casser le verrou.
 
@@ -133,6 +143,33 @@ Voici les questions concretes qui vont **probablement** se poser pendant l'imple
 ### Q10 - L'analyseur Petri (Phase 5) doit-il lire le reseau depuis `petri/petri-troncon.md` ?
 
 **Reponse** : non. Le reseau est encode **en dur** dans `src/main/scala/m14/petri/PetriNet.scala` (pas de parser de fichier). Conforme au scope verrou : pas de generalisation. La coherence avec `petri/petri-troncon.md` est verifiee par relecture, pas par parsing.
+
+### Q11 - Le `QuaiController` doit-il etre une copie conforme de `SectionController` ? [NEW Phase 7]
+
+**Reponse** : **oui, deliberement**. Memes etats internes (`quaiLibre`, `quaiOccupe(occupant, file)`), meme logique FIFO, memes cas defensifs. La duplication est assumee : elle simplifie la lecture et evite une abstraction prematuree (regles vibe-code section 12). Si plus tard on factorise, ce sera apres rendu.
+
+### Q12 - Comment le `GestionnairePortes` sait-il qu'un train est a quai ? [NEW Phase 7]
+
+**Reponse** : c'est l'acteur lui-meme qui maintient l'etat. Quand le `Train` arrive a quai (a recu `Autorisation` du `QuaiController`), il envoie `OuverturePortes(idTrain)` au `GestionnairePortes`. Le gestionnaire passe alors de l'etat `portesFermees` a `portesOuvertes(idTrain)`. La garde de surete est : si on recoit `OuverturePortes` alors qu'on est deja en `portesOuvertes(autreTrain)`, on ignore (cas defensif, deux trains a quai en meme temps est exclu par l'invariant quai). 
+
+**Note importante** : le `GestionnairePortes` ne questionne pas le `QuaiController`, il fait confiance a la machine d'etat des trains. La coherence est garantie par le modele Petri (qui empeche `OuverturePortes` sans train a quai).
+
+### Q13 - Le `Train` doit-il faire l'ouverture/fermeture des portes lui-meme ? [NEW Phase 7]
+
+**Reponse** : oui, le train **declenche** l'ouverture en envoyant `OuverturePortes` au gestionnaire des qu'il arrive a quai (recoit `Autorisation` du quai). Apres avoir recu la confirmation `PortesOuvertes`, il attend un delai symbolique (montee/descente voyageurs - en realite quelques secondes), puis envoie `FermeturePortes`. Apres `PortesFermees`, il envoie `DepartQuai` au `QuaiController` et passe a `comportementHors`.
+
+Pour les tests deterministes : le delai d'embarquement est encode comme un message immediat (pas de `Thread.sleep`). En production reelle, ce serait un `context.scheduleOnce`.
+
+### Q14 - Comment la transition Petri `T1_depart_quai` modelise-t-elle "Portes_fermees [read]" ? [NEW Phase 7]
+
+**Reponse** : en Petri ordinaire, on n'a pas de read-arc natif. On emule en consommant `Portes_fermees` puis en le reproduisant (cf petri-troncon.md section 3 : `pre={T1_a_quai, Portes_fermees}, post={T1_hors, Quai_libre, Portes_fermees}`). Net effet : `Portes_fermees` reste a 1 (lecture), mais la transition n'est tirable que si `Portes_fermees=1`. C'est exactement la semantique recherchee.
+
+### Q15 - Quelle preuve donne-t-on de la surete PSD-Open dans le rapport ? [NEW Phase 7]
+
+**Reponse** : trois niveaux de preuve convergents (cf rapport.md section 5.5) :
+1. **Structurelle** : la place `Portes_ouvertes` ne peut etre marquee que par les transitions `Ouverture_portes_Ti`, dont le pre contient `Ti_a_quai`. Donc tant que `Portes_ouvertes=1`, un train est a quai.
+2. **Inductive** : par recurrence sur le marquage initial et chaque transition (analogue a la preuve de l'invariant principal).
+3. **Programmatique** : l'analyseur Scala enumere les marquages atteignables et verifie pour chacun que `Portes_ouvertes=1 => T1_a_quai+T2_a_quai=1`. Si la verification echoue sur un seul marquage, l'analyseur signale une violation (cf `verifierSurteOuverturePortes` dans `Analyseur.scala`).
 
 ---
 

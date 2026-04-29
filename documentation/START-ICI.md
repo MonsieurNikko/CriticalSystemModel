@@ -6,19 +6,23 @@
 
 ## 1) Le projet en une phrase
 
-On modelise un sous-systeme critique inspire de la M14 : **deux trains automatiques veulent acceder a un meme troncon partage, et on prouve qu'ils ne peuvent jamais etre dessus en meme temps**.
+On modelise un sous-systeme critique inspire de la M14 : **deux trains automatiques veulent acceder a un canton de signalisation puis a un quai equipe de portes palieres (PSD), et on prouve formellement les invariants de surete (exclusion mutuelle + portes palieres ne s'ouvrent jamais sans train a quai + train ne demarre jamais portes ouvertes)**.
 
 Le projet combine :
 
-- **Akka / Scala** : simulation distribuee par acteurs ;
-- **Reseau de Petri** : modele formel du protocole ;
-- **Analyseur Scala maison** : exploration des marquages, invariants, deadlocks ;
-- **Demo HTML** : visualisation pas-a-pas pour la soutenance.
+- **Akka / Scala** : simulation distribuee par acteurs (5 acteurs : 2 Train + SectionController + QuaiController + GestionnairePortes) ;
+- **Reseau de Petri** : modele formel etendu (12 places, 12 transitions) ;
+- **Analyseur Scala maison** : exploration des marquages, 5 invariants verifies, deadlocks ;
+- **Demo HTML** : visualisation pas-a-pas pour la soutenance (a remettre a jour Phase 7).
 
-Invariant central :
+Invariants centraux (3 ressources + 2 surete PSD critiques) :
 
 ```text
-T1_sur_troncon + T2_sur_troncon + Troncon_libre = 1
+Canton  : T1_sur_canton + T2_sur_canton + Canton_libre = 1
+Quai    : T1_a_quai     + T2_a_quai     + Quai_libre   = 1
+Portes  : Portes_fermees + Portes_ouvertes              = 1
+PSD-Open      : Portes_ouvertes=1 => un train est a quai (CRITIQUE)
+PSD-Departure : Ti_depart_quai tirable => Portes_fermees=1 (CRITIQUE)
 ```
 
 ---
@@ -103,19 +107,24 @@ CriticalSystemModel/
 
 ## 4) Etat actuel
 
-Mis a jour le 27 avril 2026.
+Mis a jour le 29 avril 2026 (extension PSD validee).
 
 | Element | Etat |
 |---|---|
-| Code Akka `Train` + `SectionController` | FAIT |
-| Protocole de messages | FAIT, verrouille a 4 messages |
-| Reseau de Petri | FAIT, 7 places / 6 transitions |
-| Analyseur Petri | FAIT, 8 marquages, 0 deadlock |
-| Tests | FAIT, 19 tests verts |
-| Demo console | FAIT avec `sbt "runMain m14.Main"` |
-| Demo HTML | Prototype FAIT dans `demo/index.html` |
-| Comparaison Akka vs Petri | A finaliser avec sortie analyseur |
-| Rapport final | A rediger / completer en priorite |
+| Modele Petri etendu (canton + quai + PSD) | FAIT - `petri/petri-troncon.md` (12 places, 12 transitions) |
+| Documentation gouvernance (lexique, protocole, preuves) | FAIT - extension PSD documentee |
+| Comparaison Akka vs Petri (3 nouveaux scenarios) | FAIT - structure prete, sorties analyseur en Phase D |
+| Rapport (squelette etendu, sections 1-4 + 7-8 a remplir Phase D) | EN COURS |
+| Code Akka `Train` (4 etats) | A FAIRE - Phase B |
+| Code Akka `SectionController` (adaptation) | A FAIRE - Phase B |
+| Code Akka `QuaiController` (NEW) | A FAIRE - Phase B |
+| Code Akka `GestionnairePortes` (NEW, garde de surete) | A FAIRE - Phase B |
+| Reseau Petri etendu dans `PetriNet.scala` | A FAIRE - Phase B |
+| Analyseur etendu (`verifierSurteOuverturePortes`) | A FAIRE - Phase B |
+| Tests etendus (5 fichiers : 3 nouveaux, 2 adaptes) | A FAIRE - Phase C |
+| Execution `sbt test` cible 25-30 verts | A FAIRE - Phase D |
+| Execution analyseur cible 15-18 marquages, 5 invariants | A FAIRE - Phase D |
+| Demo HTML alignement modele etendu | A FAIRE - Phase D |
 
 ---
 
@@ -191,16 +200,17 @@ Actions prioritaires :
 
 ## 6) Ce qu'il ne faut pas changer sans accord
 
-Ces choix sont verrouilles pour eviter de casser les preuves :
+Ces choix sont verrouilles pour eviter de casser les preuves (cf `documentation/gouvernance/protocole-coordination.md` section 2) :
 
 - pas plus de 2 trains ;
-- pas plus de 1 troncon partage ;
-- pas de nouveau message Akka ;
-- pas de nouveau modele Petri sans mettre a jour les preuves ;
-- pas de generalisation a N trains ;
-- pas de pannes ou timeouts dans le coeur du projet.
+- pas plus de 1 canton + 1 quai partages ;
+- pas plus de 12 places, 12 transitions dans le reseau de Petri ;
+- pas plus de 6 messages vers controleurs + 4 messages vers trains ;
+- pas de generalisation a N trains ou N quais ;
+- pas de pannes, timeouts ou Petri temporise dans le coeur du projet ;
+- la garde de surete du `GestionnairePortes` (refus d'ouverture sans train a quai) **ne doit jamais etre desactivee** : c'est le coeur de la propriete PSD-Open.
 
-La demo HTML peut etre amelioree visuellement, mais elle doit rester alignee sur le modele actuel.
+La demo HTML peut etre amelioree visuellement, mais elle doit rester alignee sur le modele etendu actuel.
 
 ---
 

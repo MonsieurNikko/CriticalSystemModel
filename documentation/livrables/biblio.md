@@ -79,11 +79,23 @@ Lien : https://www.ratp.fr/
 
 Source de contexte applicatif. Sert a justifier le choix du domaine (metro automatique sans conducteur) comme exemple de systeme distribue **critique** au sens du cahier des charges (defaillance = consequences graves). Le projet ne pretend pas modeliser fidelement la M14, mais s'appuie sur ce contexte pour ancrer le sous-systeme abstrait etudie.
 
+### IEEE Std 1474.1-2004 - "IEEE Standard for Communications-Based Train Control (CBTC) Performance and Functional Requirements"
+*IEEE Vehicular Technology Society.*
+Lien : https://standards.ieee.org/ieee/1474.1/3349/
+
+Reference normative pour les exigences de performance et de surete des systemes CBTC, technologie qui equipe la M14. Sert a justifier le scope du sous-systeme retenu (controle d'acces canton + arret en station avec PSD) comme un sous-ensemble representatif des fonctions critiques d'un CBTC. La notion d'exclusion mutuelle sur un canton de signalisation est directement derivee des exigences de "block protection" du standard.
+
+### Article M14 / PSD - "Platform Screen Doors and Mass Transit Safety"
+*Etudes publiques sur la securite des portes palieres dans les metros automatiques (RATP / SNCF / UITP).*
+Lien : https://www.uitp.org/
+
+Source de contexte specifique aux portes palieres (PSD) ajoutee lors de l'extension du modele le 29/04/2026. Sert a justifier la criticite reglementaire des deux invariants PSD-Open et PSD-Departure : sans portes palieres, la M14 enregistrerait des chutes mortelles voyageurs. Le projet modelise formellement ces deux invariants comme proprietes de surete devant etre verifiees programmatiquement par l'analyseur Scala (livrable L5).
+
 ---
 
 ## Notes de gestion bibliographique
 
 - Toute source ajoutee ici doit etre citee au moins une fois dans `documentation/livrables/rapport.md` (livrable L4).
 - Eviter d'ajouter des sources non lues : preferer 5 sources comprises a 15 sources decoratives.
-- Format des liens : URL stable (DOI, page institutionnelle, edition de reference). Pas de lien vers un PDF tiers periss able.
-- Etat actuel : 9 sources. Cible cahier des charges : 5-8. Possibilite d'en retirer 1 ou 2 a la relecture si redondantes (par exemple Lamport 1978 si non utilisee dans le rapport).
+- Format des liens : URL stable (DOI, page institutionnelle, edition de reference). Pas de lien vers un PDF tiers perissable.
+- Etat actuel : **11 sources** (9 initiales + 2 ajoutees lors de l'extension PSD du 29/04). Cible cahier des charges : 5-8 ; au-dela mais toutes utilisees. Possibilite d'en retirer 1 ou 2 a la relecture si redondantes (par exemple Lamport 1978 si non utilisee dans le rapport).

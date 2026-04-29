@@ -1,4 +1,5 @@
-// AnalyseurSpec.scala : tests de l'analyseur Petri sur le reseau du troncon partage.
+// AnalyseurSpec.scala : tests de l'analyseur Petri sur le reseau etendu PSD
+// (canton + quai + portes palieres).
 
 package m14.petri
 
@@ -10,79 +11,125 @@ class AnalyseurSpec extends AnyWordSpec with Matchers {
   import PetriNet._
   import Analyseur._
 
-  "PetriNet" should {
+  "PetriNet (extension PSD)" should {
 
-    "avoir 7 places et 6 transitions" in {
-      toutesLesPlaces.size shouldBe 7
-      toutesLesTransitions.size shouldBe 6
+    "avoir 12 places et 12 transitions" in {
+      toutesLesPlaces.size shouldBe 12
+      toutesLesTransitions.size shouldBe 12
     }
 
-    "avoir un marquage initial coherent (3 jetons total)" in {
+    "avoir un marquage initial avec 5 jetons" in {
       val totalJetons = marquageInitial.values.sum
-      totalJetons shouldBe 3
+      totalJetons shouldBe 5
     }
 
-    "rendre T1_demande tirable depuis M0" in {
+    "M0 contient les jetons attendus (Canton/Quai/Portes libres + 2 trains hors)" in {
+      marquageInitial(CantonLibre)   shouldBe 1
+      marquageInitial(QuaiLibre)     shouldBe 1
+      marquageInitial(PortesFermees) shouldBe 1
+      marquageInitial(T1Hors)        shouldBe 1
+      marquageInitial(T2Hors)        shouldBe 1
+    }
+
+    "rendre T1_demande et T2_demande tirables depuis M0" in {
       estTirable(t1Demande, marquageInitial) shouldBe true
-    }
-
-    "rendre T2_demande tirable depuis M0" in {
       estTirable(t2Demande, marquageInitial) shouldBe true
     }
 
-    "ne pas rendre T1_entree_autorisee tirable depuis M0" in {
+    "ne pas rendre T1_entree_canton tirable depuis M0" in {
       // Pas tirable car T1_attente = 0 dans M0.
-      estTirable(t1EntreeAutorisee, marquageInitial) shouldBe false
+      estTirable(t1EntreeCanton, marquageInitial) shouldBe false
     }
 
-    "calculer correctement le marquage apres T1_demande depuis M0" in {
-      val resultat = tirer(t1Demande, marquageInitial)
-      resultat shouldBe defined
-
-      val m1 = resultat.get
-      m1(T1Hors) shouldBe 0
-      m1(T1Attente) shouldBe 1
-      m1(TronconLibre) shouldBe 1  // Troncon toujours libre apres une simple demande.
+    "ne pas rendre Ouverture_portes_T1 tirable depuis M0 (T1_a_quai = 0)" in {
+      estTirable(ouvertureT1, marquageInitial) shouldBe false
     }
 
-    "calculer correctement le marquage apres T1_demande puis T1_entree_autorisee" in {
-      val apresT1Demande = tirer(t1Demande, marquageInitial).get
-      val apresT1Entree = tirer(t1EntreeAutorisee, apresT1Demande).get
+    "calculer correctement M0 --T1_demande--> M1" in {
+      val m1 = tirer(t1Demande, marquageInitial).get
+      m1(T1Hors)       shouldBe 0
+      m1(T1Attente)    shouldBe 1
+      m1(CantonLibre)  shouldBe 1
+    }
 
-      apresT1Entree(T1Attente) shouldBe 0
-      apresT1Entree(T1SurTroncon) shouldBe 1
-      apresT1Entree(TronconLibre) shouldBe 0  // Troncon occupe par T1.
+    "calculer correctement la sequence T1_demande -> T1_entree_canton" in {
+      val m1 = tirer(t1Demande, marquageInitial).get
+      val m2 = tirer(t1EntreeCanton, m1).get
+      m2(T1Attente)    shouldBe 0
+      m2(T1SurCanton)  shouldBe 1
+      m2(CantonLibre)  shouldBe 0
+    }
+
+    "calculer correctement T1 jusqu'a a_quai (cycle canton -> quai)" in {
+      val m1 = tirer(t1Demande, marquageInitial).get
+      val m2 = tirer(t1EntreeCanton, m1).get
+      val m3 = tirer(t1ArriveeQuai, m2).get
+      m3(T1SurCanton)  shouldBe 0
+      m3(T1AQuai)      shouldBe 1
+      m3(QuaiLibre)    shouldBe 0
+      m3(CantonLibre)  shouldBe 1
     }
   }
 
-  "Analyseur" should {
+  "Analyseur (extension PSD)" should {
 
-    "trouver exactement 8 marquages atteignables" in {
+    "trouver exactement 20 marquages atteignables" in {
       val resultat = analyser(reseauTroncon)
-      resultat.nombreEtats shouldBe 8
+      resultat.nombreEtats shouldBe 20
     }
 
-    "verifier l'invariant principal sur tous les marquages" in {
-      val resultat = analyser(reseauTroncon)
-      resultat.invariantPrincipalOk shouldBe true
+    "verifier l'invariant canton (5.1)" in {
+      analyser(reseauTroncon).invariantCantonOk shouldBe true
     }
 
-    "verifier les invariants par train sur tous les marquages" in {
-      val resultat = analyser(reseauTroncon)
-      resultat.invariantsParTrainOk shouldBe true
+    "verifier l'invariant quai (5.2)" in {
+      analyser(reseauTroncon).invariantQuaiOk shouldBe true
+    }
+
+    "verifier l'invariant portes (5.3)" in {
+      analyser(reseauTroncon).invariantPortesOk shouldBe true
+    }
+
+    "verifier les invariants par train" in {
+      analyser(reseauTroncon).invariantsParTrainOk shouldBe true
+    }
+
+    "verifier PSD-Open Safety (6.1) sur tous les marquages [CRITIQUE]" in {
+      analyser(reseauTroncon).invariantPsdOpenOk shouldBe true
+    }
+
+    "verifier PSD-Departure Safety (6.2) sur tous les marquages [CRITIQUE]" in {
+      analyser(reseauTroncon).invariantPsdDepartureOk shouldBe true
     }
 
     "ne detecter aucun deadlock" in {
-      val resultat = analyser(reseauTroncon)
-      resultat.deadlocks shouldBe empty
+      analyser(reseauTroncon).deadlocks shouldBe empty
     }
 
-    "garantir l'exclusion mutuelle (jamais T1 et T2 sur le troncon en meme temps)" in {
+    "garantir exclusion mutuelle canton (jamais T1+T2 sur le canton)" in {
       val resultat = analyser(reseauTroncon)
       val collision = resultat.marquagesAtteignables.exists { m =>
-        m.getOrElse(T1SurTroncon, 0) >= 1 && m.getOrElse(T2SurTroncon, 0) >= 1
+        m.getOrElse(T1SurCanton, 0) >= 1 && m.getOrElse(T2SurCanton, 0) >= 1
       }
       collision shouldBe false
+    }
+
+    "garantir exclusion mutuelle quai (jamais T1+T2 a quai)" in {
+      val resultat = analyser(reseauTroncon)
+      val collision = resultat.marquagesAtteignables.exists { m =>
+        m.getOrElse(T1AQuai, 0) >= 1 && m.getOrElse(T2AQuai, 0) >= 1
+      }
+      collision shouldBe false
+    }
+
+    "Portes_ouvertes implique toujours qu un train est a quai (PSD-Open instantiation)" in {
+      val resultat = analyser(reseauTroncon)
+      resultat.marquagesAtteignables.foreach { m =>
+        if (m.getOrElse(PortesOuvertes, 0) >= 1) {
+          val sommeAQuai = m.getOrElse(T1AQuai, 0) + m.getOrElse(T2AQuai, 0)
+          sommeAQuai shouldBe 1
+        }
+      }
     }
   }
 }

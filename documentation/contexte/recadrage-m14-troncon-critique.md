@@ -225,3 +225,32 @@ Critiques possibles d'un correcteur exigeant:
 
 Verdict:
 - avec ce recadrage, le projet devient defendable et realisable dans un cadre academique.
+
+## 13) Extension PSD (29/04/2026) - retour partiel sur le scope retire en section 4
+
+Decision validee le 29/04/2026 par l'equipe : reintegrer dans le coeur la **gestion des portes palieres (PSD - Platform Screen Doors)** qui avait ete retiree en section 4 ("portes de quai et acces station"). La motivation est qu'apres analyse, ces portes sont :
+
+- **specifiques de la M14** (premiere ligne francaise integralement equipee), donc renforcent l'ancrage M14 du projet ;
+- **critiques au sens reglementaire** (defaillance = chute mortelle ou voyageur ecrase), exactement le type de propriete que demande le sujet "systemes critiques" ;
+- **modelisables de facon compacte** : 5 places + 4 transitions ajoutees, 4 messages Akka ajoutes. Le modele reste analysable a la main (15-18 marquages).
+
+Nouveau scope du coeur :
+- 2 trains (4 etats chacun : `hors`, `enAttente`, `surCanton`, `aQuai`)
+- 1 canton de signalisation
+- 1 quai en station
+- 1 paire de portes palieres
+- 3 controleurs : `SectionController`, `QuaiController`, `GestionnairePortes`
+- Reseau Petri : **12 places, 12 transitions effectives**
+- 5 invariants : 3 de ressource (canton, quai, portes) + 2 critiques de surete PSD (PSD-Open, PSD-Departure)
+- 3 scenarios de validation : nominal cycle complet, concurrence canton+quai, surete PSD invalide
+
+Ce qui reste hors scope (inchange depuis section 4) :
+- densite voyageurs, alertes operationnelles, gestion globale d'incidents, exploitation de ligne, N trains, 2e canton, 2 quais opposes.
+
+Renommage formel :
+- `troncon` -> `canton` (vocabulaire ferroviaire reel).
+- `Ti_sur_troncon` -> `Ti_sur_canton` ; `Troncon_libre` -> `Canton_libre`.
+- L'etat Akka `surTroncon` est renomme `surCanton`.
+
+Verrouillage :
+- Cette extension est tracee dans `documentation/suivi/historique.md` (entree du 29/04) et dans `documentation/gouvernance/protocole-coordination.md` section 2 (verrous mis a jour). Aucune nouvelle extension du scope n'est autorisee sans accord des 4 contributeurs.

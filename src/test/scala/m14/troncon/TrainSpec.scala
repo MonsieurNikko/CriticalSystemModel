@@ -1,4 +1,5 @@
-// TrainSpec.scala : tests unitaires de la machine a etats du Train.
+// TrainSpec.scala : tests unitaires de la machine a etats du Train
+// (extension PSD : 4 etats hors / attente / sur_canton / a_quai).
 
 package m14.troncon
 
@@ -8,64 +9,94 @@ import org.scalatest.wordspec.AnyWordSpecLike
 
 class TrainSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
-  "Train" should {
+  // Helper : cree un train avec 3 probes (sectionController, quaiController, gestionnairePortes).
+  private def setupTrain(id: IdTrain) = {
+    val probeSection = createTestProbe[MessagePourControleur]()
+    val probeQuai    = createTestProbe[MessagePourQuai]()
+    val probePortes  = createTestProbe[MessagePourPortes]()
+    val trainRef     = spawn(Train(id, probeSection.ref, probeQuai.ref, probePortes.ref))
+    (trainRef, probeSection, probeQuai, probePortes)
+  }
 
-    "envoyer une Demande au controleur des sa creation" in {
-      val probeControleur = createTestProbe[MessagePourControleur]()
+  "Train (extension PSD)" should {
 
-      spawn(Train(Train1, probeControleur.ref))
-
-      // Le train doit envoyer Demande(Train1, ...) immediatement.
-      val demandeRecue = probeControleur.expectMessageType[Demande]
-      assert(demandeRecue.emetteur == Train1)
+    "envoyer une Demande au SectionController des sa creation" in {
+      val (_, probeSection, _, _) = setupTrain(Train1)
+      val demande = probeSection.expectMessageType[Demande]
+      assert(demande.emetteur == Train1)
     }
 
-    "passer sur le troncon et envoyer Sortie apres avoir recu Autorisation" in {
-      val probeControleur = createTestProbe[MessagePourControleur]()
+    "rester en attente sur message Attente puis progresser sur Autorisation" in {
+      val (trainRef, probeSection, probeQuai, _) = setupTrain(Train1)
+      probeSection.expectMessageType[Demande]
 
-      val trainRef = spawn(Train(Train1, probeControleur.ref))
-
-      // Le train envoie Demande a la creation.
-      val demandeRecue = probeControleur.expectMessageType[Demande]
-
-      // Le controleur repond Autorisation -> le train doit passer sur le troncon
-      // puis envoyer Sortie (transition Ti_sortie_liberation).
-      trainRef ! Autorisation
-      val sortieRecue = probeControleur.expectMessageType[Sortie]
-      assert(sortieRecue.emetteur == Train1)
-    }
-
-    "rester en attente apres avoir recu Attente puis progresser sur Autorisation" in {
-      val probeControleur = createTestProbe[MessagePourControleur]()
-
-      val trainRef = spawn(Train(Train1, probeControleur.ref))
-
-      // Premiere Demande a la creation.
-      probeControleur.expectMessageType[Demande]
-
-      // Le controleur signale Attente -> le train ne doit rien envoyer de plus.
       trainRef ! Attente
-      probeControleur.expectNoMessage()
+      probeSection.expectNoMessage()
+      probeQuai.expectNoMessage()
 
-      // Le controleur envoie finalement Autorisation -> le train doit envoyer Sortie.
       trainRef ! Autorisation
-      val sortieRecue = probeControleur.expectMessageType[Sortie]
-      assert(sortieRecue.emetteur == Train1)
+      // Apres entree canton, le train envoie immediatement ArriveeQuai au QuaiController.
+      val arrivee = probeQuai.expectMessageType[ArriveeQuai]
+      assert(arrivee.emetteur == Train1)
     }
 
-    "recommencer un cycle complet apres etre sorti du troncon" in {
-      val probeControleur = createTestProbe[MessagePourControleur]()
-
-      val trainRef = spawn(Train(Train1, probeControleur.ref))
-
-      // Cycle 1 : Demande -> Autorisation -> Sortie
-      probeControleur.expectMessageType[Demande]
+    "envoyer ArriveeQuai puis attendre l autorisation du QuaiController" in {
+      val (trainRef, probeSection, probeQuai, probePortes) = setupTrain(Train1)
+      probeSection.expectMessageType[Demande]
       trainRef ! Autorisation
-      probeControleur.expectMessageType[Sortie]
+      probeQuai.expectMessageType[ArriveeQuai]
 
-      // Cycle 2 : le train doit re-demander automatiquement.
-      val deuxiemeDemande = probeControleur.expectMessageType[Demande]
-      assert(deuxiemeDemande.emetteur == Train1)
+      // Le quai dit Attente : le train ne doit rien envoyer aux portes.
+      trainRef ! Attente
+      probePortes.expectNoMessage()
+    }
+
+    "envoyer Sortie au SectionController + OuverturePortes apres autorisation quai" in {
+      val (trainRef, probeSection, probeQuai, probePortes) = setupTrain(Train1)
+      probeSection.expectMessageType[Demande]
+      trainRef ! Autorisation
+      probeQuai.expectMessageType[ArriveeQuai]
+
+      // Quai accorde -> le train doit liberer le canton (Sortie) puis demander OuverturePortes.
+      trainRef ! Autorisation
+      val sortie = probeSection.expectMessageType[Sortie]
+      assert(sortie.emetteur == Train1)
+      val ouverture = probePortes.expectMessageType[OuverturePortes]
+      assert(ouverture.emetteur == Train1)
+    }
+
+    "envoyer FermeturePortes apres reception PortesOuvertes" in {
+      val (trainRef, probeSection, probeQuai, probePortes) = setupTrain(Train1)
+      probeSection.expectMessageType[Demande]
+      trainRef ! Autorisation
+      probeQuai.expectMessageType[ArriveeQuai]
+      trainRef ! Autorisation
+      probeSection.expectMessageType[Sortie]
+      probePortes.expectMessageType[OuverturePortes]
+
+      trainRef ! PortesOuvertes
+      val fermeture = probePortes.expectMessageType[FermeturePortes]
+      assert(fermeture.emetteur == Train1)
+    }
+
+    "envoyer DepartQuai apres reception PortesFermees et redemarrer un cycle" in {
+      val (trainRef, probeSection, probeQuai, probePortes) = setupTrain(Train1)
+      probeSection.expectMessageType[Demande]
+      trainRef ! Autorisation
+      probeQuai.expectMessageType[ArriveeQuai]
+      trainRef ! Autorisation
+      probeSection.expectMessageType[Sortie]
+      probePortes.expectMessageType[OuverturePortes]
+      trainRef ! PortesOuvertes
+      probePortes.expectMessageType[FermeturePortes]
+
+      trainRef ! PortesFermees
+      val depart = probeQuai.expectMessageType[DepartQuai]
+      assert(depart.emetteur == Train1)
+
+      // Cycle 2 : le train doit re-demander le canton automatiquement.
+      val demande2 = probeSection.expectMessageType[Demande]
+      assert(demande2.emetteur == Train1)
     }
   }
 }

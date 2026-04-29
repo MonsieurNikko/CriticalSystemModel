@@ -33,6 +33,48 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ## Entrees
 
+### [2026-04-29 17:30] - Extension PSD - Phase A documentation complete
+- GitHub: @MonsieurNikko
+- Branche: feature/m14-extension-quai-psd (cree depuis main 0aae8a4)
+- Contexte/tache: extension du scope du projet pour reintegrer la gestion des portes palieres (PSD - Platform Screen Doors) qui avait ete retiree en section 4 du recadrage. Motivation : les portes palieres sont specifiques de la M14, critiques au sens reglementaire (chute mortelle / voyageur ecrase), et modelisables de facon compacte (5 places + 4 transitions ajoutees). La Phase A couvre l'integralite de la documentation AVANT toute modification de code, conformement au principe "Petri = source de verite, code suit".
+- Fichiers modifies:
+	- petri/petri-troncon.md (reecrit : 12 places, 12 transitions effectives, 5 invariants)
+	- documentation/gouvernance/lexique.md (4 etats par train, QuaiController + GestionnairePortes ajoutes, 6+4 messages)
+	- documentation/gouvernance/protocole-coordination.md (verrous mis a jour, Q11-Q15 PSD)
+	- documentation/livrables/preuves-manuelles.md (carnet etendu : tache 1 = 15-18 marquages, tache 2bis = invariants PSD avec triple preuve)
+	- documentation/livrables/comparaison.md (3 nouveaux scenarios : nominal cycle complet, concurrence canton+quai, surete PSD invalide)
+	- documentation/livrables/rapport.md (squelette etendu, architecture 5 acteurs, modele 12/12, section 5.5 PSD avec triple preuve)
+	- documentation/livrables/biblio.md (+IEEE 1474 CBTC, +PSD/UITP)
+	- README.md (badges, invariants, perimetre, livrables - 5 invariants au lieu de 1)
+	- documentation/START-ICI.md (etat actuel, 4 etats train, verrous PSD)
+	- documentation/suivi/PLAN.md (Phase 7-bis intercalee : A.1-A.7, B.1-B.8, C.1-C.5, D.1-D.8)
+	- documentation/contexte/recadrage-m14-troncon-critique.md (section 13 ajoutee : justification de l'extension PSD)
+- Changements detailles:
+	- Renommage formel `troncon` -> `canton` (vocabulaire ferroviaire reel) dans la documentation. Renommage etat Akka `surTroncon` -> `surCanton` (a appliquer en Phase B).
+	- Reseau de Petri : 7 places -> 12 places ; 6 transitions -> 12 transitions effectives. Ajout de 4 ressources globales (Canton_libre, Quai_libre, Portes_fermees, Portes_ouvertes) et de 4 etats train (`Ti_a_quai`).
+	- Architecture Akka : 3 acteurs -> 5 acteurs. Ajout de `QuaiController` (clone structurel) et `GestionnairePortes` (avec garde de surete CRITIQUE refusant l'ouverture sans train a quai).
+	- Protocole : 4 messages -> 10 messages (6 vers controleurs + 4 vers trains).
+	- Invariants : 1 -> 5. Trois invariants de ressource (canton, quai, portes) + deux invariants critiques de surete PSD (PSD-Open : portes ouvertes => train a quai ; PSD-Departure : depart => portes fermees).
+	- Read-arc emule sur la place `Portes_fermees` dans `Ti_depart_quai` (consume+reproduce, Petri ordinaire n'a pas de read-arc natif).
+- Commandes executees:
+	- aucune commande sbt en Phase A (documentation uniquement)
+	- git checkout -b feature/m14-extension-quai-psd (effectue avant la session)
+- Resultats de verification:
+	- Build: N/A (pas de modification code en Phase A)
+	- Tests: N/A (pas de modification code en Phase A)
+	- Notes: Phase A volontairement decouplee du code pour valider la coherence documentaire avant implementation. Incoherences mineures detectees dans la version initiale de petri-troncon.md a corriger : (1) heading T1 mouvement annonce 5 transitions mais en liste 4, (2) ligne Fermeture_portes_T2 mentionne `Portes_ouvertes` en post (corrige par note), (3) decompte des messages : texte dit 8+4=12 mais reel 6+4=10 (a clarifier), (4) section 8 confond ArriveeQuai et Sortie comme triggers de T1_arrivee_quai.
+- Risques/impacts:
+	- Risque combinatoire : passer de 8 marquages a 15-18 marquages reste tractable a la main mais double l'effort de verification de la tache 1 du carnet de preuves.
+	- Risque scope creep : verrouille par section 13 du recadrage et section 2 du protocole-coordination. Aucune nouvelle extension autorisee sans accord des 4 contributeurs.
+	- Code Akka et tests sont desynchronises de la documentation tant que Phase B/C ne sont pas faites. Branche feature isolee pour ne pas casser main.
+- Prochaines actions recommandees:
+	- Validation utilisateur de la Phase A (relecture comparaison.md, rapport.md, et 5 fichiers de pilotage).
+	- Correction des 4 incoherences mineures de petri-troncon.md.
+	- Phase B (code) : 8 fichiers, dans l'ordre Protocol -> QuaiController -> Train -> GestionnairePortes -> SectionController -> PetriNet -> Analyseur -> Main.
+	- Commit unique en fin de Phase A (ou commits atomiques par sous-phase a partir de Phase B).
+
+---
+
 ### [2026-04-27 22:45] - Mise a jour START-ICI et PLAN pour l'equipe
 - GitHub: @MonsieurNikko
 - Branche: main

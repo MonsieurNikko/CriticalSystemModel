@@ -1,4 +1,5 @@
-// Analyseur.scala : exploration BFS de l'espace d'etats + verification des invariants + detection deadlock.
+// Analyseur.scala : exploration BFS de l'espace d'etats + verification des 5 invariants
+// + detection deadlock. Modele etendu PSD (cf petri-troncon.md sections 5 et 6).
 
 package m14.petri
 
@@ -8,10 +9,21 @@ object Analyseur {
 
   import PetriNet._
 
-  // Resultat de l'analyse complete du reseau.
+  // Resultat complet d'une analyse du reseau.
+  // 5 invariants sont verifies sur tous les marquages atteignables :
+  //   1. Invariant canton  (5.1) : T1_sur_canton + T2_sur_canton + Canton_libre = 1
+  //   2. Invariant quai    (5.2) : T1_a_quai + T2_a_quai + Quai_libre = 1
+  //   3. Invariant portes  (5.3) : Portes_fermees + Portes_ouvertes = 1
+  //   4. PSD-Open Safety   (6.1) : Portes_ouvertes = 1 => T1_a_quai + T2_a_quai = 1  [CRITIQUE]
+  //   5. PSD-Departure     (6.2) : Ti_depart_quai tirable => Portes_fermees = 1     [CRITIQUE]
+  // Plus les invariants par train : Ti_hors + Ti_attente + Ti_sur_canton + Ti_a_quai = 1.
   final case class ResultatAnalyse(
     marquagesAtteignables: List[Marking],
-    invariantPrincipalOk: Boolean,
+    invariantCantonOk: Boolean,
+    invariantQuaiOk: Boolean,
+    invariantPortesOk: Boolean,
+    invariantPsdOpenOk: Boolean,
+    invariantPsdDepartureOk: Boolean,
     invariantsParTrainOk: Boolean,
     deadlocks: List[Marking],
     nombreEtats: Int
@@ -37,9 +49,7 @@ object Analyseur {
               file = file.enqueue(nouveauMarquage)
               resultat = resultat :+ nouveauMarquage
             }
-          case None =>
-            // Ne devrait pas arriver car on a verifie la tirabilite.
-            ()
+          case None => ()
         }
       }
     }
@@ -47,50 +57,102 @@ object Analyseur {
     resultat
   }
 
-  // Verifie l'invariant principal sur un marquage :
-  // T1_sur_troncon + T2_sur_troncon + Troncon_libre = 1
-  def verifierInvariantPrincipal(marquage: Marking): Boolean = {
-    val somme = marquage.getOrElse(T1SurTroncon, 0) +
-                marquage.getOrElse(T2SurTroncon, 0) +
-                marquage.getOrElse(TronconLibre, 0)
+  // ===========================================================================
+  // Invariants de ressource (P-invariants)
+  // ===========================================================================
+
+  // 5.1 - Invariant canton : T1_sur_canton + T2_sur_canton + Canton_libre = 1
+  def verifierInvariantCanton(marquage: Marking): Boolean = {
+    val somme = marquage.getOrElse(T1SurCanton, 0) +
+                marquage.getOrElse(T2SurCanton, 0) +
+                marquage.getOrElse(CantonLibre, 0)
     somme == 1
   }
 
-  // Verifie les invariants par train sur un marquage :
-  // Ti_hors + Ti_attente + Ti_sur_troncon = 1 pour chaque train.
+  // 5.2 - Invariant quai : T1_a_quai + T2_a_quai + Quai_libre = 1
+  def verifierInvariantQuai(marquage: Marking): Boolean = {
+    val somme = marquage.getOrElse(T1AQuai, 0) +
+                marquage.getOrElse(T2AQuai, 0) +
+                marquage.getOrElse(QuaiLibre, 0)
+    somme == 1
+  }
+
+  // 5.3 - Invariant portes : Portes_fermees + Portes_ouvertes = 1
+  def verifierInvariantPortes(marquage: Marking): Boolean = {
+    val somme = marquage.getOrElse(PortesFermees, 0) +
+                marquage.getOrElse(PortesOuvertes, 0)
+    somme == 1
+  }
+
+  // Invariants par train : Ti_hors + Ti_attente + Ti_sur_canton + Ti_a_quai = 1
   def verifierInvariantsParTrain(marquage: Marking): Boolean = {
     val sommeT1 = marquage.getOrElse(T1Hors, 0) +
                   marquage.getOrElse(T1Attente, 0) +
-                  marquage.getOrElse(T1SurTroncon, 0)
+                  marquage.getOrElse(T1SurCanton, 0) +
+                  marquage.getOrElse(T1AQuai, 0)
     val sommeT2 = marquage.getOrElse(T2Hors, 0) +
                   marquage.getOrElse(T2Attente, 0) +
-                  marquage.getOrElse(T2SurTroncon, 0)
+                  marquage.getOrElse(T2SurCanton, 0) +
+                  marquage.getOrElse(T2AQuai, 0)
     sommeT1 == 1 && sommeT2 == 1
   }
 
-  // Detecte les deadlocks : marquages sans aucune transition tirable.
+  // ===========================================================================
+  // Invariants critiques de surete PSD
+  // ===========================================================================
+
+  // 6.1 - PSD-Open Safety [CRITIQUE] :
+  // Portes_ouvertes = 1 => T1_a_quai + T2_a_quai = 1
+  // (si les portes palieres sont ouvertes, un train doit etre a quai).
+  def verifierSurteOuverturePortes(marquage: Marking): Boolean = {
+    val portesOuvertes = marquage.getOrElse(PortesOuvertes, 0)
+    if (portesOuvertes >= 1) {
+      val sommeAQuai = marquage.getOrElse(T1AQuai, 0) + marquage.getOrElse(T2AQuai, 0)
+      sommeAQuai == 1
+    } else {
+      true
+    }
+  }
+
+  // 6.2 - PSD-Departure Safety [CRITIQUE] :
+  // Pour tout marquage M, si Ti_depart_quai est tirable, alors M(Portes_fermees) = 1.
+  // Cette propriete est garantie structurellement par le pre de la transition,
+  // mais on la verifie programmatiquement par defense en profondeur.
+  def verifierSurteDepartQuai(net: Net, marquage: Marking): Boolean = {
+    val transitionsDepart = List(t1DepartQuai, t2DepartQuai)
+    transitionsDepart.forall { t =>
+      if (estTirable(t, marquage)) marquage.getOrElse(PortesFermees, 0) == 1
+      else true
+    }
+  }
+
+  // ===========================================================================
+  // Deadlock + analyse complete
+  // ===========================================================================
+
   def estDeadlock(net: Net, marquage: Marking): Boolean =
     transitionsTirables(net, marquage).isEmpty
 
-  // Analyse complete du reseau : BFS + verification de tous les invariants + deadlocks.
   def analyser(net: Net): ResultatAnalyse = {
     val marquages = explorerEspaceEtats(net)
-    val invariantPrincipalOk = marquages.forall(verifierInvariantPrincipal)
-    val invariantsParTrainOk = marquages.forall(verifierInvariantsParTrain)
-    val deadlocks = marquages.filter(m => estDeadlock(net, m))
-
     ResultatAnalyse(
       marquagesAtteignables = marquages,
-      invariantPrincipalOk = invariantPrincipalOk,
-      invariantsParTrainOk = invariantsParTrainOk,
-      deadlocks = deadlocks,
+      invariantCantonOk = marquages.forall(verifierInvariantCanton),
+      invariantQuaiOk = marquages.forall(verifierInvariantQuai),
+      invariantPortesOk = marquages.forall(verifierInvariantPortes),
+      invariantPsdOpenOk = marquages.forall(verifierSurteOuverturePortes),
+      invariantPsdDepartureOk = marquages.forall(m => verifierSurteDepartQuai(net, m)),
+      invariantsParTrainOk = marquages.forall(verifierInvariantsParTrain),
+      deadlocks = marquages.filter(m => estDeadlock(net, m)),
       nombreEtats = marquages.size
     )
   }
 
-  // Point d'entree pour lancer l'analyse depuis la ligne de commande : sbt "runMain m14.petri.Analyseur"
+  // ===========================================================================
+  // Point d'entree : sbt "runMain m14.petri.Analyseur"
+  // ===========================================================================
   def main(args: Array[String]): Unit = {
-    println("=== Analyseur Petri - Troncon partage M14 ===")
+    println("=== Analyseur Petri - Canton + Quai + Portes palieres (M14) ===")
     println()
 
     val resultat = analyser(reseauTroncon)
@@ -98,24 +160,22 @@ object Analyseur {
     println(s"Nombre de marquages atteignables : ${resultat.nombreEtats}")
     println()
 
-    // Affichage de chaque marquage avec notation compacte (places marquees a 1).
     println("--- Marquages atteignables ---")
     resultat.marquagesAtteignables.zipWithIndex.foreach { case (marquage, index) =>
       val placesActives = marquage.filter(_._2 > 0).keys.toList.sorted.mkString(", ")
-      val invariantOk = if (verifierInvariantPrincipal(marquage)) "OK" else "VIOLATION"
-      println(s"  M$index = ($placesActives) [invariant: $invariantOk]")
+      println(s"  M$index = ($placesActives)")
     }
     println()
 
-    // Invariant principal.
-    val statusInvariant = if (resultat.invariantPrincipalOk) "PASSE" else "ECHEC"
-    println(s"Invariant principal (T1_sur + T2_sur + libre = 1) : $statusInvariant")
+    println("--- Invariants ---")
+    println(s"  Invariant canton  (5.1)         : ${statut(resultat.invariantCantonOk)}")
+    println(s"  Invariant quai    (5.2)         : ${statut(resultat.invariantQuaiOk)}")
+    println(s"  Invariant portes  (5.3)         : ${statut(resultat.invariantPortesOk)}")
+    println(s"  Invariants par train            : ${statut(resultat.invariantsParTrainOk)}")
+    println(s"  PSD-Open Safety  (6.1) CRITIQUE : ${statut(resultat.invariantPsdOpenOk)}")
+    println(s"  PSD-Departure    (6.2) CRITIQUE : ${statut(resultat.invariantPsdDepartureOk)}")
+    println()
 
-    // Invariants par train.
-    val statusTrains = if (resultat.invariantsParTrainOk) "PASSE" else "ECHEC"
-    println(s"Invariants par train (Ti_hors + Ti_att + Ti_sur = 1) : $statusTrains")
-
-    // Deadlocks.
     if (resultat.deadlocks.isEmpty) {
       println("Deadlocks : AUCUN (le systeme peut toujours progresser)")
     } else {
@@ -126,14 +186,19 @@ object Analyseur {
       }
     }
 
-    // Exclusion mutuelle.
-    val collisionDetectee = resultat.marquagesAtteignables.exists { m =>
-      m.getOrElse(T1SurTroncon, 0) >= 1 && m.getOrElse(T2SurTroncon, 0) >= 1
+    println()
+    val collisionCanton = resultat.marquagesAtteignables.exists { m =>
+      m.getOrElse(T1SurCanton, 0) >= 1 && m.getOrElse(T2SurCanton, 0) >= 1
     }
-    val statusExclusion = if (!collisionDetectee) "PASSE" else "ECHEC - COLLISION DETECTEE"
-    println(s"Exclusion mutuelle (jamais T1 et T2 ensemble) : $statusExclusion")
+    val collisionQuai = resultat.marquagesAtteignables.exists { m =>
+      m.getOrElse(T1AQuai, 0) >= 1 && m.getOrElse(T2AQuai, 0) >= 1
+    }
+    println(s"Exclusion mutuelle canton : ${statut(!collisionCanton)}")
+    println(s"Exclusion mutuelle quai   : ${statut(!collisionQuai)}")
 
     println()
     println("=== Fin de l'analyse ===")
   }
+
+  private def statut(ok: Boolean): String = if (ok) "PASSE" else "ECHEC"
 }

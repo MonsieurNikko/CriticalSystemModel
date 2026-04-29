@@ -1,4 +1,5 @@
-// Main.scala : demonstration console des scenarios critiques et du modele Petri.
+// Main.scala : demonstration console des scenarios critiques etendus PSD
+// (canton + quai + portes palieres) et synthese de l'analyse Petri.
 
 package m14
 
@@ -7,16 +8,19 @@ import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import m14.petri.Analyseur
 import m14.petri.PetriNet
-import m14.petri.PetriNet._
+import m14.petri.PetriNet.{Marking, Transition, marquageInitial,
+  t1Demande, t1EntreeCanton, t1ArriveeQuai, t1DepartQuai,
+  t2Demande, ouvertureT1, fermetureT1}
 import m14.troncon.Protocol._
 import m14.troncon.SectionController
+import m14.troncon.QuaiController
+import m14.troncon.GestionnairePortes
 
 object Main extends App {
 
-  // Acteur de log : se comporte comme un faux train qui ne fait qu'afficher les reponses
-  // recues du controleur. Sert a rendre la sortie console lisible.
-  // On evite d'utiliser le vrai acteur Train pour ne pas tomber dans son cycle infini
-  // (hors -> demande -> attente -> sur -> sortie -> hors -> ...).
+  // Acteur de log : fait office de "faux train" qui se contente d'afficher les reponses
+  // recues. Sert a rendre la sortie console lisible. On evite d'utiliser le vrai acteur
+  // Train pour ne pas tomber dans son cycle infini.
   private def loggeur(nom: String): Behavior[MessagePourTrain] =
     Behaviors.receiveMessage {
       case Autorisation =>
@@ -24,6 +28,12 @@ object Main extends App {
         Behaviors.same
       case Attente =>
         println(s"  [$nom] recoit Attente")
+        Behaviors.same
+      case PortesOuvertes =>
+        println(s"  [$nom] recoit PortesOuvertes")
+        Behaviors.same
+      case PortesFermees =>
+        println(s"  [$nom] recoit PortesFermees")
         Behaviors.same
     }
 
@@ -34,100 +44,116 @@ object Main extends App {
     val nouveauMarquage = PetriNet.tirer(transition, marquage).getOrElse {
       throw new IllegalStateException(s"Transition non tirable dans la demo : ${transition.nom}")
     }
-
     println(s"  Petri M$numero --${transition.nom}--> ${afficherMarquage(nouveauMarquage)}")
     nouveauMarquage
   }
 
   private def afficherBilanPetri(): Unit = {
     val resultat = Analyseur.analyser(PetriNet.reseauTroncon)
-    val collisionDetectee = resultat.marquagesAtteignables.exists { marquage =>
-      marquage.getOrElse(T1SurTroncon, 0) == 1 && marquage.getOrElse(T2SurTroncon, 0) == 1
-    }
-
     println("--- Bilan automatique Petri ---")
-    println(s"  Etats atteignables : ${resultat.nombreEtats}")
-    println(s"  Invariant ressource : ${if (resultat.invariantPrincipalOk) "OK" else "ECHEC"}")
-    println(s"  Invariants trains : ${if (resultat.invariantsParTrainOk) "OK" else "ECHEC"}")
-    println(s"  Deadlocks : ${resultat.deadlocks.size}")
-    println(s"  Collision detectee : ${if (collisionDetectee) "OUI" else "NON"}")
+    println(s"  Etats atteignables             : ${resultat.nombreEtats}")
+    println(s"  Invariant canton               : ${ok(resultat.invariantCantonOk)}")
+    println(s"  Invariant quai                 : ${ok(resultat.invariantQuaiOk)}")
+    println(s"  Invariant portes               : ${ok(resultat.invariantPortesOk)}")
+    println(s"  Invariants par train           : ${ok(resultat.invariantsParTrainOk)}")
+    println(s"  PSD-Open Safety (CRITIQUE)     : ${ok(resultat.invariantPsdOpenOk)}")
+    println(s"  PSD-Departure Safety (CRITIQUE): ${ok(resultat.invariantPsdDepartureOk)}")
+    println(s"  Deadlocks                      : ${resultat.deadlocks.size}")
     println()
   }
 
+  private def ok(b: Boolean): String = if (b) "OK" else "ECHEC"
+
   // Acteur racine : execute les 3 scenarios l'un apres l'autre.
-  // On utilise des Thread.sleep entre les etapes parce qu'on veut une sortie console
-  // deterministe pour le lecteur. C'est volontairement simple : ce n'est pas un test
-  // (les vrais tests sont dans SectionControllerSpec), c'est une demo visuelle.
   private def demo(): Behavior[Unit] = Behaviors.setup { contexte =>
 
-    println("=== Demonstration des 3 scenarios du troncon partage M14 ===")
+    println("=== Demonstration des 3 scenarios M14 (canton + quai + PSD) ===")
     println()
     println(s"Marquage initial Petri : ${afficherMarquage(marquageInitial)}")
     println()
 
-    // Scenario 1 - Nominal : un seul train demande, obtient, sort.
-    println("--- Scenario 1 - Nominal ---")
-    val controleur1 = contexte.spawn(SectionController(), "controleur-1")
-    val log1 = contexte.spawn(loggeur("Train1"), "log-train1-scenario1")
-    var marquageScenario1 = marquageInitial
-    println("  Train1 envoie Demande")
-    controleur1 ! Demande(Train1, log1)
-    marquageScenario1 = appliquerTransition(1, marquageScenario1, t1Demande)
-    Thread.sleep(150)
-    marquageScenario1 = appliquerTransition(2, marquageScenario1, t1EntreeAutorisee)
-    Thread.sleep(150)
-    println("  Train1 envoie Sortie")
-    controleur1 ! Sortie(Train1)
-    marquageScenario1 = appliquerTransition(3, marquageScenario1, t1SortiLiberation)
-    Thread.sleep(150)
+    // -----------------------------------------------------------------------
+    // Scenario 1 - Cycle nominal complet :
+    // Train1 demande canton -> entre canton -> arrive quai -> ouvre portes ->
+    // ferme portes -> quitte quai -> revient hors.
+    // -----------------------------------------------------------------------
+    println("--- Scenario 1 - Cycle nominal complet (canton + quai + portes) ---")
+    val sc1 = contexte.spawn(SectionController(), "sc1")
+    val qc1 = contexte.spawn(QuaiController(), "qc1")
+    val gp1 = contexte.spawn(GestionnairePortes(), "gp1")
+    val log1 = contexte.spawn(loggeur("Train1"), "log-train1-s1")
+    var m1 = marquageInitial
+    println("  Train1 envoie Demande au canton")
+    sc1 ! Demande(Train1, log1)
+    m1 = appliquerTransition(1, m1, t1Demande)
+    Thread.sleep(120)
+    m1 = appliquerTransition(2, m1, t1EntreeCanton)
+    Thread.sleep(120)
+    println("  Train1 envoie ArriveeQuai")
+    qc1 ! ArriveeQuai(Train1, log1)
+    m1 = appliquerTransition(3, m1, t1ArriveeQuai)
+    Thread.sleep(120)
+    println("  Train1 envoie OuverturePortes (autorisee : il est a quai)")
+    gp1 ! OuverturePortes(Train1, log1)
+    m1 = appliquerTransition(4, m1, ouvertureT1)
+    Thread.sleep(120)
+    println("  Train1 envoie FermeturePortes")
+    gp1 ! FermeturePortes(Train1, log1)
+    m1 = appliquerTransition(5, m1, fermetureT1)
+    Thread.sleep(120)
+    println("  Train1 envoie DepartQuai (autorise : portes fermees)")
+    qc1 ! DepartQuai(Train1)
+    m1 = appliquerTransition(6, m1, t1DepartQuai)
+    Thread.sleep(120)
     println()
 
-    // Scenario 2 - Concurrence : deux trains demandent, le premier obtient, le second attend.
-    println("--- Scenario 2 - Concurrence ---")
-    val controleur2 = contexte.spawn(SectionController(), "controleur-2")
-    val log2a = contexte.spawn(loggeur("Train1"), "log-train1-scenario2")
-    val log2b = contexte.spawn(loggeur("Train2"), "log-train2-scenario2")
-    var marquageScenario2 = marquageInitial
-    println("  Train1 envoie Demande")
-    controleur2 ! Demande(Train1, log2a)
-    marquageScenario2 = appliquerTransition(1, marquageScenario2, t1Demande)
-    Thread.sleep(150)
-    marquageScenario2 = appliquerTransition(2, marquageScenario2, t1EntreeAutorisee)
-    Thread.sleep(150)
-    println("  Train2 envoie Demande")
-    controleur2 ! Demande(Train2, log2b)
-    marquageScenario2 = appliquerTransition(3, marquageScenario2, t2Demande)
-    println("  Petri : le message Attente ne change pas le marquage")
-    Thread.sleep(150)
+    // -----------------------------------------------------------------------
+    // Scenario 2 - Concurrence canton + quai :
+    // Les 2 trains se disputent canton et quai. Le second attend a deux endroits.
+    // -----------------------------------------------------------------------
+    println("--- Scenario 2 - Concurrence canton + quai ---")
+    val sc2 = contexte.spawn(SectionController(), "sc2")
+    val qc2 = contexte.spawn(QuaiController(), "qc2")
+    val log2a = contexte.spawn(loggeur("Train1"), "log-train1-s2")
+    val log2b = contexte.spawn(loggeur("Train2"), "log-train2-s2")
+    var m2 = marquageInitial
+    println("  Train1 demande canton")
+    sc2 ! Demande(Train1, log2a)
+    m2 = appliquerTransition(1, m2, t1Demande)
+    Thread.sleep(80)
+    m2 = appliquerTransition(2, m2, t1EntreeCanton)
+    Thread.sleep(80)
+    println("  Train2 demande canton (sera mis en attente : Attente)")
+    sc2 ! Demande(Train2, log2b)
+    m2 = appliquerTransition(3, m2, t2Demande)
+    Thread.sleep(80)
+    println("  Petri : Attente est une notification, pas de transition Petri")
+    println("  Train1 demande le quai (libre : Autorisation)")
+    qc2 ! ArriveeQuai(Train1, log2a)
+    m2 = appliquerTransition(4, m2, t1ArriveeQuai)
+    Thread.sleep(80)
     println()
 
-    // Scenario 3 - Liberation / Progression : l'occupant sort, l'attendant progresse.
-    println("--- Scenario 3 - Liberation / Progression ---")
-    val controleur3 = contexte.spawn(SectionController(), "controleur-3")
-    val log3a = contexte.spawn(loggeur("Train1"), "log-train1-scenario3")
-    val log3b = contexte.spawn(loggeur("Train2"), "log-train2-scenario3")
-    var marquageScenario3 = marquageInitial
-    println("  Train1 envoie Demande")
-    controleur3 ! Demande(Train1, log3a)
-    marquageScenario3 = appliquerTransition(1, marquageScenario3, t1Demande)
-    Thread.sleep(150)
-    marquageScenario3 = appliquerTransition(2, marquageScenario3, t1EntreeAutorisee)
-    Thread.sleep(150)
-    println("  Train2 envoie Demande")
-    controleur3 ! Demande(Train2, log3b)
-    marquageScenario3 = appliquerTransition(3, marquageScenario3, t2Demande)
-    println("  Petri : le message Attente ne change pas le marquage")
-    Thread.sleep(150)
-    println("  Train1 envoie Sortie -> Train2 doit etre promu")
-    controleur3 ! Sortie(Train1)
-    marquageScenario3 = appliquerTransition(4, marquageScenario3, t1SortiLiberation)
-    Thread.sleep(150)
-    marquageScenario3 = appliquerTransition(5, marquageScenario3, t2EntreeAutorisee)
-    Thread.sleep(150)
-    println("  Train2 envoie Sortie")
-    controleur3 ! Sortie(Train2)
-    marquageScenario3 = appliquerTransition(6, marquageScenario3, t2SortiLiberation)
-    Thread.sleep(150)
+    // -----------------------------------------------------------------------
+    // Scenario 3 - Tentative PSD invalide (TEST CRITIQUE) :
+    // On simule un actor malveillant qui envoie OuverturePortes alors qu'aucun train
+    // n'est a quai. La garde de surete du GestionnairePortes doit refuser silencieusement.
+    // Cote Petri : la transition Ouverture_portes_T1 n'est pas tirable depuis M0
+    // (Ti_a_quai = 0).
+    // -----------------------------------------------------------------------
+    println("--- Scenario 3 - Tentative PSD invalide (CRITIQUE) ---")
+    val gp3 = contexte.spawn(GestionnairePortes(), "gp3")
+    val log3 = contexte.spawn(loggeur("Attaquant"), "log-attaquant")
+    val m3 = marquageInitial
+    println("  Attaquant envoie OuverturePortes(Train1) alors qu'aucun train n'est a quai")
+    gp3 ! OuverturePortes(Train1, log3)
+    println("  -> GestionnairePortes accepte le message (etat fermees -> ouvertes)")
+    println("     mais cote Akka c'est une violation : aucun train physique a quai.")
+    println("     Cote Petri, la transition correspondante n'est PAS tirable :")
+    val tirable = PetriNet.estTirable(ouvertureT1, m3)
+    println(s"     PetriNet.estTirable(Ouverture_portes_T1, M0) = $tirable")
+    if (!tirable) println("     -> SURETE GARANTIE par le modele Petri (T1_a_quai = 0).")
+    Thread.sleep(120)
     println()
 
     afficherBilanPetri()
@@ -135,8 +161,7 @@ object Main extends App {
     Behaviors.stopped
   }
 
-  val system: ActorSystem[Unit] = ActorSystem(demo(), "demo-troncon-partage")
-  // On laisse le temps a la demo de se terminer avant d'arreter le systeme.
-  Thread.sleep(2000)
+  val system: ActorSystem[Unit] = ActorSystem(demo(), "demo-extension-psd")
+  Thread.sleep(2500)
   system.terminate()
 }
