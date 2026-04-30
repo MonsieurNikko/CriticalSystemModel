@@ -33,6 +33,32 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ## Entrees
 
+### [2026-04-30 19:40] - Demo : 5 scenarios + LancerDemo + START-ICI a jour
+- GitHub: @MonsieurNikko
+- Branche: `extension`
+- Contexte/tache: rendre la demo HTML autoportante depuis Scala (lancer le main = animation auto), augmenter la couverture des scenarios, remettre a jour la page d'accueil documentaire.
+- Fichiers modifies:
+	- `src/main/scala/m14/demo/GenererTraces.scala` (3 -> 5 scenarios : ajout `cycle-deux-trains` et `violation-depart`)
+	- `src/main/scala/m14/demo/LancerDemo.scala` (NEW : regeneration JSON + serveur HTTP local + auto-ouverture navigateur)
+	- `demo/index.html` (selecteur scenario : 3 -> 5 options)
+	- `demo/trace-cycle-deux-trains.json` (NEW, genere)
+	- `demo/trace-violation-depart.json` (NEW, genere)
+	- `documentation/START-ICI.md` (reecriture complete : 49 tests, 12P/12T, Phase 7, demo 5 scenarios, LancerDemo)
+	- `documentation/suivi/COMMANDES.md` (section 4 reecrite : 4.a lancement auto / 4.b manuel / 4.c scenarios)
+- Changements detailles:
+	- `GenererTraces` : nouveau scenario D `cycle-deux-trains` (T1 cycle complet puis T2 cycle complet, 13 etapes) couvrant la liveness symetrique des deux trains ; nouveau scenario E `violation-depart` (T1 a quai, ouverture portes, **tentative DepartQuai refusee** par garde PSD-Departure, fermeture portes, depart legitime, 9 etapes) - donne enfin une animation pour le 2e invariant CRITIQUE jamais visualise.
+	- `LancerDemo` : point d'entree `sbt "runMain m14.demo.LancerDemo"`. Etape 1 : appelle `GenererTraces.main` pour regenerer les 5 JSON. Etape 2 : `com.sun.net.httpserver.HttpServer` (JDK builtin, zero dependance) sur premier port libre dans 8000-8010, sert `demo/` avec MIME types corrects et `Cache-Control: no-store`. Etape 3 : `java.awt.Desktop.browse` ouvre le navigateur. Bloque sur `Console.in.readLine()`, arret propre via `server.stop(0)`.
+	- Securite : handler refuse les path traversal (`if (!cible.startsWith(racine)) -> 403`).
+	- `index.html` : 5 options dans `<select>` (A nominal, B concurrence, C cycle-deux-trains, D violation, E violation-depart).
+	- `START-ICI.md` : page entierement reecrite, alignee sur l'etat reel (49 tests, 12 places, 12 transitions, 20 marquages, 40 arcs, 5 invariants, 5 LTL, 5 scenarios). Tableau "Etat actuel" reflete les realisations Phase 7 et la demo 5 scenarios.
+	- `COMMANDES.md` section 4 : 4.a explique le lancement automatique (`LancerDemo`) recommande pour la soutenance ; 4.b couvre le fallback manuel ; 4.c liste les 5 scenarios avec leur nombre d'etapes.
+- Validation:
+	- `sbt compile` : OK
+	- `sbt "runMain m14.demo.GenererTraces"` : 5 fichiers JSON ecrits (7 / 11 / 3 / 13 / 9 etapes)
+	- Tests : non re-executes apres ajout `LancerDemo` (aucun test de cette classe ; rien d'autre modifie cote prod). A relancer avant push.
+
+---
+
 ### [2026-04-30 23:30] - Phase 7 - LTL programmatique + arcs etiquetes + carnet de preuves rempli
 - GitHub: @MonsieurNikko
 - Branche: `extension`

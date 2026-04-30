@@ -373,9 +373,11 @@
     <label>
       Scenario
       <select id="scenarioSelect">
-        <option value="nominal">A - Cycle nominal complet</option>
-        <option value="concurrence">B - Concurrence canton + quai</option>
-        <option value="violation">C - Tentative PSD invalide (CRITIQUE)</option>
+        <option value="nominal">A - Cycle nominal complet (1 train)</option>
+        <option value="concurrence">B - Concurrence canton + quai (2 trains)</option>
+        <option value="cycle-deux-trains">C - Cycle complet sequentiel des 2 trains (liveness)</option>
+        <option value="violation">D - Tentative PSD-Open invalide (CRITIQUE)</option>
+        <option value="violation-depart">E - Tentative PSD-Departure portes ouvertes (CRITIQUE)</option>
       </select>
     </label>
     <label>

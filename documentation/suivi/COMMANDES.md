@@ -77,33 +77,40 @@ Cette commande sert a verifier :
 
 ## 4) Demo visuelle HTML
 
-Ouvrir le fichier suivant dans un navigateur :
-
-```text
-demo/index.html
-```
-
-Depuis PowerShell, on peut aussi lancer :
-
-```powershell
-Start-Process .\demo\index.html
-```
-
-La page permet de tester (extension PSD) :
-
-- scenario nominal (cycle complet canton + quai + portes palieres) ;
-- scenario concurrence canton + quai (T1 et T2 partagent les ressources) ;
-- scenario tentative PSD invalide (overlay rouge : la garde de surete bloque) ;
-- timeline cliquable, lecture / pause / pas-a-pas ;
-- visualisation des 5 acteurs, des 12 places Petri, des popups Akka et du bandeau d'invariants en temps reel.
-
-Pour regenerer les traces JSON depuis le modele Scala :
+### 4.a) Lancement automatique (recommande pour la soutenance)
 
 ```bash
-sbt "runMain m14.demo.GenererTraces"
+sbt "runMain m14.demo.LancerDemo"
 ```
 
-Cette commande ecrit `demo/trace-nominal.json`, `demo/trace-concurrence.json`, `demo/trace-violation.json` (sources de verite : `m14.petri.PetriNet.tirer`).
+Cette commande effectue automatiquement :
+
+1. la **regeneration des 5 fichiers JSON** depuis le modele Petri verifie ;
+2. le **demarrage d'un mini serveur HTTP local** (port 8000, ou premier port libre dans 8000-8010) servant le dossier `demo/` ;
+3. l'**ouverture automatique du navigateur** par defaut sur `http://localhost:<port>/index.html`.
+
+Pour arreter : revenir dans le terminal sbt et appuyer sur **Entree**.
+
+Avantages : pas de probleme `file://` / CORS, traces toujours a jour, parcours soutenance en une commande.
+
+### 4.b) Lancement manuel
+
+Si le port 8000-8010 est indisponible ou si le navigateur ne s'ouvre pas automatiquement :
+
+- regenerer les traces explicitement : `sbt "runMain m14.demo.GenererTraces"` ;
+- ouvrir directement `demo/index.html` dans un navigateur ; cela peut bloquer le `fetch()` des JSON selon le navigateur (file://). Privilegier `LancerDemo` ou un serveur statique tiers (`python3 -m http.server` depuis `demo/`).
+
+### 4.c) Scenarios disponibles
+
+La page permet de tester (extension PSD complete, 5 scenarios) :
+
+- **A** cycle nominal (1 train, 7 etapes) ;
+- **B** concurrence canton + quai (2 trains, 11 etapes) ;
+- **C** cycle complet sequentiel des 2 trains - liveness (13 etapes) ;
+- **D** tentative PSD-Open invalide (overlay rouge, 3 etapes - CRITIQUE) ;
+- **E** tentative PSD-Departure portes ouvertes (overlay rouge puis sequence corrigee, 9 etapes - CRITIQUE).
+
+Toutes les traces sont generees depuis `m14.petri.PetriNet.tirer` (source de verite).
 
 ---
 

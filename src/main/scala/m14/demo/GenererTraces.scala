@@ -91,15 +91,91 @@ object GenererTraces extends App {
     .construire()
 
   // ---------------------------------------------------------------------------
-  // Ecriture des 3 fichiers JSON dans demo/.
+  // Scenario D : cycle complet 2 trains (liveness + retour a M0)
+  // T1 fait son cycle entier jusqu'a son depart de quai (retour a M0 cote T1),
+  // puis T2 enchaine son propre cycle complet. Demontre la symetrie + le fait que
+  // le systeme revient bien a un marquage de type "depart" apres chaque cycle.
+  // ---------------------------------------------------------------------------
+  val scenarioD = new Constructeur(
+    id = "cycle-deux-trains",
+    titre = "Cycle complet sequentiel des 2 trains (liveness)",
+    description = "T1 effectue son cycle complet (canton -> quai -> portes -> depart). Le systeme revient a un etat ou T2 peut a son tour faire son cycle complet. Demonstration de la liveness."
+  )
+    .tirer("Train1 demande le canton",
+      Some(MessageAkka("Train1", "SectionController", "Demande")), t1Demande)
+    .tirer("Train1 entre dans le canton",
+      Some(MessageAkka("SectionController", "Train1", "Autorisation")), t1EntreeCanton)
+    .tirer("Train1 arrive au quai",
+      Some(MessageAkka("Train1", "QuaiController", "ArriveeQuai")), t1ArriveeQuai)
+    .tirer("Train1 ouvre les portes",
+      Some(MessageAkka("Train1", "GestionnairePortes", "OuverturePortes")), ouvertureT1)
+    .tirer("Train1 ferme les portes",
+      Some(MessageAkka("Train1", "GestionnairePortes", "FermeturePortes")), fermetureT1)
+    .tirer("Train1 quitte le quai (retour a un marquage T1_hors)",
+      Some(MessageAkka("Train1", "QuaiController", "DepartQuai")), t1DepartQuai)
+    .tirer("Train2 demande le canton (le systeme est libre)",
+      Some(MessageAkka("Train2", "SectionController", "Demande")), t2Demande)
+    .tirer("Train2 entre dans le canton",
+      Some(MessageAkka("SectionController", "Train2", "Autorisation")), t2EntreeCanton)
+    .tirer("Train2 arrive au quai",
+      Some(MessageAkka("Train2", "QuaiController", "ArriveeQuai")), t2ArriveeQuai)
+    .tirer("Train2 ouvre les portes",
+      Some(MessageAkka("Train2", "GestionnairePortes", "OuverturePortes")), ouvertureT2)
+    .tirer("Train2 ferme les portes",
+      Some(MessageAkka("Train2", "GestionnairePortes", "FermeturePortes")), fermetureT2)
+    .tirer("Train2 quitte le quai. Cycle complet des 2 trains termine.",
+      Some(MessageAkka("Train2", "QuaiController", "DepartQuai")), t2DepartQuai)
+    .construire()
+
+  // ---------------------------------------------------------------------------
+  // Scenario E : tentative depart portes ouvertes (PSD-Departure CRITIQUE)
+  // T1 va a quai, ouvre les portes, puis tente DepartQuai. La transition
+  // T1_depart_quai n'est PAS tirable (Portes_fermees=0). La garde Akka du
+  // QuaiController/Train refuse aussi. Demontre l'invariant PSD-Departure.
+  // ---------------------------------------------------------------------------
+  val scenarioE = new Constructeur(
+    id = "violation-depart",
+    titre = "Tentative depart portes ouvertes (CRITIQUE - bloquee)",
+    description = "T1 est a quai portes ouvertes. Un signal DepartQuai est envoye prematurement. La transition Petri n'est pas tirable (Portes_fermees=0). Invariant PSD-Departure preserve."
+  )
+    .tirer("Train1 demande le canton",
+      Some(MessageAkka("Train1", "SectionController", "Demande")), t1Demande)
+    .tirer("Train1 entre dans le canton",
+      Some(MessageAkka("SectionController", "Train1", "Autorisation")), t1EntreeCanton)
+    .tirer("Train1 arrive au quai",
+      Some(MessageAkka("Train1", "QuaiController", "ArriveeQuai")), t1ArriveeQuai)
+    .tirer("Train1 ouvre les portes (legitime : a quai)",
+      Some(MessageAkka("Train1", "GestionnairePortes", "OuverturePortes")), ouvertureT1)
+    .violation(
+      label = "Tentative DepartQuai alors que Portes_ouvertes=1 -> transition NON tirable",
+      akka = Some(MessageAkka("Train1", "QuaiController", "DepartQuai (premature)")),
+      transition = Some(t1DepartQuai)
+    )
+    .violation(
+      label = "Garde de surete : Portes_fermees=0 -> message ignore. Invariant PSD-Departure preserve.",
+      akka = None,
+      transition = None
+    )
+    .tirer("Sequence corrigee : Train1 ferme d'abord les portes",
+      Some(MessageAkka("Train1", "GestionnairePortes", "FermeturePortes")), fermetureT1)
+    .tirer("Maintenant DepartQuai est legitime (Portes_fermees=1)",
+      Some(MessageAkka("Train1", "QuaiController", "DepartQuai")), t1DepartQuai)
+    .construire()
+
+  // ---------------------------------------------------------------------------
+  // Ecriture des 5 fichiers JSON dans demo/.
   // ---------------------------------------------------------------------------
   val sortie = "demo"
   ecrire(scenarioA, s"$sortie/trace-nominal.json")
   ecrire(scenarioB, s"$sortie/trace-concurrence.json")
   ecrire(scenarioC, s"$sortie/trace-violation.json")
+  ecrire(scenarioD, s"$sortie/trace-cycle-deux-trains.json")
+  ecrire(scenarioE, s"$sortie/trace-violation-depart.json")
 
   println(s"Traces ecrites dans $sortie/ :")
-  println(s"  - trace-nominal.json     (${scenarioA.etapes.size} etapes)")
-  println(s"  - trace-concurrence.json (${scenarioB.etapes.size} etapes)")
-  println(s"  - trace-violation.json   (${scenarioC.etapes.size} etapes)")
+  println(s"  - trace-nominal.json            (${scenarioA.etapes.size} etapes)")
+  println(s"  - trace-concurrence.json        (${scenarioB.etapes.size} etapes)")
+  println(s"  - trace-violation.json          (${scenarioC.etapes.size} etapes)")
+  println(s"  - trace-cycle-deux-trains.json  (${scenarioD.etapes.size} etapes)")
+  println(s"  - trace-violation-depart.json   (${scenarioE.etapes.size} etapes)")
 }
