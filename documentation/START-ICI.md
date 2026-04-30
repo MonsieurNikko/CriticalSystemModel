@@ -164,6 +164,8 @@ Actions prioritaires :
 2. Inserer le bloc des 40 arcs (tache 7) en annexe A1.
 3. Relecture croisee.
 
+> **Mode d'emploi detaille pour la redaction : voir section 9 plus bas.**
+
 ### Piste B - Soutenance et demo
 
 Objectif : preparer un parcours de demonstration de 5-10 minutes.
@@ -235,3 +237,143 @@ La demo HTML peut etre amelioree visuellement, mais elle doit rester alignee sur
 - Regles de contribution : [`documentation/gouvernance/REGLES_PROJET.md`](gouvernance/REGLES_PROJET.md)
 - Modele Petri : [`petri/petri-troncon.md`](../petri/petri-troncon.md)
 - Carnet de preuves : [`documentation/livrables/preuves-manuelles.md`](livrables/preuves-manuelles.md)
+
+---
+
+## 9) Guide pratique - Rediger sa partie du rapport
+
+**Cible** : un membre de l'equipe qui doit completer une section de [`documentation/livrables/rapport.md`](livrables/rapport.md) et ne sait pas par ou commencer.
+
+### 9.1 Principe directeur
+
+Le rapport est un **assemblage** de contenus deja produits. On ne reinvente rien. Pour chaque section a remplir, il existe une **source de verite** (carnet de preuves, modele Petri, comparaison, sortie analyseur). La regle : **citer + reformuler court**, ne jamais paraphraser sans relire la source.
+
+### 9.2 Tableau "section du rapport -> source -> action"
+
+| Section rapport | Source de verite a copier | Action exacte |
+|---|---|---|
+| 1) Contexte et motivation | [`contexte/recadrage-m14-troncon-critique.md`](contexte/recadrage-m14-troncon-critique.md) + [`gouvernance/REGLES_PROJET.md`](gouvernance/REGLES_PROJET.md) | Reformuler le perimetre en 1/2 page (2 trains, 1 canton, 1 quai, PSD). Citer la M14. |
+| 2) Bibliographie | [`livrables/biblio.md`](livrables/biblio.md) | Recopier les 11 sources commentees telles quelles. Aucune a chercher. |
+| 3) Architecture Akka | Code `src/main/scala/m14/troncon/` + [`gouvernance/lexique.md`](gouvernance/lexique.md) | Donner schema 5 acteurs + 6+4 messages. Source : commentaires en tete de chaque fichier `.scala` du dossier `troncon/`. |
+| 4) Modele Petri formel | [`petri/petri-troncon.md`](../petri/petri-troncon.md) sections 2-5 | Recopier la liste des 12 places, 12 transitions, M0. **Verifier les chiffres (12P/12T/20 marquages/40 arcs).** |
+| **5) Verification des proprietes** **(section principale)** | [`livrables/preuves-manuelles.md`](livrables/preuves-manuelles.md) taches 2.1 a 4 | Une sous-section par invariant (5.1 a 5.5). Pour chacun : enonce + preuve manuelle (source carnet) + sortie analyseur (recopier verbatim). |
+| 6) Comparaison Akka vs Petri | [`livrables/comparaison.md`](livrables/comparaison.md) | Recopier les 3 tableaux de scenarios + la sortie analyseur verbatim. Deja fait, juste a relire. |
+| 7) Limites assumees | [`gouvernance/protocole-coordination.md`](gouvernance/protocole-coordination.md) section 2 (perimetre) | Lister explicitement : pas de pannes, pas de timing, 2 trains max, fairness FIFO supposee. |
+| 8) Conclusion | Tableau "Etat actuel" section 4 ci-dessus | 1/2 page : on a montre quoi (5 invariants, 5 LTL, 0 deadlock), pour combien d'effort, et 3 extensions possibles. |
+| Annexe A1 (40 arcs) | [`livrables/preuves-manuelles.md`](livrables/preuves-manuelles.md) tache 7 | Copier-coller le bloc des 40 arcs (sortie `runMain m14.petri.Analyseur`). |
+| Annexe A2 (sortie analyseur complete) | Lancer `sbt "runMain m14.petri.Analyseur" > /tmp/sortie.txt` | Coller la sortie integrale (20 marquages + invariants + LTL). |
+
+### 9.3 Methode pas-a-pas pour une section
+
+Exemple : tu dois rediger la section **5.5 Surete PSD**.
+
+1. **Ouvrir la source** : [`livrables/preuves-manuelles.md`](livrables/preuves-manuelles.md), chercher "tache 2bis.1" et "tache 2bis.2".
+2. **Lire l'enonce** dans [`petri/petri-troncon.md`](../petri/petri-troncon.md) section 5.5 (PSD-Open et PSD-Departure).
+3. **Lancer la verification** :
+   ```bash
+   sbt "runMain m14.petri.Analyseur" 2>&1 | grep -A 1 "PSD"
+   ```
+   Recopier la sortie dans le rapport.
+4. **Rediger** dans cet ordre fixe :
+   - Enonce formel (LTL ou predicat)
+   - Preuve structurelle (2-3 lignes : arc Petri qui empeche la violation)
+   - Preuve programmatique (sortie analyseur)
+   - Consequence M14 (1 phrase metier)
+5. **Verifier la coherence** : si tu ecris "20 marquages", verifier que la sortie analyseur dit aussi 20. Si divergence : tu as un bug, **corriger le code en priorite** (regle d'or 7).
+6. **Tracer** : ajouter une ligne dans [`suivi/historique.md`](suivi/historique.md) avec ton GitHub, la branche, les fichiers touches.
+
+### 9.4 Erreurs frequentes a eviter
+
+- **Inventer des chiffres**. Toujours relancer l'analyseur si tu n'es pas sur. Les chiffres officiels du sprint final sont : **12 places, 12 transitions, 20 marquages, 40 arcs, 5 invariants, 5 LTL, 49 tests, 0 deadlock**.
+- **Reformuler la preuve sans la relire**. Le carnet de preuves est tres precis ; le paraphraser introduit des erreurs.
+- **Oublier de citer la source M14**. Toute affirmation reglementaire doit pointer vers [`livrables/biblio.md`](livrables/biblio.md).
+- **Modifier le code juste pour la redaction**. Si tu trouves une faute dans le code, ouvrir une issue ou prevenir l'equipe ; ne pas faire un commit "drive-by" non teste.
+- **Pousser sans tests**. Avant tout `git push` : `sbt compile && sbt test` (regle d'or 1).
+
+### 9.5 Definition of Done d'une section de rapport
+
+Une section est consideree finie quand :
+
+- [ ] tous les chiffres correspondent a la sortie de `sbt "runMain m14.petri.Analyseur"` du jour ;
+- [ ] toutes les references vers d'autres documents sont cliquables (chemins relatifs valides) ;
+- [ ] aucune phrase ne commence par "TODO", "a completer", "voir plus tard" ;
+- [ ] la section a ete relue par un binome (cf [`gouvernance/repartition-equipe.md`](gouvernance/repartition-equipe.md)) ;
+- [ ] une entree datee a ete ajoutee dans [`suivi/historique.md`](suivi/historique.md).
+
+---
+
+## 10) Parcours de lecture - Comment naviguer dans la doc
+
+**Cible** : tu rejoins le projet aujourd'hui, ou tu reprends le travail apres une pause. Voici l'ordre conseille selon ton role.
+
+### 10.1 Profil "Je decouvre" (30 min)
+
+1. [`documentation/START-ICI.md`](START-ICI.md) **(cette page)** - vue d'ensemble.
+2. [`documentation/contexte/recadrage-m14-troncon-critique.md`](contexte/recadrage-m14-troncon-critique.md) - le pourquoi M14, le perimetre.
+3. [`petri/petri-troncon.md`](../petri/petri-troncon.md) sections 1-3 - le modele formel en gros.
+4. [`demo/README.md`](../demo/README.md) puis lancer `sbt "runMain m14.demo.LancerDemo"` - voir le systeme tourner.
+5. [`documentation/gouvernance/lexique.md`](gouvernance/lexique.md) - vocabulaire commun (canton, quai, PSD, marquage, transition...).
+
+### 10.2 Profil "Je vais coder" (45 min de plus)
+
+6. [`documentation/gouvernance/REGLES_PROJET.md`](gouvernance/REGLES_PROJET.md) - conventions de code, branches, PR.
+7. Lire les 5 fichiers de `src/main/scala/m14/troncon/` (commentaires d'entete + signatures).
+8. Lire `src/main/scala/m14/petri/PetriNet.scala` (12 places, 12 transitions, marquage initial).
+9. Lire `src/main/scala/m14/petri/Analyseur.scala` (BFS + invariants + LTL).
+10. Lancer `sbt test` et **lire** les noms de tests (49 tests = 49 specifications executables).
+
+### 10.3 Profil "Je vais rediger le rapport" (1h)
+
+6. [`documentation/livrables/rapport.md`](livrables/rapport.md) en entier - ce qui existe deja.
+7. [`documentation/livrables/preuves-manuelles.md`](livrables/preuves-manuelles.md) - **la mine d'or**, lire les taches 1 a 7.
+8. [`documentation/livrables/comparaison.md`](livrables/comparaison.md) - les 3 scenarios canoniques + sortie analyseur.
+9. [`documentation/livrables/biblio.md`](livrables/biblio.md) - les 11 sources, savoir laquelle citer pour quel argument.
+10. Section **9** ci-dessus - le tableau "section -> source -> action".
+
+### 10.4 Profil "Je presente la soutenance" (30 min)
+
+6. [`documentation/suivi/COMMANDES.md`](suivi/COMMANDES.md) section 4 - lancement de la demo.
+7. Lancer `sbt "runMain m14.demo.LancerDemo"` et derouler les 5 scenarios A/B/C/D/E.
+8. Repeter le storytelling : section 5.B de cette page (Piste B - Soutenance).
+9. Preparer 3 questions defensives :
+   - "Pourquoi pas TLA+ / Spin / mCRL2 ?" -> [`livrables/biblio.md`](livrables/biblio.md) + [`gouvernance/protocole-coordination.md`](gouvernance/protocole-coordination.md) Q3.
+   - "Comment savez-vous que vos 5 invariants suffisent ?" -> [`livrables/preuves-manuelles.md`](livrables/preuves-manuelles.md) tache 6 (LTL).
+   - "Que se passe-t-il avec 3 trains ?" -> section 6 ci-dessus + section 7 du rapport (limites assumees).
+
+### 10.5 Profil "Je reprends apres une pause" (15 min)
+
+1. [`documentation/suivi/historique.md`](suivi/historique.md) - les 3 dernieres entrees.
+2. [`documentation/suivi/HANDOVER.md`](suivi/HANDOVER.md) - etat de transmission entre membres.
+3. [`documentation/suivi/PLAN.md`](suivi/PLAN.md) - phase courante et prochaines etapes.
+4. `git log --oneline -10` - les derniers commits.
+5. `sbt compile && sbt test` - verifier que rien n'est casse.
+
+### 10.6 Carte de la documentation (qui sert a quoi)
+
+| Fichier | Role | Tu le lis quand... |
+|---|---|---|
+| [`START-ICI.md`](START-ICI.md) | Page d'accueil, point d'entree unique | toujours en premier |
+| [`contexte/recadrage-m14-troncon-critique.md`](contexte/recadrage-m14-troncon-critique.md) | Justification du perimetre | tu doutes du scope |
+| [`gouvernance/REGLES_PROJET.md`](gouvernance/REGLES_PROJET.md) | Conventions code/git/PR | avant ton premier commit |
+| [`gouvernance/repartition-equipe.md`](gouvernance/repartition-equipe.md) | Qui fait quoi (poles A/B/C/D) | tu cherches ton binome de relecture |
+| [`gouvernance/protocole-coordination.md`](gouvernance/protocole-coordination.md) | FAQ Q1-Q15 sur les decisions de design | tu veux justifier un choix |
+| [`gouvernance/lexique.md`](gouvernance/lexique.md) | Vocabulaire Akka/Petri/M14 | un terme te semble flou |
+| [`livrables/rapport.md`](livrables/rapport.md) | Le rapport final a rendre | tu rediges |
+| [`livrables/preuves-manuelles.md`](livrables/preuves-manuelles.md) | Carnet detaille des preuves (taches 1-7) | tu redige la section 5 du rapport |
+| [`livrables/comparaison.md`](livrables/comparaison.md) | Tableaux Akka vs Petri par scenario | tu rediges la section 6 |
+| [`livrables/biblio.md`](livrables/biblio.md) | 11 sources commentees | tu cites une reference |
+| [`suivi/PLAN.md`](suivi/PLAN.md) | Phases et avancement global | tu planifies |
+| [`suivi/COMMANDES.md`](suivi/COMMANDES.md) | Toutes les commandes (sbt, git, demo) | tu cherches "la commande pour..." |
+| [`suivi/historique.md`](suivi/historique.md) | Journal chronologique inverse | tu reprends ou tu finis ta journee |
+| [`suivi/HANDOVER.md`](suivi/HANDOVER.md) | Etat de transmission entre membres | passage de relais |
+| [`petri/petri-troncon.md`](../petri/petri-troncon.md) | Modele Petri formel (source de verite) | tu doutes d'un chiffre, d'une transition |
+| [`demo/README.md`](../demo/README.md) | Mode d'emploi de la demo HTML | tu prepares la soutenance |
+
+### 10.7 Regle de priorite en cas de conflit entre documents
+
+1. Le **code Scala** est l'autorite finale (`PetriNet.scala`, `Analyseur.scala`, tests).
+2. [`petri/petri-troncon.md`](../petri/petri-troncon.md) est la **specification** ; si elle diverge du code, on aligne le code OU le doc selon discussion d'equipe.
+3. [`livrables/preuves-manuelles.md`](livrables/preuves-manuelles.md) doit refleter le code. Si divergence : on relance l'analyseur, on met a jour le carnet.
+4. [`livrables/rapport.md`](livrables/rapport.md) est en bout de chaine : il copie depuis le carnet. Jamais l'inverse.
+5. [`START-ICI.md`](START-ICI.md) (cette page) est un resume ; en cas de doute, la **source detaillee** prime.
+
