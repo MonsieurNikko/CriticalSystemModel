@@ -9,6 +9,11 @@ object Analyseur {
 
   import PetriNet._
 
+  // Un arc du graphe d'accessibilite : marquage source --transition--> marquage cible.
+  // Un arc peut etre auto-boucle (source == cible) si la transition reproduit
+  // exactement les jetons consommes (cas non rencontre dans notre reseau).
+  final case class Arc(source: Marking, transition: Transition, cible: Marking)
+
   // Resultat complet d'une analyse du reseau.
   // 5 invariants sont verifies sur tous les marquages atteignables :
   //   1. Invariant canton  (5.1) : T1_sur_canton + T2_sur_canton + Canton_libre = 1
@@ -26,15 +31,23 @@ object Analyseur {
     invariantPsdDepartureOk: Boolean,
     invariantsParTrainOk: Boolean,
     deadlocks: List[Marking],
-    nombreEtats: Int
+    nombreEtats: Int,
+    arcs: List[Arc] = Nil
   )
 
-  // Exploration BFS depuis le marquage initial.
-  // Retourne tous les marquages atteignables dans l'ordre de decouverte.
-  def explorerEspaceEtats(net: Net): List[Marking] = {
+  // Exploration BFS depuis le marquage initial. Retourne uniquement la liste des
+  // marquages atteignables (ordre de decouverte), conserve pour compatibilite avec
+  // l'ancien usage. Pour disposer aussi des arcs, voir explorerAvecArcs.
+  def explorerEspaceEtats(net: Net): List[Marking] =
+    explorerAvecArcs(net)._1
+
+  // Exploration BFS qui retourne a la fois les marquages atteignables et les arcs
+  // (M_i --transition--> M_j) decouverts. Les arcs sont produits dans l'ordre du BFS.
+  def explorerAvecArcs(net: Net): (List[Marking], List[Arc]) = {
     var visites: Set[Marking] = Set(net.marquageInitial)
     var file: Queue[Marking] = Queue(net.marquageInitial)
-    var resultat: List[Marking] = List(net.marquageInitial)
+    var marquages: List[Marking] = List(net.marquageInitial)
+    var arcs: List[Arc] = Nil
 
     while (file.nonEmpty) {
       val (marquageCourant, fileRestante) = file.dequeue
@@ -44,17 +57,18 @@ object Analyseur {
       for (transition <- tirables) {
         tirer(transition, marquageCourant) match {
           case Some(nouveauMarquage) =>
+            arcs = arcs :+ Arc(marquageCourant, transition, nouveauMarquage)
             if (!visites.contains(nouveauMarquage)) {
               visites = visites + nouveauMarquage
               file = file.enqueue(nouveauMarquage)
-              resultat = resultat :+ nouveauMarquage
+              marquages = marquages :+ nouveauMarquage
             }
           case None => ()
         }
       }
     }
 
-    resultat
+    (marquages, arcs)
   }
 
   // ===========================================================================
@@ -127,6 +141,56 @@ object Analyseur {
   }
 
   // ===========================================================================
+  // Verification LTL programmatique (Phase 7) sur le graphe d'accessibilite fini
+  // ===========================================================================
+
+  // G p (Safety) : pour tout marquage atteignable M, p(M) doit etre vrai.
+  // Renvoie Right(true) si tous verifient le predicat, Left(contre-exemple) sinon.
+  def verifierGSafety(marquages: List[Marking], predicat: Marking => Boolean): Either[Marking, Boolean] = {
+    marquages.find(m => !predicat(m)) match {
+      case Some(contreExemple) => Left(contreExemple)
+      case None                => Right(true)
+    }
+  }
+
+  // G (p -> F q) (Liveness reactive) : pour tout marquage M ou p tient, il existe
+  // un chemin dans le graphe d'accessibilite qui conduit a un marquage ou q tient.
+  // L'implementation fait une BFS dans le graphe reduit aux successeurs effectifs
+  // et verifie l'atteignabilite. Sous l'hypothese de fairness FIFO documentee
+  // (cf protocole-coordination Q11), cela suffit pour argumenter F q.
+  def verifierGFLiveness(
+    marquages: List[Marking],
+    arcs: List[Arc],
+    source: Marking => Boolean,
+    cible: Marking => Boolean
+  ): Either[Marking, Boolean] = {
+    val successeurs: Map[Marking, List[Marking]] =
+      arcs.groupBy(_.source).view.mapValues(_.map(_.cible).distinct).toMap.withDefaultValue(Nil)
+
+    def atteignableDepuis(depart: Marking): Boolean = {
+      var visites: Set[Marking] = Set(depart)
+      var file: Queue[Marking] = Queue(depart)
+      while (file.nonEmpty) {
+        val (m, reste) = file.dequeue
+        file = reste
+        if (cible(m)) return true
+        for (s <- successeurs(m)) {
+          if (!visites.contains(s)) {
+            visites = visites + s
+            file = file.enqueue(s)
+          }
+        }
+      }
+      false
+    }
+
+    marquages.filter(source).find(m => !atteignableDepuis(m)) match {
+      case Some(contreExemple) => Left(contreExemple)
+      case None                => Right(true)
+    }
+  }
+
+  // ===========================================================================
   // Deadlock + analyse complete
   // ===========================================================================
 
@@ -134,7 +198,7 @@ object Analyseur {
     transitionsTirables(net, marquage).isEmpty
 
   def analyser(net: Net): ResultatAnalyse = {
-    val marquages = explorerEspaceEtats(net)
+    val (marquages, arcs) = explorerAvecArcs(net)
     ResultatAnalyse(
       marquagesAtteignables = marquages,
       invariantCantonOk = marquages.forall(verifierInvariantCanton),
@@ -144,7 +208,8 @@ object Analyseur {
       invariantPsdDepartureOk = marquages.forall(m => verifierSurteDepartQuai(net, m)),
       invariantsParTrainOk = marquages.forall(verifierInvariantsParTrain),
       deadlocks = marquages.filter(m => estDeadlock(net, m)),
-      nombreEtats = marquages.size
+      nombreEtats = marquages.size,
+      arcs = arcs
     )
   }
 
@@ -197,7 +262,45 @@ object Analyseur {
     println(s"Exclusion mutuelle quai   : ${statut(!collisionQuai)}")
 
     println()
+    println("--- Graphe d'accessibilite (arcs etiquetes M_i --transition--> M_j) ---")
+    val indexParMarquage: Map[Marking, Int] =
+      resultat.marquagesAtteignables.zipWithIndex.toMap
+    println(s"  ${resultat.arcs.size} arcs au total")
+    resultat.arcs.foreach { arc =>
+      val i = indexParMarquage.getOrElse(arc.source, -1)
+      val j = indexParMarquage.getOrElse(arc.cible, -1)
+      println(s"  M$i --${arc.transition.nom}--> M$j")
+    }
+    println()
+
+    println("--- Verification LTL programmatique (Phase 7) ---")
+    val safetyCanton = verifierGSafety(resultat.marquagesAtteignables,
+      m => !(m.getOrElse(T1SurCanton, 0) >= 1 && m.getOrElse(T2SurCanton, 0) >= 1))
+    val safetyQuai = verifierGSafety(resultat.marquagesAtteignables,
+      m => !(m.getOrElse(T1AQuai, 0) >= 1 && m.getOrElse(T2AQuai, 0) >= 1))
+    val safetyPsdOpen = verifierGSafety(resultat.marquagesAtteignables,
+      verifierSurteOuverturePortes)
+    val livenessCantonT1 = verifierGFLiveness(resultat.marquagesAtteignables, resultat.arcs,
+      source = m => m.getOrElse(T1Attente, 0) >= 1,
+      cible  = m => m.getOrElse(T1SurCanton, 0) >= 1)
+    val livenessCantonT2 = verifierGFLiveness(resultat.marquagesAtteignables, resultat.arcs,
+      source = m => m.getOrElse(T2Attente, 0) >= 1,
+      cible  = m => m.getOrElse(T2SurCanton, 0) >= 1)
+    println(s"  G safety canton           (G !(T1 sur AND T2 sur))    : ${statutLtl(safetyCanton)}")
+    println(s"  G safety quai             (G !(T1 quai AND T2 quai))  : ${statutLtl(safetyQuai)}")
+    println(s"  G safety PSD-Open         (G ouvertes -> Ti a quai)   : ${statutLtl(safetyPsdOpen)}")
+    println(s"  G F liveness canton T1    (T1_attente -> F sur_canton): ${statutLtl(livenessCantonT1)}")
+    println(s"  G F liveness canton T2    (T2_attente -> F sur_canton): ${statutLtl(livenessCantonT2)}")
+
+    println()
     println("=== Fin de l'analyse ===")
+  }
+
+  private def statutLtl(r: Either[Marking, Boolean]): String = r match {
+    case Right(_)            => "PASSE"
+    case Left(contreExemple) =>
+      val places = contreExemple.filter(_._2 > 0).keys.toList.sorted.mkString(", ")
+      s"ECHEC (contre-exemple : ($places))"
   }
 
   private def statut(ok: Boolean): String = if (ok) "PASSE" else "ECHEC"

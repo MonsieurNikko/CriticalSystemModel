@@ -28,8 +28,10 @@ Resultat attendu avant rendu :
 
 ```text
 All tests passed.
-Total number of tests run: 19
+Total number of tests run: 49
 ```
+
+(Repartition : TrainSpec 6 + SectionControllerSpec 3 + QuaiControllerSpec 5 + GestionnairePortesSpec 5 + AnalyseurSpec 30 = 49.)
 
 ---
 
@@ -43,10 +45,10 @@ sbt "runMain m14.Main"
 
 Cette commande affiche :
 
-- les 3 scenarios critiques ;
+- les 3 scenarios critiques (cycle nominal, concurrence canton+quai, tentative PSD invalide) ;
 - les messages Akka ;
 - les transitions Petri associees ;
-- le bilan automatique : 8 etats, invariant OK, 0 deadlock, collision NON.
+- le bilan automatique : **20 marquages**, **5 invariants PASSE**, **0 deadlock**, exclusions mutuelles canton/quai PASSE.
 
 Important : eviter `sbt run` seul, car le projet contient plusieurs points d'entree et sbt peut demander de choisir lequel lancer.
 
@@ -62,11 +64,14 @@ sbt "runMain m14.petri.Analyseur"
 
 Cette commande sert a verifier :
 
-- les marquages atteignables ;
-- l'invariant principal ;
-- les invariants par train ;
+- **20 marquages atteignables** (M0..M19) ;
+- les **3 invariants de ressource** (canton, quai, portes) ;
+- les **2 invariants critiques de surete PSD** (PSD-Open, PSD-Departure) ;
+- les invariants par train sur 4 etats ;
 - l'absence de deadlock ;
-- l'exclusion mutuelle.
+- l'exclusion mutuelle canton et quai ;
+- le **graphe d'accessibilite** : 40 arcs etiquetes M_i --transition--> M_j ;
+- la verification **LTL programmatique** (Phase 7) : G safety canton/quai/PSD-Open + G F liveness canton T1/T2.
 
 ---
 
@@ -84,14 +89,21 @@ Depuis PowerShell, on peut aussi lancer :
 Start-Process .\demo\index.html
 ```
 
-La page permet de tester :
+La page permet de tester (extension PSD) :
 
-- scenario nominal ;
-- scenario concurrence ;
-- scenario liberation / progression ;
-- ordre Train1 ou Train2 en premier ;
-- lecture automatique ou pas-a-pas ;
-- affichage des places, transitions et invariants.
+- scenario nominal (cycle complet canton + quai + portes palieres) ;
+- scenario concurrence canton + quai (T1 et T2 partagent les ressources) ;
+- scenario tentative PSD invalide (overlay rouge : la garde de surete bloque) ;
+- timeline cliquable, lecture / pause / pas-a-pas ;
+- visualisation des 5 acteurs, des 12 places Petri, des popups Akka et du bandeau d'invariants en temps reel.
+
+Pour regenerer les traces JSON depuis le modele Scala :
+
+```bash
+sbt "runMain m14.demo.GenererTraces"
+```
+
+Cette commande ecrit `demo/trace-nominal.json`, `demo/trace-concurrence.json`, `demo/trace-violation.json` (sources de verite : `m14.petri.PetriNet.tirer`).
 
 ---
 

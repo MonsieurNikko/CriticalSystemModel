@@ -132,4 +132,82 @@ class AnalyseurSpec extends AnyWordSpec with Matchers {
       }
     }
   }
+
+  "Graphe d'accessibilite (Phase 7)" should {
+
+    "produire exactement 40 arcs etiquetes" in {
+      analyser(reseauTroncon).arcs.size shouldBe 40
+    }
+
+    "construire des arcs dont source et cible sont des marquages atteignables" in {
+      val resultat = analyser(reseauTroncon)
+      val atteignables = resultat.marquagesAtteignables.toSet
+      resultat.arcs.foreach { arc =>
+        atteignables should contain(arc.source)
+        atteignables should contain(arc.cible)
+      }
+    }
+
+    "que chaque arc respecte la semantique de tirage Petri" in {
+      val resultat = analyser(reseauTroncon)
+      resultat.arcs.foreach { arc =>
+        val cibleCalculee = tirer(arc.transition, arc.source)
+        cibleCalculee shouldBe Some(arc.cible)
+      }
+    }
+  }
+
+  "Verification LTL programmatique (Phase 7)" should {
+
+    "verifier G safety canton (jamais T1+T2 sur le canton)" in {
+      val resultat = analyser(reseauTroncon)
+      val r = verifierGSafety(resultat.marquagesAtteignables, m =>
+        !(m.getOrElse(T1SurCanton, 0) >= 1 && m.getOrElse(T2SurCanton, 0) >= 1))
+      r shouldBe Right(true)
+    }
+
+    "verifier G safety quai (jamais T1+T2 a quai)" in {
+      val resultat = analyser(reseauTroncon)
+      val r = verifierGSafety(resultat.marquagesAtteignables, m =>
+        !(m.getOrElse(T1AQuai, 0) >= 1 && m.getOrElse(T2AQuai, 0) >= 1))
+      r shouldBe Right(true)
+    }
+
+    "verifier G safety PSD-Open via verifierGSafety" in {
+      val resultat = analyser(reseauTroncon)
+      val r = verifierGSafety(resultat.marquagesAtteignables, verifierSurteOuverturePortes)
+      r shouldBe Right(true)
+    }
+
+    "fournir un contre-exemple si Safety est violee" in {
+      val resultat = analyser(reseauTroncon)
+      // Predicat impossible pour M0 : Canton_libre = 0. Doit renvoyer M0 en contre-exemple.
+      val r = verifierGSafety(resultat.marquagesAtteignables, m => m.getOrElse(CantonLibre, 0) == 0)
+      r.isLeft shouldBe true
+    }
+
+    "verifier G F liveness canton T1 (T1_attente -> F T1_sur_canton)" in {
+      val resultat = analyser(reseauTroncon)
+      val r = verifierGFLiveness(resultat.marquagesAtteignables, resultat.arcs,
+        source = m => m.getOrElse(T1Attente, 0) >= 1,
+        cible  = m => m.getOrElse(T1SurCanton, 0) >= 1)
+      r shouldBe Right(true)
+    }
+
+    "verifier G F liveness canton T2 (T2_attente -> F T2_sur_canton)" in {
+      val resultat = analyser(reseauTroncon)
+      val r = verifierGFLiveness(resultat.marquagesAtteignables, resultat.arcs,
+        source = m => m.getOrElse(T2Attente, 0) >= 1,
+        cible  = m => m.getOrElse(T2SurCanton, 0) >= 1)
+      r shouldBe Right(true)
+    }
+
+    "verifier G F liveness PSD T1 (T1_a_quai -> F Portes_ouvertes)" in {
+      val resultat = analyser(reseauTroncon)
+      val r = verifierGFLiveness(resultat.marquagesAtteignables, resultat.arcs,
+        source = m => m.getOrElse(T1AQuai, 0) >= 1,
+        cible  = m => m.getOrElse(PortesOuvertes, 0) >= 1)
+      r shouldBe Right(true)
+    }
+  }
 }

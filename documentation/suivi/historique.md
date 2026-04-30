@@ -33,7 +33,42 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ## Entrees
 
-### [2026-04-29 16:00] - Phase B - Demo simulation animee pilotee par Scala
+### [2026-04-30 23:30] - Phase 7 - LTL programmatique + arcs etiquetes + carnet de preuves rempli
+- GitHub: @MonsieurNikko
+- Branche: `extension`
+- Contexte/tache: completer la Phase 7 du PLAN (verification LTL programmatique). Etendre l'analyseur avec un graphe d'accessibilite etiquete (arcs `M_i --transition--> M_j`), ajouter `verifierGSafety` et `verifierGFLiveness`, remplir les taches 1 a 7 du carnet de preuves manuelles avec les valeurs reelles (20 marquages, 40 arcs).
+- Fichiers modifies:
+	- src/main/scala/m14/petri/Analyseur.scala (ajout `Arc`, `explorerAvecArcs`, `verifierGSafety`, `verifierGFLiveness`, sortie main etendue)
+	- src/test/scala/m14/petri/AnalyseurSpec.scala (+10 tests : 3 graphe + 7 LTL)
+	- documentation/livrables/preuves-manuelles.md (taches 1-7 remplies : 20 marquages, 5 invariants, 40 arcs, justification model-checking, limites Liveness)
+	- documentation/suivi/COMMANDES.md (49 tests, 20 marquages, demo PSD, generateur traces)
+	- documentation/suivi/PLAN.md (Phase 7 marquee TERMINEE)
+- Changements detailles:
+	- `Arc(source, transition, cible)` ajoute pour modeliser le graphe d'accessibilite. `explorerAvecArcs` retourne `(List[Marking], List[Arc])` ; `explorerEspaceEtats` conserve sa signature pour retro-compatibilite.
+	- `verifierGSafety` : verification `G p` par parcours des marquages, retourne `Either[contre-exemple, true]`.
+	- `verifierGFLiveness` : verification `G (p -> F q)` par BFS dans le graphe d'arcs depuis chaque marquage source, retourne le contre-exemple si pas de chemin atteignable.
+	- Sortie main : 40 arcs listes + 5 verifications LTL (3 Safety + 2 Liveness canton + cross-validation).
+	- Tableaux du carnet remplis avec les 20 marquages reels (au lieu de "M10-M17 a remplir") : invariants 2.1, 2.2, 2.3, 2bis.1, 2bis.2, 3 (T1+T2), 4 (deadlock).
+	- Tache 7 : graphe ASCII complet + liste verbatim des 40 arcs prete pour annexe A1 du rapport.
+- Commandes executees:
+	- `git pull --ff-only origin extension` (resync sur 9d80fc9 avant edition)
+	- `sbt -no-colors -batch "compile; test"`
+	- `sbt -no-colors -batch -error "runMain m14.petri.Analyseur"`
+- Resultats de verification:
+	- Build: PASS
+	- Tests: PASS (49/49 : TrainSpec 6 + SectionControllerSpec 3 + QuaiControllerSpec 5 + GestionnairePortesSpec 5 + AnalyseurSpec 30)
+	- Analyseur : 20 marquages, 40 arcs, 5 invariants PASSE, 0 deadlock, 5 proprietes LTL PASSE
+- Risques/impacts:
+	- Aucun risque sur la suite de tests (10 nouveaux tests verts).
+	- Le carnet de preuves est maintenant cross-valide par l'analyseur sur tous les 20 marquages.
+- Prochaines actions recommandees:
+	- D.7 : merge `extension` -> `main` avec `--no-ff` apres relecture equipe.
+	- Phase 8 : reprendre les tableaux du carnet pour completer le rapport (sections 5.1 a 5.8 + annexe A1).
+	- Phase 9 : tag `v1.0-rendu`.
+
+---
+
+
 - GitHub: @MonsieurNikko
 - Branche: `extension`
 - Contexte/tache: rendre la demo plus concrete pour la soutenance. Au lieu d'un HTML statique, generer des traces JSON depuis le vrai modele Scala (PetriNet) et les rejouer dans une page animee (trains qui glissent, popups Akka, overlay rouge en cas de violation PSD).

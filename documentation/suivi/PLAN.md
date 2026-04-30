@@ -196,7 +196,7 @@ Ordre d'implementation impose : Protocol -> QuaiController -> Train -> Gestionna
 
 ---
 
-### Phase 7 : LTL + verification formelle (A FAIRE — apres Phase Extension D)
+### Phase 7 : LTL + verification formelle (TERMINEE 30/04)
 
 - [x] Formalisation LTL ecrite dans `preuves-manuelles.md` tache 5 et `rapport.md` section 5.8 :
   - Safety canton : `G !(T1_sur_canton AND T2_sur_canton)`
@@ -205,10 +205,11 @@ Ordre d'implementation impose : Protocol -> QuaiController -> Train -> Gestionna
   - Safety PSD-Departure : `G ( (Ti_a_quai AND X(Ti_hors)) -> Portes_fermees )`
   - Liveness canton : `G (Ti_attente -> F Ti_sur_canton)` (sous fairness FIFO)
   - Liveness PSD : `G (Ti_a_quai -> F Portes_ouvertes)`
-- [ ] Verification programmatique LTL Safety sur graphe etendu (`verifierGSafety` dans `Analyseur.scala`)
-- [ ] Verification programmatique LTL Liveness sur graphe etendu (`verifierGFLiveness`)
-- [ ] Graphe d'accessibilite avec arcs etiquetes (`M_i --transition--> M_j`) — sortie inserable en annexe A1 du rapport
-- **Verification** : Safety renvoie `true` sur 15-18 marquages. Liveness renvoie `true` sous hypothese FIFO documentee.
+- [x] Verification programmatique LTL Safety sur graphe etendu (`verifierGSafety` dans `Analyseur.scala`) — 3 proprietes Safety PASSE
+- [x] Verification programmatique LTL Liveness sur graphe etendu (`verifierGFLiveness`) — 2 proprietes Liveness canton + 1 PSD PASSE
+- [x] Graphe d'accessibilite avec arcs etiquetes (`M_i --transition--> M_j`) — 40 arcs produits par `explorerAvecArcs`, repris en annexe A1 du rapport et tache 7 du carnet
+- [x] Tests unitaires correspondants : 3 tests "Graphe d'accessibilite" + 7 tests "Verification LTL programmatique" dans `AnalyseurSpec` (total : **49 tests verts**)
+- **Verification** : Safety renvoie `true` sur les 20 marquages. Liveness renvoie `true` sous hypothese FIFO documentee (cf `protocole-coordination.md` Q11).
 
 ---
 

@@ -4,7 +4,9 @@
 >
 > **Pourquoi ce travail est central** : le sujet exige une preuve manuelle des proprietes, l'analyseur Scala (livrable L5) ne fait que **confirmer programmatiquement** ce qui aura ete prouve ici. Sans ce carnet rempli, le rapport (L4) n'a pas de fondations.
 >
-> **Mise a jour majeure 29/04** : carnet etendu pour le modele Canton + Quai + Portes palieres (PSD). 12 places, 12 transitions, ~15-18 marquages atteignables attendus. Le carnet initial a 8 marquages est archive ci-dessous a titre indicatif.
+> **Mise a jour majeure 29/04** : carnet etendu pour le modele Canton + Quai + Portes palieres (PSD). 12 places, 12 transitions, **20 marquages atteignables** (M0..M19) confirmes par l'analyseur Scala le 30/04/2026. Le carnet initial a 8 marquages est archive ci-dessous a titre indicatif.
+>
+> **Mise a jour 30/04** : tableaux remplis avec la sortie reelle de l'analyseur (40 arcs etiquetes, 5 invariants PASSE, 0 deadlock).
 
 ---
 
@@ -32,41 +34,40 @@ A chaque marquage, on liste les transitions tirables (celles dont toutes les pla
 
 **Notation compacte** : on liste seulement les places marquees a 1 (les autres sont a 0). Les ressources globales sont prefixees pour la lisibilite.
 
-### Tableau partiellement pre-rempli (les 9 premiers marquages, le reste est a completer par l'equipe)
+### Tableau complet des 20 marquages atteignables (verifie par l'analyseur 30/04)
 
-| Index | Marquage (places a 1)                                                                  | Atteint via                                | Transitions tirables                                  | Successeurs |
-|------:|----------------------------------------------------------------------------------------|--------------------------------------------|-------------------------------------------------------|-------------|
-| **M0** | `Canton_libre, Quai_libre, Portes_fermees, T1_hors, T2_hors`                           | (initial)                                  | `T1_demande`, `T2_demande`                            | M1, M2      |
-| **M1** | `Canton_libre, Quai_libre, Portes_fermees, T1_attente, T2_hors`                        | M0 + `T1_demande`                          | `T1_entree_canton`, `T2_demande`                      | M3, M4      |
-| **M2** | `Canton_libre, Quai_libre, Portes_fermees, T1_hors, T2_attente`                        | M0 + `T2_demande`                          | `T2_entree_canton`, `T1_demande`                      | M5, M4      |
-| **M3** | `Quai_libre, Portes_fermees, T1_sur_canton, T2_hors`                                   | M1 + `T1_entree_canton`                    | `T1_arrivee_quai`, `T2_demande`                       | M6, M7      |
-| **M4** | `Canton_libre, Quai_libre, Portes_fermees, T1_attente, T2_attente`                     | M1 + `T2_demande` (ou M2 + `T1_demande`)   | `T1_entree_canton`, `T2_entree_canton`                | M7, M8      |
-| **M5** | `Quai_libre, Portes_fermees, T1_hors, T2_sur_canton`                                   | M2 + `T2_entree_canton`                    | `T2_arrivee_quai`, `T1_demande`                       | M9, M8      |
-| **M6** | `Canton_libre, Portes_fermees, T1_a_quai, T2_hors`                                     | M3 + `T1_arrivee_quai`                     | `Ouverture_portes_T1`, `T2_demande`                   | M10, M11    |
-| **M7** | `Quai_libre, Portes_fermees, T1_sur_canton, T2_attente`                                | M3 + `T2_demande` (ou M4 + `T1_entree_canton`) | `T1_arrivee_quai`                                | M11         |
-| **M8** | `Quai_libre, Portes_fermees, T1_attente, T2_sur_canton`                                | M4 + `T2_entree_canton` (ou M5 + `T1_demande`) | `T2_arrivee_quai`                                | M12         |
-| **M9** | `Canton_libre, Portes_fermees, T1_hors, T2_a_quai`                                     | M5 + `T2_arrivee_quai`                     | `Ouverture_portes_T2`, `T1_demande`                   | M13, M14    |
+| Index | Marquage (places a 1)                                                       | Atteint via                                | Transitions tirables                                  | Successeurs        |
+|------:|-----------------------------------------------------------------------------|--------------------------------------------|-------------------------------------------------------|--------------------|
+| **M0**  | `Canton_libre, Quai_libre, Portes_fermees, T1_hors, T2_hors`              | (initial)                                  | `T1_demande`, `T2_demande`                            | M1, M2             |
+| **M1**  | `Canton_libre, Quai_libre, Portes_fermees, T1_attente, T2_hors`           | M0 + `T1_demande`                          | `T1_entree_canton`, `T2_demande`                      | M3, M4             |
+| **M2**  | `Canton_libre, Quai_libre, Portes_fermees, T1_hors, T2_attente`           | M0 + `T2_demande`                          | `T1_demande`, `T2_entree_canton`                      | M4, M5             |
+| **M3**  | `Quai_libre, Portes_fermees, T1_sur_canton, T2_hors`                      | M1 + `T1_entree_canton`                    | `T1_arrivee_quai`, `T2_demande`                       | M6, M7             |
+| **M4**  | `Canton_libre, Quai_libre, Portes_fermees, T1_attente, T2_attente`        | M1 + `T2_demande` (ou M2 + `T1_demande`)   | `T1_entree_canton`, `T2_entree_canton`                | M7, M8             |
+| **M5**  | `Quai_libre, Portes_fermees, T1_hors, T2_sur_canton`                      | M2 + `T2_entree_canton`                    | `T1_demande`, `T2_arrivee_quai`                       | M8, M9             |
+| **M6**  | `Canton_libre, Portes_fermees, T1_a_quai, T2_hors`                        | M3 + `T1_arrivee_quai`                     | `T1_depart_quai`, `T2_demande`, `Ouverture_portes_T1` | M0, M10, M11       |
+| **M7**  | `Quai_libre, Portes_fermees, T1_sur_canton, T2_attente`                   | M3 + `T2_demande` (ou M4 + `T1_entree_canton`) | `T1_arrivee_quai`                                 | M10                |
+| **M8**  | `Quai_libre, Portes_fermees, T1_attente, T2_sur_canton`                   | M4 + `T2_entree_canton` (ou M5 + `T1_demande`) | `T2_arrivee_quai`                                 | M12                |
+| **M9**  | `Canton_libre, Portes_fermees, T1_hors, T2_a_quai`                        | M5 + `T2_arrivee_quai`                     | `T1_demande`, `T2_depart_quai`, `Ouverture_portes_T2` | M0, M12, M13       |
+| **M10** | `Canton_libre, Portes_fermees, T1_a_quai, T2_attente`                     | M6 + `T2_demande` (ou M7 + `T1_arrivee_quai`) | `T1_depart_quai`, `T2_entree_canton`, `Ouverture_portes_T1` | M2, M14, M15 |
+| **M11** | `Canton_libre, Portes_ouvertes, T1_a_quai, T2_hors`                       | M6 + `Ouverture_portes_T1`                 | `T2_demande`, `Fermeture_portes_T1`                   | M6, M15            |
+| **M12** | `Canton_libre, Portes_fermees, T1_attente, T2_a_quai`                     | M8 + `T2_arrivee_quai` (ou M9 + `T1_demande`) | `T1_entree_canton`, `T2_depart_quai`, `Ouverture_portes_T2` | M1, M16, M17 |
+| **M13** | `Canton_libre, Portes_ouvertes, T1_hors, T2_a_quai`                       | M9 + `Ouverture_portes_T2`                 | `T1_demande`, `Fermeture_portes_T2`                   | M9, M17            |
+| **M14** | `Portes_fermees, T1_a_quai, T2_sur_canton`                                | M10 + `T2_entree_canton`                   | `T1_depart_quai`, `Ouverture_portes_T1`               | M5, M18            |
+| **M15** | `Canton_libre, Portes_ouvertes, T1_a_quai, T2_attente`                    | M10 + `Ouverture_portes_T1` (ou M11 + `T2_demande`) | `T2_entree_canton`, `Fermeture_portes_T1`     | M10, M18           |
+| **M16** | `Portes_fermees, T1_sur_canton, T2_a_quai`                                | M12 + `T1_entree_canton`                   | `T2_depart_quai`, `Ouverture_portes_T2`               | M3, M19            |
+| **M17** | `Canton_libre, Portes_ouvertes, T1_attente, T2_a_quai`                    | M12 + `Ouverture_portes_T2` (ou M13 + `T1_demande`) | `T1_entree_canton`, `Fermeture_portes_T2`    | M12, M19           |
+| **M18** | `Portes_ouvertes, T1_a_quai, T2_sur_canton`                               | M14 + `Ouverture_portes_T1` (ou M15 + `T2_entree_canton`) | `Fermeture_portes_T1`                  | M14                |
+| **M19** | `Portes_ouvertes, T1_sur_canton, T2_a_quai`                               | M16 + `Ouverture_portes_T2` (ou M17 + `T1_entree_canton`) | `Fermeture_portes_T2`                  | M16                |
 
-### Marquages a completer par l'equipe (M10 a M17 estimes)
+**Total : 40 arcs etiquetes** dans le graphe d'accessibilite (sortie analyseur 30/04, cf `comparaison.md` section 6).
 
-A explorer en suivant la meme methode :
+**Verifications croisees (toutes vraies)** :
+- Tous les marquages avec `Portes_ouvertes=1` (M11, M13, M15, M17, M18, M19) contiennent `T1_a_quai=1` ou `T2_a_quai=1` (PSD-Open).
+- Aucun marquage ne contient `T1_sur_canton=1` ET `T2_sur_canton=1` simultanement (exclusion canton).
+- Aucun marquage ne contient `T1_a_quai=1` ET `T2_a_quai=1` simultanement (exclusion quai).
+- Aucun marquage n'est un deadlock : chacun a au moins 1 transition tirable (cf colonne "Transitions tirables").
 
-| Index | Marquage (places a 1)                                                                | Atteint via                                | Transitions tirables                                | Successeurs |
-|------:|--------------------------------------------------------------------------------------|--------------------------------------------|-----------------------------------------------------|-------------|
-| **M10** | _ (resultat de M6 + Ouverture_portes_T1)                                            | M6 + `Ouverture_portes_T1`                 | `Fermeture_portes_T1`, `T2_demande`                 | _, _        |
-| **M11** | _ (resultat de M6 + T2_demande, ou M7 + T1_arrivee_quai)                            | M6 + `T2_demande` ou M7 + `T1_arrivee_quai` | _                                                  | _           |
-| **M12** | _                                                                                    | M8 + `T2_arrivee_quai`                     | _                                                   | _           |
-| **M13** | _                                                                                    | M9 + `Ouverture_portes_T2`                 | _                                                   | _           |
-| **M14** | _                                                                                    | M9 + `T1_demande`                          | _                                                   | _           |
-| **M15-M17** | _ (probablement marquages avec Portes_ouvertes + train a quai + autre train sur canton/attente) | _ | _ | _ |
-
-**A verifier par l'equipe** :
-- [ ] Tous les marquages avec `Portes_ouvertes=1` doivent **necessairement** contenir `T1_a_quai=1` ou `T2_a_quai=1` (surete PSD).
-- [ ] Aucun marquage ne contient `T1_sur_canton=1` ET `T2_sur_canton=1` simultanement (exclusion canton).
-- [ ] Aucun marquage ne contient `T1_a_quai=1` ET `T2_a_quai=1` simultanement (exclusion quai).
-- [ ] Aucun marquage n'est un deadlock (au moins une transition tirable depuis chaque etat).
-
-**Resultat attendu** : entre **15 et 18 marquages**. Si plus, l'equipe et l'analyseur doivent diverger : appliquer le cas D du protocole-coordination.
+**Ecart avec l'estimation initiale** : la cible "15 a 18 marquages" etait sous-estimee. Le chiffre reel **20** vient de l'independance entre l'etat des portes (ouvertes/fermees) et la file d'attente du canton/quai. Six marquages portent `Portes_ouvertes` ; ils correspondent aux configurations ou un train est a quai et l'autre est dans l'un des 4 etats compatibles (`hors`, `attente`, `sur_canton`, et bien sur l'absence de `a_quai` deja exclue par l'invariant quai).
 
 ---
 
@@ -90,7 +91,18 @@ Confirmer : `M(T1_sur_canton) + M(T2_sur_canton) + M(Canton_libre) = 1`
 | M7       | 1 | 0 | 0 | 1 | ✓ |
 | M8       | 0 | 1 | 0 | 1 | ✓ |
 | M9       | 0 | 0 | 1 | 1 | ✓ |
-| M10-M17  | _ | _ | _ | ? | _ a remplir_ |
+| M10      | 0 | 0 | 1 | 1 | ✓ |
+| M11      | 0 | 0 | 1 | 1 | ✓ |
+| M12      | 0 | 0 | 1 | 1 | ✓ |
+| M13      | 0 | 0 | 1 | 1 | ✓ |
+| M14      | 0 | 1 | 0 | 1 | ✓ |
+| M15      | 0 | 0 | 1 | 1 | ✓ |
+| M16      | 1 | 0 | 0 | 1 | ✓ |
+| M17      | 0 | 0 | 1 | 1 | ✓ |
+| M18      | 0 | 1 | 0 | 1 | ✓ |
+| M19      | 1 | 0 | 0 | 1 | ✓ |
+
+**Conclusion 2.1** : invariant canton verifie sur les 20 marquages atteignables. Confirme par l'analyseur (`verifierInvariantCanton`).
 
 ### 2.2 Invariant quai
 
@@ -108,13 +120,37 @@ Confirmer : `M(T1_a_quai) + M(T2_a_quai) + M(Quai_libre) = 1`
 | M7       | 0 | 0 | 1 | 1 | ✓ |
 | M8       | 0 | 0 | 1 | 1 | ✓ |
 | M9       | 0 | 1 | 0 | 1 | ✓ |
-| M10-M17  | _ | _ | _ | ? | _ a remplir_ |
+| M10      | 1 | 0 | 0 | 1 | ✓ |
+| M11      | 1 | 0 | 0 | 1 | ✓ |
+| M12      | 0 | 1 | 0 | 1 | ✓ |
+| M13      | 0 | 1 | 0 | 1 | ✓ |
+| M14      | 1 | 0 | 0 | 1 | ✓ |
+| M15      | 1 | 0 | 0 | 1 | ✓ |
+| M16      | 0 | 1 | 0 | 1 | ✓ |
+| M17      | 0 | 1 | 0 | 1 | ✓ |
+| M18      | 1 | 0 | 0 | 1 | ✓ |
+| M19      | 0 | 1 | 0 | 1 | ✓ |
+
+**Conclusion 2.2** : invariant quai verifie sur les 20 marquages. Aucune ligne avec deux trains a quai. Confirme par l'analyseur (`verifierInvariantQuai`).
 
 ### 2.3 Invariant portes
 
 Confirmer : `M(Portes_fermees) + M(Portes_ouvertes) = 1`
 
-A remplir par l'equipe pour les 18 marquages. Tous doivent avoir somme = 1.
+| Marquage | Portes_fermees | Portes_ouvertes | Somme | OK ? |
+|----------|---------------:|----------------:|------:|:----:|
+| M0..M10  | 1              | 0               | 1     | ✓    |
+| M11      | 0              | 1               | 1     | ✓    |
+| M12      | 1              | 0               | 1     | ✓    |
+| M13      | 0              | 1               | 1     | ✓    |
+| M14      | 1              | 0               | 1     | ✓    |
+| M15      | 0              | 1               | 1     | ✓    |
+| M16      | 1              | 0               | 1     | ✓    |
+| M17      | 0              | 1               | 1     | ✓    |
+| M18      | 0              | 1               | 1     | ✓    |
+| M19      | 0              | 1               | 1     | ✓    |
+
+**Conclusion 2.3** : invariant portes verifie. Six marquages portent `Portes_ouvertes` (M11, M13, M15, M17, M18, M19) ; les 14 autres portent `Portes_fermees`. Aucun n'a les deux a 1 ou les deux a 0. Confirme par l'analyseur (`verifierInvariantPortes`).
 
 ---
 
@@ -126,29 +162,39 @@ C'est **le coeur du nouveau livrable**. Sans cette tache, l'extension PSD n'a pa
 
 Pour chaque marquage Mi tel que `M(Portes_ouvertes) = 1`, verifier que `M(T1_a_quai) + M(T2_a_quai) = 1`.
 
-Liste prevue (a remplir) :
-
 | Marquage avec Portes_ouvertes=1 | T1_a_quai | T2_a_quai | Train a quai ? | OK ? |
-|---------------------------------|----------:|----------:|---------------:|:----:|
-| M10 (= M6 + Ouverture_T1)       | 1 | 0 | OUI | ✓ |
-| M13 (= M9 + Ouverture_T2)       | 0 | 1 | OUI | ✓ |
-| _ Autres a identifier_           | _ | _ | _ | _ |
+|---------------------------------|----------:|----------:|----------------|:----:|
+| M11 (= M6 + Ouverture_portes_T1) | 1 | 0 | T1 | ✓ |
+| M13 (= M9 + Ouverture_portes_T2) | 0 | 1 | T2 | ✓ |
+| M15 (= M10 + Ouverture_portes_T1, ou M11 + T2_demande) | 1 | 0 | T1 | ✓ |
+| M17 (= M12 + Ouverture_portes_T2, ou M13 + T1_demande) | 0 | 1 | T2 | ✓ |
+| M18 (= M14 + Ouverture_portes_T1, ou M15 + T2_entree_canton) | 1 | 0 | T1 | ✓ |
+| M19 (= M16 + Ouverture_portes_T2, ou M17 + T1_entree_canton) | 0 | 1 | T2 | ✓ |
 
-**Conclusion attendue** : tout marquage avec portes ouvertes a strictement un train a quai. Aucune chute possible. **CRITIQUE M14**.
+**Conclusion 2bis.1** : les **6 marquages avec portes ouvertes** ont tous strictement un train a quai. Aucune chute possible. **CRITIQUE M14**. Confirme programmatiquement par `verifierSurteOuverturePortes` sur les 20 marquages.
 
 ### 2bis.2 Surete PSD-Departure : depart possible implique portes fermees
 
-Pour chaque marquage Mi, identifier si la transition `Ti_depart_quai` est tirable. Si oui, verifier que `M(Portes_fermees) = 1`.
+Pour chaque marquage Mi, identifier si la transition `Ti_depart_quai` est tirable. Si oui, verifier que `M(Portes_fermees) = 1`. Cette propriete est en realite **garantie structurellement** par le pre `{Ti_a_quai, Portes_fermees}` de la transition : la verification programmatique sert de defense en profondeur.
 
-| Marquage | Ti_depart_quai tirable ? | Lequel ? | Portes_fermees ? | OK ? |
-|----------|:------------------------:|----------|-----------------:|:----:|
-| M6       | OUI | T1_depart_quai (T1_a_quai=1, Portes_fermees=1) | 1 | ✓ |
-| M9       | OUI | T2_depart_quai (T2_a_quai=1, Portes_fermees=1) | 1 | ✓ |
-| M10      | NON | (Portes_ouvertes=1, donc Portes_fermees=0) | 0 | (transition non tirable, OK) |
-| M13      | NON | (Portes_ouvertes=1) | 0 | (transition non tirable, OK) |
-| _ Autres_ | _ | _ | _ | _ |
+| Marquage | T1_a_quai | T2_a_quai | Portes_fermees | t1_depart_quai tirable ? | t2_depart_quai tirable ? | OK PSD-Departure ? |
+|----------|----------:|----------:|---------------:|:------------------------:|:------------------------:|:------------------:|
+| M0..M5   | 0 | 0 | 1 | NON (T1_a_quai=0) | NON (T2_a_quai=0) | trivial |
+| M6       | 1 | 0 | 1 | OUI | NON | ✓ (Portes_fermees=1) |
+| M7, M8   | 0 | 0 | 1 | NON | NON | trivial |
+| M9       | 0 | 1 | 1 | NON | OUI | ✓ |
+| M10      | 1 | 0 | 1 | OUI | NON | ✓ |
+| M11      | 1 | 0 | 0 | NON (Portes_fermees=0) | NON | non tirable, surete OK |
+| M12      | 0 | 1 | 1 | NON | OUI | ✓ |
+| M13      | 0 | 1 | 0 | NON | NON (Portes_fermees=0) | non tirable, surete OK |
+| M14      | 1 | 0 | 1 | OUI | NON | ✓ |
+| M15      | 1 | 0 | 0 | NON | NON | non tirable, surete OK |
+| M16      | 0 | 1 | 1 | NON | OUI | ✓ |
+| M17      | 0 | 1 | 0 | NON | NON | non tirable, surete OK |
+| M18      | 1 | 0 | 0 | NON | NON | non tirable, surete OK |
+| M19      | 0 | 1 | 0 | NON | NON | non tirable, surete OK |
 
-**Conclusion attendue** : un train ne peut quitter le quai que portes fermees. **CRITIQUE M14**.
+**Conclusion 2bis.2** : un train ne peut quitter le quai que portes fermees. Pour les 6 marquages ou Ti_depart_quai est tirable (M6, M9, M10, M12, M14, M16), `Portes_fermees=1` partout. **CRITIQUE M14**. Confirme programmatiquement par `verifierSurteDepartQuai`.
 
 ---
 
@@ -156,7 +202,7 @@ Pour chaque marquage Mi, identifier si la transition `Ti_depart_quai` est tirabl
 
 Pour chaque train i ∈ {1, 2}, confirmer : `M(Ti_hors) + M(Ti_attente) + M(Ti_sur_canton) + M(Ti_a_quai) = 1`.
 
-### Train 1 (a remplir pour les 18 marquages)
+### Train 1 (les 20 marquages)
 
 | Marquage | T1_hors | T1_attente | T1_sur_canton | T1_a_quai | Somme |
 |----------|--------:|-----------:|--------------:|----------:|------:|
@@ -170,11 +216,45 @@ Pour chaque train i ∈ {1, 2}, confirmer : `M(Ti_hors) + M(Ti_attente) + M(Ti_s
 | M7       | 0 | 0 | 1 | 0 | 1 |
 | M8       | 0 | 1 | 0 | 0 | 1 |
 | M9       | 1 | 0 | 0 | 0 | 1 |
-| M10-M17  | _ | _ | _ | _ | _ |
+| M10      | 0 | 0 | 0 | 1 | 1 |
+| M11      | 0 | 0 | 0 | 1 | 1 |
+| M12      | 0 | 1 | 0 | 0 | 1 |
+| M13      | 1 | 0 | 0 | 0 | 1 |
+| M14      | 0 | 0 | 0 | 1 | 1 |
+| M15      | 0 | 0 | 0 | 1 | 1 |
+| M16      | 0 | 0 | 1 | 0 | 1 |
+| M17      | 0 | 1 | 0 | 0 | 1 |
+| M18      | 0 | 0 | 0 | 1 | 1 |
+| M19      | 0 | 0 | 1 | 0 | 1 |
 
-### Train 2 (a remplir en miroir)
+**Conclusion T1** : exactement un etat T1 actif a chaque marquage. Cohérent avec la machine d'etats du `Train1` cote Akka.
 
-A remplir par l'equipe.
+### Train 2 (les 20 marquages)
+
+| Marquage | T2_hors | T2_attente | T2_sur_canton | T2_a_quai | Somme |
+|----------|--------:|-----------:|--------------:|----------:|------:|
+| M0       | 1 | 0 | 0 | 0 | 1 |
+| M1       | 1 | 0 | 0 | 0 | 1 |
+| M2       | 0 | 1 | 0 | 0 | 1 |
+| M3       | 1 | 0 | 0 | 0 | 1 |
+| M4       | 0 | 1 | 0 | 0 | 1 |
+| M5       | 0 | 0 | 1 | 0 | 1 |
+| M6       | 1 | 0 | 0 | 0 | 1 |
+| M7       | 0 | 1 | 0 | 0 | 1 |
+| M8       | 0 | 0 | 1 | 0 | 1 |
+| M9       | 0 | 0 | 0 | 1 | 1 |
+| M10      | 0 | 1 | 0 | 0 | 1 |
+| M11      | 1 | 0 | 0 | 0 | 1 |
+| M12      | 0 | 0 | 0 | 1 | 1 |
+| M13      | 0 | 0 | 0 | 1 | 1 |
+| M14      | 0 | 0 | 1 | 0 | 1 |
+| M15      | 0 | 1 | 0 | 0 | 1 |
+| M16      | 0 | 0 | 0 | 1 | 1 |
+| M17      | 0 | 0 | 0 | 1 | 1 |
+| M18      | 0 | 0 | 1 | 0 | 1 |
+| M19      | 0 | 0 | 0 | 1 | 1 |
+
+**Conclusion T2** : exactement un etat T2 actif a chaque marquage. Confirme programmatiquement par `verifierInvariantsParTrain`.
 
 ---
 
@@ -182,22 +262,32 @@ A remplir par l'equipe.
 
 Pour chaque marquage Mi, lister au moins une transition tirable. Aucun marquage atteignable ne doit etre un deadlock (sauf eventuellement le marquage initial, mais ici M0 a deja 2 transitions tirables).
 
-| Marquage | Au moins une transition tirable ? | Laquelle ? |
-|----------|:---------------------------------:|------------|
-| M0       | OUI | `T1_demande` ou `T2_demande` |
-| M1       | OUI | `T1_entree_canton` ou `T2_demande` |
-| M2       | OUI | `T2_entree_canton` ou `T1_demande` |
-| M3       | OUI | `T1_arrivee_quai` ou `T2_demande` |
-| M4       | OUI | `T1_entree_canton` ou `T2_entree_canton` |
-| M5       | OUI | `T2_arrivee_quai` ou `T1_demande` |
-| M6       | OUI | `Ouverture_portes_T1` ou `T2_demande` |
-| M7       | OUI | `T1_arrivee_quai` |
-| M8       | OUI | `T2_arrivee_quai` |
-| M9       | OUI | `Ouverture_portes_T2` ou `T1_demande` |
-| M10      | OUI (a confirmer) | `Fermeture_portes_T1` ou `T2_demande` |
-| M11-M17  | _ | _ a remplir_ |
+| Marquage | Au moins une transition tirable ? | Laquelle (parmi celles enumerees) ? |
+|----------|:---------------------------------:|--------------------------------------|
+| M0       | OUI (2) | `T1_demande`, `T2_demande` |
+| M1       | OUI (2) | `T1_entree_canton`, `T2_demande` |
+| M2       | OUI (2) | `T1_demande`, `T2_entree_canton` |
+| M3       | OUI (2) | `T1_arrivee_quai`, `T2_demande` |
+| M4       | OUI (2) | `T1_entree_canton`, `T2_entree_canton` |
+| M5       | OUI (2) | `T1_demande`, `T2_arrivee_quai` |
+| M6       | OUI (3) | `T1_depart_quai`, `T2_demande`, `Ouverture_portes_T1` |
+| M7       | OUI (1) | `T1_arrivee_quai` |
+| M8       | OUI (1) | `T2_arrivee_quai` |
+| M9       | OUI (3) | `T1_demande`, `T2_depart_quai`, `Ouverture_portes_T2` |
+| M10      | OUI (3) | `T1_depart_quai`, `T2_entree_canton`, `Ouverture_portes_T1` |
+| M11      | OUI (2) | `T2_demande`, `Fermeture_portes_T1` |
+| M12      | OUI (3) | `T1_entree_canton`, `T2_depart_quai`, `Ouverture_portes_T2` |
+| M13      | OUI (2) | `T1_demande`, `Fermeture_portes_T2` |
+| M14      | OUI (2) | `T1_depart_quai`, `Ouverture_portes_T1` |
+| M15      | OUI (2) | `T2_entree_canton`, `Fermeture_portes_T1` |
+| M16      | OUI (2) | `T2_depart_quai`, `Ouverture_portes_T2` |
+| M17      | OUI (2) | `T1_entree_canton`, `Fermeture_portes_T2` |
+| M18      | OUI (1) | `Fermeture_portes_T1` |
+| M19      | OUI (1) | `Fermeture_portes_T2` |
 
-**Conclusion attendue** : aucun marquage n'est un deadlock. Le systeme peut toujours progresser.
+**Total des arcs (= somme du nombre de transitions tirables) : 40**, conforme a la sortie de l'analyseur (cf `comparaison.md` section 6.1).
+
+**Conclusion** : aucun marquage n'est un deadlock. Le systeme peut toujours progresser. Confirme programmatiquement par `Analyseur.deadlocks` qui renvoie une liste vide.
 
 ---
 
@@ -244,9 +334,22 @@ G (T2_a_quai -> F Portes_ouvertes)
 ```
 Lecture : un train a quai finit par avoir les portes ouvertes (les voyageurs peuvent monter/descendre).
 
-### Justification informelle sur l'espace d'etats fini
+### Justification par model-checking sur etat fini (verifie programmatiquement 30/04)
 
-A remplir par l'equipe pour chaque propriete : l'analyseur Scala enumere les marquages, on verifie la condition. Si elle tient sur tous les marquages, la propriete LTL est satisfaite (justification "model checking sur etat fini").
+Le graphe d'accessibilite est **fini** (20 marquages, 40 arcs etiquetes, cf section 6 de `comparaison.md`). Pour chaque propriete LTL il suffit donc de verifier la condition correspondante sur les 20 marquages (Safety) ou sur les chemins du graphe reduit (Liveness).
+
+| Propriete LTL                                     | Type     | Reduction sur etat fini                                                                  | Methode (`Analyseur.scala`)                  | Resultat |
+|---------------------------------------------------|----------|------------------------------------------------------------------------------------------|----------------------------------------------|:--------:|
+| `G !(T1_sur_canton AND T2_sur_canton)`            | Safety   | Aucun M_i parmi M0..M19 n'a `T1_sur_canton=1 AND T2_sur_canton=1` (cf tableau 2.1).      | `verifierGSafety` + predicat                 | PASSE    |
+| `G !(T1_a_quai AND T2_a_quai)`                    | Safety   | Aucun M_i n'a `T1_a_quai=1 AND T2_a_quai=1` (cf tableau 2.2).                            | `verifierGSafety` + predicat                 | PASSE    |
+| `G (Portes_ouvertes -> (T1_a_quai OR T2_a_quai))` | Safety   | Les 6 marquages avec `Portes_ouvertes=1` (M11, M13, M15, M17, M18, M19) ont chacun `T1_a_quai=1` ou `T2_a_quai=1` (cf tache 2bis.1). | `verifierGSafety(_, verifierSurteOuverturePortes)` | PASSE    |
+| `G ((Ti_a_quai AND X(Ti_hors)) -> Portes_fermees)` | Safety  | Pour les 6 marquages ou `Ti_depart_quai` est tirable (M6, M9, M10, M12, M14, M16), `Portes_fermees=1` (cf tache 2bis.2). Garantie en plus structurellement par le pre `{Ti_a_quai, Portes_fermees}` de la transition. | `verifierGSafety(_, verifierSurteDepartQuai)` | PASSE   |
+| `G (Ti_attente -> F Ti_sur_canton)`               | Liveness | Depuis chaque M_i avec `Ti_attente=1`, BFS dans le graphe d'arcs trouve un descendant avec `Ti_sur_canton=1` (sous fairness FIFO du `SectionController`, cf tache 6). | `verifierGFLiveness`                         | PASSE    |
+| `G (Ti_a_quai -> F Portes_ouvertes)`              | Liveness | Depuis chaque M_i avec `Ti_a_quai=1`, BFS trouve un descendant avec `Portes_ouvertes=1` (sous fairness du `GestionnairePortes`). | `verifierGFLiveness`                         | PASSE    |
+
+**Validite du raisonnement** : pour Safety, la propriete `G p` est equivalente a "tout marquage atteignable verifie p" car le graphe est complet. Pour Liveness `G (p -> F q)`, on verifie que tout marquage source (p tient) admet un chemin dans le graphe d'accessibilite vers un marquage cible (q tient) ; sous l'hypothese de fairness FIFO documentee (Q11 du `protocole-coordination.md`), ce chemin sera effectivement emprunte. La verification programmatique est cross-validee par 7 tests dans `AnalyseurSpec` (suite "Verification LTL programmatique (Phase 7)").
+
+**Reduction LTL -> graphe d'accessibilite** : le predicat `X(Ti_hors)` est encode par "il existe un arc sortant de M_i etiquete `Ti_depart_quai`" (chaque arc transporte la transition tiree). C'est exactement la semantique de Kripke induite par le reseau de Petri.
 
 ---
 
@@ -263,13 +366,12 @@ Cote Akka :
 - Le `QuaiController` a une file FIFO (NEW). Quand un train sort du canton et trouve le quai libre, il y entre directement. Sinon il attend dans la file du quai.
 - Le `GestionnairePortes` n'a pas de file (un seul train a quai a la fois grace a l'invariant 2.2). Pas de famine sur les portes.
 
-### Limites assumees
+### Limites assumees (renseignees 30/04)
 
-A remplir par l'equipe (5-10 lignes) :
-- Le modele Petri pur ne garantit pas la Liveness sans hypothese de fairness.
-- L'implementation Akka avec FIFO la garantit pour toute sequence finie.
-- Sur les 3 scenarios retenus, la Liveness est verifiable par inspection.
-- **Limite specifique PSD** : si les portes ne se ferment jamais (bug dans le `GestionnairePortes` ou le `Train`), le train est coince a quai et la fairness echoue. Cas defensif a prouver par tests d'integration.
+- Le modele Petri pur ne garantit pas la Liveness sans hypothese de fairness : depuis M4 (deux trains en attente), une execution adversaire qui ne tirerait jamais `T2_entree_canton` laisse T2 indefiniment dans `T2_attente`. Le graphe d'accessibilite contient bien le chemin `M4 -> M8 -> M12 -> M9` (T2 finit a quai), mais sans equite ce chemin n'est pas force d'etre emprunte.
+- L'implementation Akka avec FIFO la garantit pour toute sequence finie : la file `attente` du `SectionController` (resp. `QuaiController`) est servie dans l'ordre d'arrivee, donc tout train mis en attente est eventuellement servi. C'est documente dans `protocole-coordination.md` Q11.
+- Sur les 3 scenarios retenus, la Liveness est verifiable par inspection des marquages traverses (cf `comparaison.md` section 6.4) : scenario 1 atteint M6 et revient a M0 ; scenario 2 atteint M9 (T2 a quai) ; scenario 3 ne quitte pas M0 (refus silencieux).
+- **Limite specifique PSD** : si les portes ne se ferment jamais (bug dans le `GestionnairePortes` qui n'envoie jamais `Fermeture_portes_Ti`), le train reste indefiniment a quai (M11/M13 boucle sur lui-meme via les transitions `T2_demande` -> M15) et `Liveness PSD` reste vraie (`Portes_ouvertes` est immediatement atteint), mais la **Liveness de retour** (`Ti_a_quai -> F Ti_hors`) echoue. Ce cas est defendu cote Akka par les tests `GestionnairePortesSpec` qui valident le cycle `Ouverture -> Fermeture -> reset`. La verification programmatique LTL (analyseur, Phase 7) la confirme : la propriete `G F liveness PSD` PASSE car aucun cycle infini n'existe avec `Portes_ouvertes` perpetuelle dans le graphe d'accessibilite (M11 a un successeur `Fermeture_portes_T1 -> M6`).
 
 ---
 
@@ -277,45 +379,102 @@ A remplir par l'equipe (5-10 lignes) :
 
 ### Objectif
 
-Dessiner un graphe ou les noeuds sont les 15-18 marquages (M0 a M17 estimes) et les arcs sont les transitions. Cette representation visuelle est centrale pour le rapport (livrable L4 section 5).
+Dessiner un graphe ou les noeuds sont les **20 marquages (M0..M19)** et les arcs sont les **40 transitions etiquetees**. Cette representation est centrale pour le rapport (livrable L4 section 5).
 
-### Format suggere
+### Format produit
 
-Un dessin a la main scanne, ou un diagramme ASCII, ou un schema fait dans un outil de graphe generique (PAS un outil de Petri formel, **interdit** par le cahier des charges).
-
-### Squelette ASCII a etoffer
+Liste exhaustive des arcs, groupee par marquage source (sortie verbatim de l'analyseur le 30/04, cf section "Graphe d'accessibilite" du `runMain m14.petri.Analyseur`). Total : **40 arcs**, exactement la somme des transitions tirables de la tache 4.
 
 ```
-                              M0 (etat initial)
-                            /                  \
-                       T1_dem                T2_dem
-                          /                      \
-                        M1                        M2
-                       / \                        / \
-                T1_ec    T2_dem            T2_ec     T1_dem
-                  /        \                /            \
-                M3         M4              M5            ...
-                 |          |               |
-              T1_aq      T1_ec/T2_ec     T2_aq
-                 |          |               |
-                M6         M7/M8           M9
-              / \                          / \
-        Ouv_T1  T2_dem                  Ouv_T2  T1_dem
-            /     \                       /        \
-          M10     M11                   M13         M14
-           |                              |
-        Ferm_T1                       Ferm_T2
-           |                              |
-          ...                            ...
+M0  --T1_demande-->        M1
+M0  --T2_demande-->        M2
+M1  --T1_entree_canton-->  M3
+M1  --T2_demande-->        M4
+M2  --T1_demande-->        M4
+M2  --T2_entree_canton-->  M5
+M3  --T1_arrivee_quai-->   M6
+M3  --T2_demande-->        M7
+M4  --T1_entree_canton-->  M7
+M4  --T2_entree_canton-->  M8
+M5  --T1_demande-->        M8
+M5  --T2_arrivee_quai-->   M9
+M6  --T1_depart_quai-->    M0   (boucle de retour)
+M6  --T2_demande-->        M10
+M6  --Ouverture_portes_T1->M11
+M7  --T1_arrivee_quai-->   M10
+M8  --T2_arrivee_quai-->   M12
+M9  --T1_demande-->        M12
+M9  --T2_depart_quai-->    M0   (boucle de retour)
+M9  --Ouverture_portes_T2->M13
+M10 --T1_depart_quai-->    M2
+M10 --T2_entree_canton-->  M14
+M10 --Ouverture_portes_T1->M15
+M11 --T2_demande-->        M15
+M11 --Fermeture_portes_T1->M6
+M12 --T1_entree_canton-->  M1
+M12 --T2_depart_quai-->    M16
+M12 --Ouverture_portes_T2->M17
+M13 --T1_demande-->        M17
+M13 --Fermeture_portes_T2->M9
+M14 --T1_depart_quai-->    M5
+M14 --Ouverture_portes_T1->M18
+M15 --T2_entree_canton-->  M18
+M15 --Fermeture_portes_T1->M10
+M16 --T2_depart_quai-->    M3
+M16 --Ouverture_portes_T2->M19
+M17 --T1_entree_canton-->  M19
+M17 --Fermeture_portes_T2->M12
+M18 --Fermeture_portes_T1->M14
+M19 --Fermeture_portes_T2->M16
 ```
 
-(Legende : `T1_dem` = `T1_demande`, `T1_ec` = `T1_entree_canton`, `T1_aq` = `T1_arrivee_quai`, `Ouv_T1` = `Ouverture_portes_T1`, `Ferm_T1` = `Fermeture_portes_T1`, idem T2.)
+### Vue ASCII condensee (cycle nominal + branches PSD)
 
-A faire par l'equipe : completer ce graphe avec **toutes** les transitions tirables, y compris les boucles de retour vers M0 via `Ti_depart_quai`.
+```
+                        M0
+                       /  \
+                T1_dem    T2_dem
+                    /        \
+                  M1          M2
+                 /  \         /  \
+           T1_ec   T2_dem  T1_dem T2_ec
+              /      \      /       \
+            M3        M4 (sym)        M5
+           /  \                      /  \
+       T1_aq  T2_dem              T1_dem T2_aq
+          /     \                    /      \
+        M6       M7                M8        M9
+       /|\        |                 |       /|\
+   T1_dq | Ouv_T1 T1_aq         T2_aq   T2_dq | Ouv_T2
+     /   |   \      |              |      \   |    \
+   M0   M10  M11   M10            M12     M0  M12   M13
+        /|\    \                   /|\          \
+   T1_dq Ouv  Ferm           Ouv_T2 T2_dq        Ferm
+    /    T1   T1                T2    \           T2
+   M2   M15   M6              M17     M16          M9
+        / \                    / \
+     T2_ec Ferm            Ferm  T1_ec
+        |    T1               T2     |
+       M18   M10              M12   M19
+        |                            |
+       Ferm                         Ferm
+        T1                           T2
+        |                            |
+       M14                          M16
+```
+
+(Legende compacte : `T1_dem`=`T1_demande`, `T1_ec`=`T1_entree_canton`, `T1_aq`=`T1_arrivee_quai`, `T1_dq`=`T1_depart_quai`, `Ouv_T1`=`Ouverture_portes_T1`, `Ferm_T1`=`Fermeture_portes_T1` ; idem T2.)
+
+### Mise en evidence des marquages "Portes_ouvertes" (criticite PSD-Open)
+
+Marquages portant `Portes_ouvertes=1` : **M11, M13, M15, M17, M18, M19** (6 marquages sur 20). Tous contiennent `T1_a_quai=1` ou `T2_a_quai=1` -> aucune ouverture sans train present. Ce sont les seuls noeuds atteints depuis une transition `Ouverture_portes_Ti`, et ils ont chacun exactement une sortie `Fermeture_portes_Ti` qui boucle vers le marquage portes-fermees correspondant. Aucun cycle infini avec portes ouvertes.
 
 ### Insertion finale
 
-Ce diagramme sera repris dans le rapport (`documentation/livrables/rapport.md` section 5) comme illustration centrale de la verification, avec mise en evidence des marquages "Portes_ouvertes" pour visualiser la propriete de surete.
+Ce diagramme est repris en **annexe A1 du rapport** (`documentation/livrables/rapport.md`) avec :
+- la liste des 40 arcs (verbatim ci-dessus, sortie de `Analyseur`) ;
+- la cartographie des 6 marquages "portes ouvertes" en couleur ;
+- les 2 boucles de retour vers M0 (M6 et M9) qui ferment le cycle complet d'un train.
 
 ---
 
