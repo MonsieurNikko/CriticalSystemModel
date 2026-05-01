@@ -1,6 +1,3 @@
-// Analyseur.scala : exploration BFS de l'espace d'etats + verification des 5 invariants
-// + detection deadlock. Modele etendu PSD (cf petri-troncon.md sections 5 et 6).
-
 package m14.petri
 
 import scala.collection.immutable.Queue
@@ -9,19 +6,8 @@ object Analyseur {
 
   import PetriNet._
 
-  // Un arc du graphe d'accessibilite : marquage source --transition--> marquage cible.
-  // Un arc peut etre auto-boucle (source == cible) si la transition reproduit
-  // exactement les jetons consommes (cas non rencontre dans notre reseau).
   final case class Arc(source: Marking, transition: Transition, cible: Marking)
 
-  // Resultat complet d'une analyse du reseau.
-  // 5 invariants sont verifies sur tous les marquages atteignables :
-  //   1. Invariant canton  (5.1) : T1_sur_canton + T2_sur_canton + Canton_libre = 1
-  //   2. Invariant quai    (5.2) : T1_a_quai + T2_a_quai + Quai_libre = 1
-  //   3. Invariant portes  (5.3) : Portes_fermees + Portes_ouvertes = 1
-  //   4. PSD-Open Safety   (6.1) : Portes_ouvertes = 1 => T1_a_quai + T2_a_quai = 1  [CRITIQUE]
-  //   5. PSD-Departure     (6.2) : Ti_depart_quai tirable => Portes_fermees = 1     [CRITIQUE]
-  // Plus les invariants par train : Ti_hors + Ti_attente + Ti_sur_canton + Ti_a_quai = 1.
   final case class ResultatAnalyse(
     marquagesAtteignables: List[Marking],
     invariantCantonOk: Boolean,
@@ -35,15 +21,11 @@ object Analyseur {
     arcs: List[Arc] = Nil
   )
 
-  // Exploration BFS depuis le marquage initial. Retourne uniquement la liste des
-  // marquages atteignables (ordre de decouverte), conserve pour compatibilite avec
-  // l'ancien usage. Pour disposer aussi des arcs, voir explorerAvecArcs.
   def explorerEspaceEtats(net: Net): List[Marking] =
     explorerAvecArcs(net)._1
 
-  // Exploration BFS qui retourne a la fois les marquages atteignables et les arcs
-  // (M_i --transition--> M_j) decouverts. Les arcs sont produits dans l'ordre du BFS.
   def explorerAvecArcs(net: Net): (List[Marking], List[Arc]) = {
+    // BFS classique, pas besoin d'un outil Petri externe pour ce petit reseau.
     var visites: Set[Marking] = Set(net.marquageInitial)
     var file: Queue[Marking] = Queue(net.marquageInitial)
     var marquages: List[Marking] = List(net.marquageInitial)
@@ -71,11 +53,6 @@ object Analyseur {
     (marquages, arcs)
   }
 
-  // ===========================================================================
-  // Invariants de ressource (P-invariants)
-  // ===========================================================================
-
-  // 5.1 - Invariant canton : T1_sur_canton + T2_sur_canton + Canton_libre = 1
   def verifierInvariantCanton(marquage: Marking): Boolean = {
     val somme = marquage.getOrElse(T1SurCanton, 0) +
                 marquage.getOrElse(T2SurCanton, 0) +
@@ -83,7 +60,6 @@ object Analyseur {
     somme == 1
   }
 
-  // 5.2 - Invariant quai : T1_a_quai + T2_a_quai + Quai_libre = 1
   def verifierInvariantQuai(marquage: Marking): Boolean = {
     val somme = marquage.getOrElse(T1AQuai, 0) +
                 marquage.getOrElse(T2AQuai, 0) +
@@ -91,14 +67,12 @@ object Analyseur {
     somme == 1
   }
 
-  // 5.3 - Invariant portes : Portes_fermees + Portes_ouvertes = 1
   def verifierInvariantPortes(marquage: Marking): Boolean = {
     val somme = marquage.getOrElse(PortesFermees, 0) +
                 marquage.getOrElse(PortesOuvertes, 0)
     somme == 1
   }
 
-  // Invariants par train : Ti_hors + Ti_attente + Ti_sur_canton + Ti_a_quai = 1
   def verifierInvariantsParTrain(marquage: Marking): Boolean = {
     val sommeT1 = marquage.getOrElse(T1Hors, 0) +
                   marquage.getOrElse(T1Attente, 0) +
@@ -111,13 +85,6 @@ object Analyseur {
     sommeT1 == 1 && sommeT2 == 1
   }
 
-  // ===========================================================================
-  // Invariants critiques de surete PSD
-  // ===========================================================================
-
-  // 6.1 - PSD-Open Safety [CRITIQUE] :
-  // Portes_ouvertes = 1 => T1_a_quai + T2_a_quai = 1
-  // (si les portes palieres sont ouvertes, un train doit etre a quai).
   def verifierSurteOuverturePortes(marquage: Marking): Boolean = {
     val portesOuvertes = marquage.getOrElse(PortesOuvertes, 0)
     if (portesOuvertes >= 1) {
@@ -128,10 +95,6 @@ object Analyseur {
     }
   }
 
-  // 6.2 - PSD-Departure Safety [CRITIQUE] :
-  // Pour tout marquage M, si Ti_depart_quai est tirable, alors M(Portes_fermees) = 1.
-  // Cette propriete est garantie structurellement par le pre de la transition,
-  // mais on la verifie programmatiquement par defense en profondeur.
   def verifierSurteDepartQuai(net: Net, marquage: Marking): Boolean = {
     val transitionsDepart = List(t1DepartQuai, t2DepartQuai)
     transitionsDepart.forall { t =>
@@ -140,12 +103,6 @@ object Analyseur {
     }
   }
 
-  // ===========================================================================
-  // Verification LTL programmatique (Phase 7) sur le graphe d'accessibilite fini
-  // ===========================================================================
-
-  // G p (Safety) : pour tout marquage atteignable M, p(M) doit etre vrai.
-  // Renvoie Right(true) si tous verifient le predicat, Left(contre-exemple) sinon.
   def verifierGSafety(marquages: List[Marking], predicat: Marking => Boolean): Either[Marking, Boolean] = {
     marquages.find(m => !predicat(m)) match {
       case Some(contreExemple) => Left(contreExemple)
@@ -153,17 +110,13 @@ object Analyseur {
     }
   }
 
-  // G (p -> F q) (Liveness reactive) : pour tout marquage M ou p tient, il existe
-  // un chemin dans le graphe d'accessibilite qui conduit a un marquage ou q tient.
-  // L'implementation fait une BFS dans le graphe reduit aux successeurs effectifs
-  // et verifie l'atteignabilite. Sous l'hypothese de fairness FIFO documentee
-  // (cf protocole-coordination Q11), cela suffit pour argumenter F q.
   def verifierGFLiveness(
     marquages: List[Marking],
     arcs: List[Arc],
     source: Marking => Boolean,
     cible: Marking => Boolean
   ): Either[Marking, Boolean] = {
+    // ltl version "petit projet": on cherche juste un chemin vers la cible.
     val successeurs: Map[Marking, List[Marking]] =
       arcs.groupBy(_.source).view.mapValues(_.map(_.cible).distinct).toMap.withDefaultValue(Nil)
 
@@ -190,10 +143,6 @@ object Analyseur {
     }
   }
 
-  // ===========================================================================
-  // Deadlock + analyse complete
-  // ===========================================================================
-
   def estDeadlock(net: Net, marquage: Marking): Boolean =
     transitionsTirables(net, marquage).isEmpty
 
@@ -213,9 +162,6 @@ object Analyseur {
     )
   }
 
-  // ===========================================================================
-  // Point d'entree : sbt "runMain m14.petri.Analyseur"
-  // ===========================================================================
   def main(args: Array[String]): Unit = {
     println("=== Analyseur Petri - Canton + Quai + Portes palieres (M14) ===")
     println()

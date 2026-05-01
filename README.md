@@ -1,7 +1,7 @@
 # CriticalSystemModel - Sous-systeme critique M14 (canton + quai + portes palieres)
-> Recadrage du projet existant: abstraction formelle et simulation distribuee d'un mecanisme d'exclusion mutuelle, etendu (29/04/2026) a la gestion des portes palieres (PSD).
+> Projet construit en deux temps : d'abord un socle simple **2 trains / 1 troncon partage**, puis une extension M14 plus complete le 29/04/2026 avec **canton + quai + portes palieres (PSD)**.
 
-![Status](https://img.shields.io/badge/status-en%20cours-yellow)
+![Status](https://img.shields.io/badge/status-finalisation-yellow)
 ![Equipe](https://img.shields.io/badge/equipe-4%20personnes-blue)
 ![Deadline](https://img.shields.io/badge/deadline-4%20mai%202026-red)
 ![Extension](https://img.shields.io/badge/extension-PSD%20valid%C3%A9e-green)
@@ -14,13 +14,27 @@ Le projet est recentre sur un sous-systeme critique inspire de la M14: le contro
 
 Ce choix est une reduction du projet existant, pas une recreation. Le cas a 2 trains est retenu comme plus petit cas non trivial pour etudier:
 - concurrence
-- exclusion mutuelle
-- attente/arbitrage
+- exclusion mutuelle canton et quai
+- attente/arbitrage FIFO
 - progression apres liberation
+- surete des portes palieres
+
+### Lecture chronologique pour le rendu
+
+Le projet n'a pas commence directement avec les portes palieres. Il a ete construit par paliers :
+
+| Etape | Modele | Objectif | Resultat |
+|---|---|---|---|
+| **1 - Socle initial** | 2 trains + 1 troncon partage | Prouver l'exclusion mutuelle et l'absence de deadlock sur le plus petit cas concurrent interessant | 3 acteurs, 7 places, 6 transitions, 8 marquages atteignables |
+| **2 - Upgrade M14** | 2 trains + canton + quai + portes palieres | Rendre le sujet plus proche de la M14 et ajouter les proprietes critiques PSD | 5 acteurs, 12 places, 12 transitions, 20 marquages, 5 invariants, 49 tests |
+
+Dans le rendu final, le mot `canton` correspond au troncon critique du socle initial, renomme avec un vocabulaire ferroviaire plus precis. Le modele final garde donc l'idee de depart (**2 trains qui se partagent une zone critique**) et l'etend avec le quai et les portes.
 
 Le projet combine:
-- Akka + Scala: simulation distribuee du protocole de messages
-- Reseaux de Petri: abstraction formelle du comportement essentiel et verification des proprietes critiques
+- Akka + Scala: simulation distribuee du protocole de messages (5 acteurs)
+- Reseaux de Petri: abstraction formelle du comportement essentiel (12 places, 12 transitions)
+- Analyseur Scala: exploration exhaustive (20 marquages, 40 arcs, 5 invariants, 5 proprietes LTL)
+- Demo HTML: animation locale pilotee par des traces JSON generees depuis le modele Petri
 
 Positionnement academique explicite:
 - ce projet ne modelise pas la ligne M14 complete
@@ -33,10 +47,10 @@ Positionnement academique explicite:
 | # | Objectif | Description |
 |---|----------|-------------|
 | 1 | Etat de l'art | Etudier verification formelle et systemes de transport urbain critiques |
-| 2 | Modelisation | Definir une architecture d'acteurs minimale pour le controle d'acces au troncon partage |
-| 3 | Traduction formelle | Construire un reseau de Petri compact, centre sur l'exclusion mutuelle |
-| 4 | Verification | Prouver exclusion mutuelle, absence de collision, progression apres liberation |
-| 5 | Simulation & comparaison | Relier messages Akka et transitions Petri sur 3 scenarios critiques |
+| 2 | Modelisation | Construire d'abord le socle 2 trains / 1 troncon, puis l'etendre a canton + quai + portes palieres |
+| 3 | Traduction formelle | Construire un reseau de Petri compact, centre sur les ressources critiques |
+| 4 | Verification | Prouver exclusion mutuelle, surete PSD, absence de deadlock et LTL bornee |
+| 5 | Simulation & comparaison | Relier messages Akka, transitions Petri et demo sur les scenarios critiques |
 
 ---
 
@@ -93,12 +107,20 @@ CriticalSystemModel/
 └── build.sbt
 ```
 
-Commande de verification locale:
+Commandes de verification locale:
 
 ```bash
 sbt compile
 sbt test
+sbt "runMain m14.Main"
+sbt "runMain m14.petri.Analyseur"
+sbt "runMain m14.demo.LancerDemo"
 ```
+
+Resultat attendu :
+- `sbt test` : **49 tests verts**.
+- `runMain m14.petri.Analyseur` : **20 marquages**, **40 arcs**, **5 invariants PASSE**, **0 deadlock**, **5 proprietes LTL PASSE**.
+- `runMain m14.demo.LancerDemo` : regenere les 5 traces JSON et ouvre la demo locale.
 
 ---
 
@@ -140,11 +162,19 @@ Exemples de branches (alignees sur le scope troncon partage) :
 Architecture cible minimale:
 
 ```
-[Train1Actor] --demande--> [SectionControllerActor] <--demande-- [Train2Actor]
-    ^                          |       ^
-    |                          |       |
-    +---- autorisation/attente +-------+
-            sortie/liberation
+          +-------------------+
+Train1 -> | SectionController | <- Train2
+          +-------------------+
+                    |
+                    v
+          +-------------------+
+          |  QuaiController   |
+          +-------------------+
+                    |
+                    v
+          +-------------------+
+          | GestionnairePortes|
+          +-------------------+
 ```
 
 ### Invariants metier critiques
@@ -173,7 +203,7 @@ quai   : T1_a_quai     + T2_a_quai     + Quai_libre   = 1
 portes : Portes_fermees + Portes_ouvertes              = 1
 ```
 
-### Invariants critiques de surete PSD (NEW)
+### Invariants critiques de surete PSD
 
 ```
 PSD-Open      : G ( Portes_ouvertes -> (T1_a_quai OR T2_a_quai) )
@@ -182,7 +212,9 @@ PSD-Departure : Ti_depart_quai tirable -> Portes_fermees = 1
 
 ---
 
-## Perimetre du coeur du projet (apres extension PSD du 29/04)
+## Perimetre du coeur du projet final (apres upgrade PSD du 29/04)
+
+Le **socle initial** etait volontairement plus petit : 2 trains, 1 troncon partage, un controleur d'acces, 7 places Petri et 6 transitions. Une fois ce socle coherent et teste, il a ete garde comme base et **upgrade** vers le modele final ci-dessous.
 
 Le coeur du projet inclut uniquement:
 - 2 trains concurrents (4 etats chacun : `hors`, `enAttente`, `surCanton`, `aQuai`)
@@ -216,8 +248,8 @@ Voir le detail du recadrage dans documentation/contexte/recadrage-m14-troncon-cr
 ## Livrables
 
 - Bibliographie commentee (`documentation/livrables/biblio.md`)
-- Code Akka/Scala fonctionnel du troncon partage (`src/main/scala/m14/troncon/`)
-- Reseau de Petri du controle d'acces concurrent (`petri/petri-troncon.md`)
+- Code Akka/Scala fonctionnel du sous-systeme critique (`src/main/scala/m14/troncon/`)
+- Reseau de Petri final du controle d'acces + quai + PSD (`petri/petri-troncon.md`)
 - Analyseur Petri en Scala (`src/main/scala/m14/petri/`)
 - Rapport de verification des proprietes (`documentation/livrables/rapport.md`)
 - Comparaison simulation Akka vs modele formel (`documentation/livrables/comparaison.md`)

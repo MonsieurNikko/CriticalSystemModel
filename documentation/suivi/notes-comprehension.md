@@ -1,5 +1,7 @@
 # Notes de compréhension du code
 
+> **Archive du modele initial** : cette note explique l'ancien `Train` du socle 2 trains / 1 troncon. Le code final a ete upgrade avec `QuaiController` et `GestionnairePortes`. Pour la sequence actuelle, lire `Train.scala`, `START-ICI.md` et `petri/petri-troncon.md`.
+
 ## Workflow : spawn → apply → comportementHors
 
 **Fichiers concernés :**

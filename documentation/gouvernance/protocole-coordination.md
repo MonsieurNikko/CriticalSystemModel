@@ -16,7 +16,7 @@ Chaque information du projet a **une seule** source de verite. En cas de conflit
 |--------------------------------------------|-----------------------------------------------------------------|-------------------------------|-----------------------------|
 | Modele formel (places, transitions, PSD)   | `petri/petri-troncon.md`                                        | Piste A                       | Toute l'equipe              |
 | Vocabulaire metier <-> code <-> Petri      | `documentation/gouvernance/lexique.md`                          | Piste A                       | Piste B avant chaque commit |
-| Protocole de messages Akka (8+4 messages)  | `src/main/scala/m14/troncon/Protocol.scala`                     | Piste B                       | Piste A                     |
+| Protocole de messages Akka (6+4 messages)  | `src/main/scala/m14/troncon/Protocol.scala`                     | Piste B                       | Piste A                     |
 | Arbitrage du canton                        | `src/main/scala/m14/troncon/SectionController.scala`            | Piste B                       | Piste A pour validation FIFO|
 | Arbitrage du quai (NEW)                    | `src/main/scala/m14/troncon/QuaiController.scala`               | Piste B                       | Piste A pour validation FIFO|
 | Garde de surete des portes (NEW, CRITIQUE) | `src/main/scala/m14/troncon/GestionnairePortes.scala`           | Piste B                       | Piste A obligatoire         |
@@ -35,7 +35,7 @@ Chaque information du projet a **une seule** source de verite. En cas de conflit
 Les decisions suivantes sont verrouillees apres l'extension PSD du 29 avril 2026. Toute modification necessite un accord explicite des 4 contributeurs (a tracer dans historique.md).
 
 - [LOCKED] **12 places, 12 transitions** dans le reseau de Petri etendu (canton + quai + portes). Pas plus, pas moins.
-- [LOCKED] **8 messages Akka cote controleurs** : `Demande`, `Sortie`, `ArriveeQuai`, `DepartQuai`, `OuverturePortes`, `FermeturePortes`, plus `Autorisation`, `Attente`, `PortesOuvertes`, `PortesFermees` cote trains. Aucun nouveau message.
+- [LOCKED] **10 messages Akka au total** : 6 messages vers controleurs/portes (`Demande`, `Sortie`, `ArriveeQuai`, `DepartQuai`, `OuverturePortes`, `FermeturePortes`) + 4 messages vers trains (`Autorisation`, `Attente`, `PortesOuvertes`, `PortesFermees`). Aucun nouveau message.
 - [LOCKED] **2 trains** dans le scope. Pas de generalisation a N trains.
 - [LOCKED] **Marquage initial M0** : `Canton_libre=1, Quai_libre=1, Portes_fermees=1, T1_hors=1, T2_hors=1`. Toute autre place a 0. 5 jetons en circulation.
 - [LOCKED] **3 invariants de ressource** :
@@ -67,7 +67,7 @@ Si pendant le codage une de ces verrous semble bloquer, **stop** : on en discute
 
 ### Cas B - Ajouter un detail de protocole non couvert
 
-Exemple : "que fait le controleur si un train envoie `Sortie` alors qu'il n'est pas sur le troncon ?"
+Exemple : "que fait le controleur si un train envoie `Sortie` alors qu'il n'est pas sur le canton ?"
 
 1. Verifier d'abord si le cas est **possible** dans le modele Petri. Si la transition n'est pas tirable depuis aucun marquage atteignable, c'est un cas qui ne peut pas se produire avec une implementation correcte.
 2. Si c'est le cas (cas impossible) : dans le code, on **ignore le message** avec un commentaire explicite : `// cas impossible si la machine d'etat est respectee, robustesse defensive`.
@@ -108,9 +108,9 @@ Voici les questions concretes qui vont **probablement** se poser pendant l'imple
 
 ### Q2 - Que faire si un train envoie deux `Demande` consecutives ?
 
-**Reponse** : impossible si la machine d'etat du train est correcte (un train en `attente` ou `sur_troncon` n'envoie pas de nouvelle `Demande`). Cote controleur : ignorer la deuxieme demande avec commentaire defensif. Pas de modification du modele Petri.
+**Reponse** : impossible si la machine d'etat du train est correcte (un train en `attente` ou `surCanton` n'envoie pas de nouvelle `Demande`). Cote controleur : ignorer la deuxieme demande avec commentaire defensif. Pas de modification du modele Petri.
 
-### Q3 - Que faire si un train envoie `Sortie` alors qu'il n'occupe pas le troncon ?
+### Q3 - Que faire si un train envoie `Sortie` alors qu'il n'occupe pas le canton ?
 
 **Reponse** : ignorer cote controleur (commentaire defensif). Cas impossible par construction. Pas de transition Petri ajoutee.
 
@@ -152,7 +152,7 @@ Voici les questions concretes qui vont **probablement** se poser pendant l'imple
 
 **Reponse** : c'est l'acteur lui-meme qui maintient l'etat. Quand le `Train` arrive a quai (a recu `Autorisation` du `QuaiController`), il envoie `OuverturePortes(idTrain)` au `GestionnairePortes`. Le gestionnaire passe alors de l'etat `portesFermees` a `portesOuvertes(idTrain)`. La garde de surete est : si on recoit `OuverturePortes` alors qu'on est deja en `portesOuvertes(autreTrain)`, on ignore (cas defensif, deux trains a quai en meme temps est exclu par l'invariant quai). 
 
-**Note importante** : le `GestionnairePortes` ne questionne pas le `QuaiController`, il fait confiance a la machine d'etat des trains. La coherence est garantie par le modele Petri (qui empeche `OuverturePortes` sans train a quai).
+**Note importante** : le `GestionnairePortes` ne questionne pas le `QuaiController`, il fait confiance a la machine d'etat des trains. La coherence est garantie a deux niveaux : cote Akka, seul `comportementAQuai` envoie `OuverturePortes` ; cote Petri, `Ouverture_portes_Ti` exige `Ti_a_quai` dans son pre.
 
 ### Q13 - Le `Train` doit-il faire l'ouverture/fermeture des portes lui-meme ? [NEW Phase 7]
 

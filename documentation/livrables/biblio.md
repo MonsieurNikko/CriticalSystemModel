@@ -12,7 +12,7 @@
 *Proceedings of the IEEE, vol. 77, no. 4, pp. 541-580.*
 Lien : https://doi.org/10.1109/5.24143
 
-Reference canonique des reseaux de Petri. Sert de base pour les definitions formelles utilisees dans `petri/petri-troncon.md` : places, transitions, marquage, tirabilite, espace d'etats accessible, invariants de places (P-invariants). La notion de P-invariant est directement appliquee a notre invariant principal `T1_sur_troncon + T2_sur_troncon + Troncon_libre = 1`.
+Reference canonique des reseaux de Petri. Sert de base pour les definitions formelles utilisees dans `petri/petri-troncon.md` : places, transitions, marquage, tirabilite, espace d'etats accessible, invariants de places (P-invariants). La notion de P-invariant est directement appliquee a nos 3 invariants de ressource : `T1_sur_canton + T2_sur_canton + Canton_libre = 1`, `T1_a_quai + T2_a_quai + Quai_libre = 1`, `Portes_fermees + Portes_ouvertes = 1`.
 
 ### David, R. & Alla, H. (2010) - "Discrete, Continuous, and Hybrid Petri Nets" (2e ed., chapitres 1-3)
 *Springer.*
@@ -41,7 +41,7 @@ Source historique du modele acteur. Citee pour ancrer theoriquement le choix Akk
 ### Baier, C. & Katoen, J.-P. (2008) - "Principles of Model Checking" (chapitres 5 et 6)
 *MIT Press.*
 
-Reference moderne pour la logique LTL et le model checking. Utilisee pour la formalisation des proprietes de surete (Safety) et de vivacite (Liveness) du projet : `G !(T1_sur_troncon ∧ T2_sur_troncon)` et `G (T1_attente -> F T1_sur_troncon)`. Le projet ne code pas un model checker complet mais s'appuie sur les definitions et la justification informelle sur l'espace d'etats fini.
+Reference moderne pour la logique LTL et le model checking. Utilisee pour la formalisation des proprietes de surete (Safety) et de vivacite (Liveness) du projet : `G !(T1_sur_canton ∧ T2_sur_canton)`, `G (Portes_ouvertes -> (T1_a_quai ∨ T2_a_quai))` et `G (T1_attente -> F T1_sur_canton)`. Le projet ne code pas un model checker complet mais s'appuie sur les definitions et la justification informelle sur l'espace d'etats fini.
 
 ### Manna, Z. & Pnueli, A. (1995) - "Temporal Verification of Reactive Systems: Safety"
 *Springer-Verlag.*
@@ -61,7 +61,7 @@ Support pedagogique concis pour les operateurs LTL (`G`, `F`, `X`, `U`) et leur 
 ### Magee, J. & Kramer, J. (2006) - "Concurrency: State Models and Java Programs" (2e ed., chapitres 4-5)
 *Wiley.*
 
-Reference pedagogique sur la modelisation de la concurrence par machines a etats. Utilisee comme inspiration pour le decoupage des etats des acteurs `Train` (`hors` / `attente` / `sur_troncon`) et pour la justification du choix d'un controleur centralise plutot que d'un protocole peer-to-peer.
+Reference pedagogique sur la modelisation de la concurrence par machines a etats. Utilisee comme inspiration pour le decoupage des etats des acteurs `Train` (`hors` / `attente` / `sur_canton` / `a_quai`) et pour la justification du choix d'un controleur centralise plutot que d'un protocole peer-to-peer.
 
 ### Lamport, L. (1978) - "Time, Clocks, and the Ordering of Events in a Distributed System"
 *Communications of the ACM, vol. 21, no. 7, pp. 558-565.*

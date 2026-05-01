@@ -15,6 +15,17 @@ Le reseau modelise deux mecanismes critiques imbriques d'un metro automatique sa
 
 Cette extension par rapport au modele initial (1 troncon seul) ajoute deux **proprietes de surete CRITIQUES** au sens reglementaire : une violation peut entrainer une chute mortelle (porte palieres ouverte sans train) ou un voyageur ecrase (depart avec portes ouvertes). C'est exactement ce que demande le cahier des charges sur les "systemes critiques".
 
+### Lecture historique du modele
+
+Pour le rendu, il faut lire ce fichier comme le **modele final**, obtenu apres un premier modele plus petit :
+
+| Etape | Reseau Petri | Role |
+|---|---|---|
+| **Modele initial** | 7 places, 6 transitions, 8 marquages | 2 trains se partagent un seul troncon. On prouve l'exclusion mutuelle de base. |
+| **Modele final PSD** | 12 places, 12 transitions, 20 marquages | Le troncon devient le `Canton_libre`, puis on ajoute `Quai_libre`, `Portes_fermees`, `Portes_ouvertes` et les transitions de quai/portes. |
+
+Le reseau ci-dessous est donc l'upgrade du socle initial, pas un modele different sans lien avec lui.
+
 **Scope strict** :
 - 2 trains : T1, T2
 - 1 canton de signalisation (entre amont et station)
@@ -23,7 +34,7 @@ Cette extension par rapport au modele initial (1 troncon seul) ajoute deux **pro
 - 1 controleur de canton + 1 controleur de quai + 1 gestionnaire de portes
 - Aucune notion de panne, de famine prolongee, ni de priorite
 
-Le reseau est analysable a la main (15-18 marquages atteignables prevus, a confirmer par l'analyseur Scala).
+Le reseau est analysable a la main et par l'analyseur Scala : **20 marquages atteignables** (M0..M19), **40 arcs etiquetes**, **5 invariants PASSE**, **0 deadlock**.
 
 ---
 
@@ -215,7 +226,7 @@ L'invariant est preserve. **Consequence** : les portes sont toujours dans exacte
 
 ---
 
-## 6) Invariants critiques de surete PSD (les NOUVEAUX)
+## 6) Invariants critiques de surete PSD
 
 Ces invariants ne sont pas des P-invariants au sens strict (ils ne sont pas des combinaisons lineaires constantes), mais des **proprietes de surete** que l'analyseur doit verifier sur tout marquage atteignable.
 
@@ -246,16 +257,16 @@ alors M(Portes_fermees) = 1.
 
 ---
 
-## 7) Espace d'etats attendu
+## 7) Espace d'etats obtenu
 
-Depuis M0, l'enumeration manuelle prevoit **15 a 18 marquages atteignables** (a confirmer par l'analyseur Scala). Cette borne est compatible avec une enumeration manuelle dans le carnet de preuves (`documentation/livrables/preuves-manuelles.md` tache 1 etendue).
+Depuis M0, l'analyseur Scala et le carnet de preuves enumerent **20 marquages atteignables** (M0..M19). La liste exhaustive est reproduite dans `documentation/livrables/preuves-manuelles.md` tache 1 et la sortie brute dans `documentation/livrables/comparaison.md` section 6.
 
-**Estimations a la main** (raisonnement par projection) :
+**Lecture par projection** :
 - Le canton seul (avec 2 trains) : 8 etats (comme dans le modele initial).
 - Pour chaque etat de canton ou un train est `Ti_a_quai`, on multiplie par les 2 etats des portes (fermees/ouvertes).
-- Mais beaucoup de combinaisons sont inaccessibles (par exemple : un train sur le canton ET un autre a quai avec portes ouvertes).
+- Beaucoup de combinaisons restent inaccessibles (par exemple : deux trains a quai, ou portes ouvertes sans train a quai).
 
-L'analyseur fournira la liste exacte. **Si elle excede 25 marquages, on simplifie le modele** (par exemple en fusionnant Ouverture/Fermeture en une seule transition, ou en retirant les portes pour les ramener a un seul flag).
+La cible initiale "15 a 18" etait sous-estimee ; le chiffre reel **20** reste assez petit pour etre enumere dans le rapport et defendu a l'oral.
 
 ---
 
@@ -296,13 +307,14 @@ Le message `Attente` (refus temporaire envoye par les controleurs) **n'a pas de 
 
 ---
 
-## 10) Verification a faire avec l'analyseur (Phases B-C-D)
+## 10) Verification effectuee avec l'analyseur
 
-L'analyseur Scala doit confirmer programmatiquement :
-- [ ] Tous les marquages atteignables verifient l'invariant canton (5.1).
-- [ ] Tous les marquages atteignables verifient l'invariant quai (5.2).
-- [ ] Tous les marquages atteignables verifient l'invariant portes (5.3).
-- [ ] **Tous les marquages avec `Portes_ouvertes=1` ont `T1_a_quai + T2_a_quai = 1` (PSD safety, 6.1).**
-- [ ] Tous les marquages atteignables verifient les invariants par train (`Ti_hors + Ti_attente + Ti_sur_canton + Ti_a_quai = 1`).
-- [ ] Aucun marquage atteignable n'est un deadlock.
-- [ ] Le nombre de marquages atteignables est compatible avec l'enumeration manuelle (entre 12 et 20).
+L'analyseur Scala confirme programmatiquement :
+- [x] Tous les marquages atteignables verifient l'invariant canton (5.1).
+- [x] Tous les marquages atteignables verifient l'invariant quai (5.2).
+- [x] Tous les marquages atteignables verifient l'invariant portes (5.3).
+- [x] **Tous les marquages avec `Portes_ouvertes=1` ont `T1_a_quai + T2_a_quai = 1` (PSD safety, 6.1).**
+- [x] Tous les marquages atteignables verifient les invariants par train (`Ti_hors + Ti_attente + Ti_sur_canton + Ti_a_quai = 1`).
+- [x] Aucun marquage atteignable n'est un deadlock.
+- [x] Le graphe d'accessibilite contient exactement **20 marquages** et **40 arcs etiquetes**.
+- [x] Les proprietes LTL bornees (3 Safety + 2 Liveness) passent sur le graphe fini.

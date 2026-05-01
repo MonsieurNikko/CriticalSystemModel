@@ -1,11 +1,3 @@
-// GenererTraces.scala : produit les fichiers demo/trace-*.json a partir des
-// scenarios canoniques (cycle nominal, concurrence canton+quai, tentative PSD invalide).
-//
-// Lance via : sbt "runMain m14.demo.GenererTraces"
-//
-// Chaque trace utilise PetriNet.tirer pour calculer les marquages : la simulation
-// HTML rejoue donc une sequence d'etats verifiee par le modele Scala.
-
 package m14.demo
 
 import m14.demo.TraceWriter._
@@ -13,10 +5,7 @@ import m14.petri.PetriNet._
 
 object GenererTraces extends App {
 
-  // ---------------------------------------------------------------------------
-  // Scenario A : cycle nominal complet
-  // Train1 : hors -> attente -> canton -> quai -> ouvre -> ferme -> hors
-  // ---------------------------------------------------------------------------
+  // les traces servent surtout pour la demo HTML.
   val scenarioA = new Constructeur(
     id = "nominal",
     titre = "Cycle nominal complet (canton + quai + portes)",
@@ -36,10 +25,6 @@ object GenererTraces extends App {
       Some(MessageAkka("Train1", "QuaiController", "DepartQuai")), t1DepartQuai)
     .construire()
 
-  // ---------------------------------------------------------------------------
-  // Scenario B : concurrence canton + quai
-  // Train1 prend canton puis quai. Train2 attend a chaque etape.
-  // ---------------------------------------------------------------------------
   val scenarioB = new Constructeur(
     id = "concurrence",
     titre = "Concurrence canton + quai (2 trains)",
@@ -67,35 +52,23 @@ object GenererTraces extends App {
       Some(MessageAkka("Train2", "QuaiController", "ArriveeQuai")), t2ArriveeQuai)
     .construire()
 
-  // ---------------------------------------------------------------------------
-  // Scenario C : tentative PSD invalide (CRITIQUE)
-  // Un acteur "Attaquant" envoie OuverturePortes alors qu'aucun train n'est a quai.
-  // La transition Petri Ouverture_portes_T1 n'est PAS tirable (T1_a_quai = 0).
-  // La garde de surete du GestionnairePortes refuse silencieusement.
-  // ---------------------------------------------------------------------------
   val scenarioC = new Constructeur(
     id = "violation",
     titre = "Tentative PSD invalide (CRITIQUE - bloquee)",
-    description = "Un acteur tente d'ouvrir les portes alors qu'aucun train n'est a quai. Petri refuse (transition non tirable) et la garde Akka refuse silencieusement."
+    description = "Tentative d'ouverture des portes alors qu'aucun train n'est a quai. Petri refuse (transition non tirable) ; cote Akka, le message est hors protocole car seul un Train en etat a_quai emet OuverturePortes."
   )
     .violation(
-      label = "Attaquant envoie OuverturePortes(Train1) alors qu'aucun train n'est a quai",
-      akka = Some(MessageAkka("Attaquant", "GestionnairePortes", "OuverturePortes(Train1)")),
+      label = "Tentative hors protocole : OuverturePortes(Train1) alors qu'aucun train n'est a quai",
+      akka = Some(MessageAkka("HorsProtocole", "GestionnairePortes", "OuverturePortes(Train1)")),
       transition = Some(ouvertureT1)
     )
     .violation(
-      label = "Garde de surete : T1_a_quai=0 -> message ignore. Invariant PSD-Open preserve.",
+      label = "Petri refuse : T1_a_quai=0 -> Ouverture_portes_T1 non tirable. TrainSpec garantit que le vrai Train n'emet pas ce message.",
       akka = None,
       transition = None
     )
     .construire()
 
-  // ---------------------------------------------------------------------------
-  // Scenario D : cycle complet 2 trains (liveness + retour a M0)
-  // T1 fait son cycle entier jusqu'a son depart de quai (retour a M0 cote T1),
-  // puis T2 enchaine son propre cycle complet. Demontre la symetrie + le fait que
-  // le systeme revient bien a un marquage de type "depart" apres chaque cycle.
-  // ---------------------------------------------------------------------------
   val scenarioD = new Constructeur(
     id = "cycle-deux-trains",
     titre = "Cycle complet sequentiel des 2 trains (liveness)",
@@ -127,12 +100,6 @@ object GenererTraces extends App {
       Some(MessageAkka("Train2", "QuaiController", "DepartQuai")), t2DepartQuai)
     .construire()
 
-  // ---------------------------------------------------------------------------
-  // Scenario E : tentative depart portes ouvertes (PSD-Departure CRITIQUE)
-  // T1 va a quai, ouvre les portes, puis tente DepartQuai. La transition
-  // T1_depart_quai n'est PAS tirable (Portes_fermees=0). La garde Akka du
-  // QuaiController/Train refuse aussi. Demontre l'invariant PSD-Departure.
-  // ---------------------------------------------------------------------------
   val scenarioE = new Constructeur(
     id = "violation-depart",
     titre = "Tentative depart portes ouvertes (CRITIQUE - bloquee)",
@@ -162,10 +129,8 @@ object GenererTraces extends App {
       Some(MessageAkka("Train1", "QuaiController", "DepartQuai")), t1DepartQuai)
     .construire()
 
-  // ---------------------------------------------------------------------------
-  // Ecriture des 5 fichiers JSON dans demo/.
-  // ---------------------------------------------------------------------------
   val sortie = "demo"
+  // on ecrase les anciens fichiers, c'est voulu.
   ecrire(scenarioA, s"$sortie/trace-nominal.json")
   ecrire(scenarioB, s"$sortie/trace-concurrence.json")
   ecrire(scenarioC, s"$sortie/trace-violation.json")

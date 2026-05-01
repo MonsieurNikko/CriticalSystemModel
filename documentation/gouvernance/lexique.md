@@ -5,7 +5,7 @@
 >
 > **Regle dure** : si un nom dans une colonne ne correspond pas exactement aux autres colonnes, c'est un bug de coherence et il faut renommer.
 >
-> **Mise a jour majeure le 29/04/2026** : extension du modele avec le quai (station) et les portes palieres (PSD). Le vocabulaire couvre desormais 4 etats par train et 4 ressources globales.
+> **Mise a jour majeure le 29/04/2026** : extension du modele avec le quai (station) et les portes palieres (PSD). Le vocabulaire couvre desormais 4 etats par train et 4 ressources globales. Le modele initial "2 trains / 1 troncon" reste l'etape de depart historique.
 
 ---
 
@@ -49,13 +49,13 @@
 | Portes palieres fermees           | `Portes_fermees=1`       | `portesFermees`                  | Etat initial. Securise.                      |
 | Portes palieres ouvertes          | `Portes_ouvertes=1`      | `portesOuvertes(occupant)`       | Ne peut etre atteint que si un train a quai. |
 
-**Garde de surete CRITIQUE (PSD)** : le `GestionnairePortes` REFUSE toute demande d'ouverture si aucun train n'est a quai. C'est l'invariant de surete d'ouverture (cf petri-troncon.md section 6.1).
+**Surete CRITIQUE (PSD)** : le `GestionnairePortes` accepte l'ouverture dans le protocole normal parce que seul un `Train` en etat `a_quai` envoie `OuverturePortes`. La garde defensive locale refuse surtout les demandes concurrentes d'un autre train pendant que les portes sont deja ouvertes. La preuve stricte "portes ouvertes => train a quai" est portee par la machine d'etats du `Train` et par le pre Petri `Ti_a_quai` de `Ouverture_portes_Ti` (cf `petri-troncon.md` section 6.1).
 
 **Note FIFO vs Petri** : les files FIFO Akka des controleurs sont des finesses d'implementation pour garantir la fairness en pratique. Elles n'ont pas d'equivalent direct dans le reseau de Petri (non deterministe). Cette dissymetrie est documentee.
 
 ---
 
-## 3) Messages du protocole Akka (8 messages)
+## 3) Messages du protocole Akka (10 messages)
 
 ### Messages vers les controleurs
 
@@ -63,10 +63,10 @@
 |------------------------------------------|-------------------------------------|----------------------------------------------------------|--------------------------------------------|
 | `Demande(emetteur, repondreA)`           | `MessagePourControleur`             | Le train demande l'acces au canton                       | `T1_demande` / `T2_demande`                |
 | `Sortie(emetteur)`                       | `MessagePourControleur`             | Le train signale qu'il a quitte le canton (vers le quai) | `T1_arrivee_quai` / `T2_arrivee_quai` (libere canton) |
-| `ArriveeQuai(emetteur, repondreA)`       | `MessagePourQuaiController` (NEW)   | Le train demande l'acces au quai                         | `T1_arrivee_quai` / `T2_arrivee_quai` (occupe quai) |
-| `DepartQuai(emetteur)`                   | `MessagePourQuaiController` (NEW)   | Le train signale qu'il a quitte le quai                  | `T1_depart_quai` / `T2_depart_quai`        |
-| `OuverturePortes(emetteur)`              | `MessagePourGestionnairePortes` (NEW) | Le train demande l'ouverture des portes palieres       | `Ouverture_portes_T1` / `Ouverture_portes_T2` |
-| `FermeturePortes(emetteur)`              | `MessagePourGestionnairePortes` (NEW) | Le train demande la fermeture des portes              | `Fermeture_portes_T1` / `Fermeture_portes_T2` |
+| `ArriveeQuai(emetteur, repondreA)`       | `MessagePourQuai` (NEW)             | Le train demande l'acces au quai                         | `T1_arrivee_quai` / `T2_arrivee_quai` (occupe quai) |
+| `DepartQuai(emetteur)`                   | `MessagePourQuai` (NEW)             | Le train signale qu'il a quitte le quai                  | `T1_depart_quai` / `T2_depart_quai`        |
+| `OuverturePortes(emetteur, repondreA)`   | `MessagePourPortes` (NEW)           | Le train demande l'ouverture des portes palieres         | `Ouverture_portes_T1` / `Ouverture_portes_T2` |
+| `FermeturePortes(emetteur, repondreA)`   | `MessagePourPortes` (NEW)           | Le train demande la fermeture des portes                 | `Fermeture_portes_T1` / `Fermeture_portes_T2` |
 
 ### Messages vers les trains
 
@@ -77,7 +77,7 @@
 | `PortesOuvertes`       | `MessagePourTrain` (NEW) | Le `GestionnairePortes` confirme que les portes sont ouvertes |
 | `PortesFermees`        | `MessagePourTrain` (NEW) | Le `GestionnairePortes` confirme la fermeture          |
 
-**Regle de verrouillage** : aucun nouveau message ne peut etre introduit sans mise a jour de `petri/petri-troncon.md` section 8 ET de ce lexique. Le protocole est verrouille a **8 messages cote controleurs + 4 messages cote trains** (12 au total).
+**Regle de verrouillage** : aucun nouveau message ne peut etre introduit sans mise a jour de `petri/petri-troncon.md` section 8 ET de ce lexique. Le protocole est verrouille a **6 messages cote controleurs + 4 messages cote trains** (10 au total).
 
 **Note** : selon l'implementation, certains messages peuvent partager un type commun (`MessagePourTrain` pour `Autorisation`, `Attente`, `PortesOuvertes`, `PortesFermees`).
 

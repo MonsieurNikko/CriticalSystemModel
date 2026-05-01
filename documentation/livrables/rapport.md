@@ -2,7 +2,7 @@
 
 > Livrable L4 du cahier des charges. Rapport detaille de la verification des proprietes structurelles et des invariants metier du sous-systeme critique M14, etendu le 29/04/2026 a la gestion des portes palieres (PSD).
 >
-> Etat : sections 1-4, 6, 7, 8 redigees Phase D (29/04/2026) avec la sortie reelle de l'analyseur (20 marquages, 5 invariants PASSE, 0 deadlock). Section 5 (cadre de verification) redigee Phase A. Annexes A1-A4 a finaliser apres Phase 7 (LTL programmatique + arcs etiquetes).
+> Etat : rapport finalise le 01/05/2026 avec la sortie reelle de l'analyseur (20 marquages, 40 arcs etiquetes, 5 invariants PASSE, 0 deadlock, 5 proprietes LTL PASSE). La section 5 reprend les tableaux du carnet de preuves ; les annexes A1-A4 donnent les sorties et references de verification.
 
 ---
 
@@ -21,6 +21,17 @@ Nous modelisons un troncon critique compose de **un canton de signalisation suiv
 Conformement au recadrage de cadrage `documentation/contexte/recadrage-m14-troncon-critique.md` (sections 1-3 et 13), le scope est volontairement minimaliste mais defendable : 2 trains, 1 canton, 1 quai, 1 paire de PSD, 5 acteurs Akka, 12 places et 12 transitions Petri. L'extension PSD du 29/04/2026 (section 13 du recadrage) ajoute la dimension critique manquante (les portes palieres) sans faire exploser la combinatoire : on passe de 8 a 20 marquages atteignables, ce qui reste enumerable a la main et programmatiquement.
 
 La doctrine du sprint, resumee dans `documentation/suivi/PLAN.md` section 8, est explicite : **simple, propre et verifiable** plutot que realiste mais inanalysable. Les extensions naturelles (N trains, second canton en serie, deux quais opposes, Petri temporise) sont mentionnees en section 8 comme pistes mais explicitement hors sprint.
+
+### 1.4 Demarche progressive du projet
+
+Le modele final n'a pas ete pose directement. Pour garder un projet defendable, nous avons travaille en deux temps :
+
+| Etape | Perimetre | But de l'etape | Etat obtenu |
+|---|---|---|---|
+| **Socle initial** | 2 trains + 1 troncon partage | Construire et verifier le mecanisme minimal d'exclusion mutuelle : demande, attente, autorisation, sortie/liberation. | 3 acteurs Akka, 7 places Petri, 6 transitions, 8 marquages atteignables, 1 invariant principal. |
+| **Upgrade M14 / PSD** | 2 trains + canton + quai + portes palieres | Ajouter la dimension station M14 : arret a quai, ouverture/fermeture PSD, depart uniquement portes fermees. | 5 acteurs Akka, 12 places, 12 transitions, 20 marquages, 5 invariants, 5 proprietes LTL bornees. |
+
+Le terme `troncon` du socle initial a ete precise en `canton` dans le modele final. Cette evolution n'est pas un changement de sujet : le canton reste la premiere ressource critique partagee entre les deux trains ; le quai et les portes sont ajoutes ensuite comme extension de surete.
 
 ---
 
@@ -71,7 +82,7 @@ Chaque `Train` est implemente comme une cascade de quatre `Behavior` (cf `src/ma
 
 1. `comportementHors` : etat initial. Le train envoie `Demande` au `SectionController` en sortie d'init et passe en attente.
 2. `comportementEnAttente` : reception de `Autorisation` -> passage en `comportementSurCanton` ; reception de `Attente` -> reste dans cet etat.
-3. `comportementSurCanton` : envoie `Sortie` au `SectionController` puis `ArriveeQuai` au `QuaiController`. Reception de `Autorisation` (du quai) -> `comportementAQuai`.
+3. `comportementSurCanton` : envoie `ArriveeQuai` au `QuaiController`. Apres reception de `Autorisation` du quai, le train envoie `Sortie` au `SectionController` puis passe en `comportementAQuai`.
 4. `comportementAQuai` : envoie `OuverturePortes` au `GestionnairePortes`, attend `PortesOuvertes`, envoie `FermeturePortes`, attend `PortesFermees`, envoie `DepartQuai` au `QuaiController`, retourne en `comportementHors` (cycle ferme).
 
 Deux helpers (`enAttenteOuverturePortes`, `enAttenteFermeturePortes`) materialisent les ack de portes.
@@ -83,7 +94,7 @@ Defini dans `src/main/scala/m14/troncon/Protocol.scala` :
 - **Vers controleurs canton/quai** (6) : `Demande`, `Sortie`, `ArriveeQuai`, `DepartQuai`, `OuverturePortes`, `FermeturePortes`.
 - **Vers trains** (4) : `Autorisation`, `Attente`, `PortesOuvertes`, `PortesFermees`.
 
-Les types ADT (sealed traits `MessagePourCanton`, `MessagePourQuai`, `MessagePourPortes`, `MessagePourTrain`) garantissent qu'aucun acteur ne peut recevoir un message hors de son protocole (verification au compile).
+Les types ADT (sealed traits `MessagePourControleur`, `MessagePourQuai`, `MessagePourPortes`, `MessagePourTrain`) garantissent qu'aucun acteur ne peut recevoir un message hors de son protocole (verification au compile).
 
 ### 3.4 Arbitrage des controleurs
 
@@ -96,7 +107,7 @@ Les types ADT (sealed traits `MessagePourCanton`, `MessagePourQuai`, `MessagePou
 - En `portesFermees()`, une `OuverturePortes(emetteur)` est acceptee inconditionnellement (le `QuaiController` est suppose avoir deja autorise l'emetteur a quai). Cote tests, on verifie que rien dans le protocole ne permet d'envoyer cette ouverture sans avoir au prealable obtenu le quai.
 - En `portesOuvertes(occupant)`, toute `OuverturePortes` ou `FermeturePortes` provenant d'un emetteur != occupant est **silencieusement refusee** (aucun ack envoye, etat inchange). Cette garde est testee explicitement par deux tests CRITIQUES de `GestionnairePortesSpec`.
 
-C'est cette garde qui materialise l'invariant PSD-Open au niveau du code Akka. Au niveau Petri, le meme invariant est materialise structurellement par le pre `{Ti_a_quai, Portes_fermees}` de `Ouverture_portes_Ti` (section 4.2).
+Au niveau Akka, PSD-Open est materialise par le couple **machine d'etats du `Train`** (seul `comportementAQuai` envoie `OuverturePortes`) + garde defensive du `GestionnairePortes` contre un second occupant. Au niveau Petri, le meme invariant est materialise structurellement par le pre `{Ti_a_quai, Portes_fermees}` de `Ouverture_portes_Ti` (section 4.2).
 
 ### 3.6 Hypotheses du modele
 
@@ -168,25 +179,82 @@ Toute extension (N trains, second canton, second quai) multiplie ces nombres et 
 
 Enonce : `M(T1_sur_canton) + M(T2_sur_canton) + M(Canton_libre) = 1` pour tout marquage atteignable.
 
-Preuve a deux niveaux :
-- **A la main** : verification sur M0 et preservation par chaque transition (cf `petri/petri-troncon.md` section 5.1 et `documentation/livrables/preuves-manuelles.md` tache 2.1).
-- **Programmatique** : confirmation par l'analyseur Scala (`verifierInvariantCanton`) sur tous les ~15-18 marquages atteignables. Sortie a inserer en Phase D.
+Preuve a deux niveaux : preservation structurelle par les transitions de `petri/petri-troncon.md` section 5.1, puis enumeration exhaustive par l'analyseur Scala (`verifierInvariantCanton`) sur les 20 marquages atteignables.
+
+| Marquage | T1_sur_canton | T2_sur_canton | Canton_libre | Somme | Resultat |
+|----------|--------------:|--------------:|-------------:|------:|:--------:|
+| M0       | 0 | 0 | 1 | 1 | PASSE |
+| M1       | 0 | 0 | 1 | 1 | PASSE |
+| M2       | 0 | 0 | 1 | 1 | PASSE |
+| M3       | 1 | 0 | 0 | 1 | PASSE |
+| M4       | 0 | 0 | 1 | 1 | PASSE |
+| M5       | 0 | 1 | 0 | 1 | PASSE |
+| M6       | 0 | 0 | 1 | 1 | PASSE |
+| M7       | 1 | 0 | 0 | 1 | PASSE |
+| M8       | 0 | 1 | 0 | 1 | PASSE |
+| M9       | 0 | 0 | 1 | 1 | PASSE |
+| M10      | 0 | 0 | 1 | 1 | PASSE |
+| M11      | 0 | 0 | 1 | 1 | PASSE |
+| M12      | 0 | 0 | 1 | 1 | PASSE |
+| M13      | 0 | 0 | 1 | 1 | PASSE |
+| M14      | 0 | 1 | 0 | 1 | PASSE |
+| M15      | 0 | 0 | 1 | 1 | PASSE |
+| M16      | 1 | 0 | 0 | 1 | PASSE |
+| M17      | 0 | 0 | 1 | 1 | PASSE |
+| M18      | 0 | 1 | 0 | 1 | PASSE |
+| M19      | 1 | 0 | 0 | 1 | PASSE |
 
 **Consequence** : exclusion mutuelle stricte sur le canton de signalisation. Pas de collision possible.
 
-### 5.2 Invariant quai (NEW)
+### 5.2 Invariant quai
 
 Enonce : `M(T1_a_quai) + M(T2_a_quai) + M(Quai_libre) = 1` pour tout marquage atteignable.
 
-Meme structure de preuve. Fonction analyseur : `verifierInvariantQuai`.
+| Marquage | T1_a_quai | T2_a_quai | Quai_libre | Somme | Resultat |
+|----------|----------:|----------:|-----------:|------:|:--------:|
+| M0       | 0 | 0 | 1 | 1 | PASSE |
+| M1       | 0 | 0 | 1 | 1 | PASSE |
+| M2       | 0 | 0 | 1 | 1 | PASSE |
+| M3       | 0 | 0 | 1 | 1 | PASSE |
+| M4       | 0 | 0 | 1 | 1 | PASSE |
+| M5       | 0 | 0 | 1 | 1 | PASSE |
+| M6       | 1 | 0 | 0 | 1 | PASSE |
+| M7       | 0 | 0 | 1 | 1 | PASSE |
+| M8       | 0 | 0 | 1 | 1 | PASSE |
+| M9       | 0 | 1 | 0 | 1 | PASSE |
+| M10      | 1 | 0 | 0 | 1 | PASSE |
+| M11      | 1 | 0 | 0 | 1 | PASSE |
+| M12      | 0 | 1 | 0 | 1 | PASSE |
+| M13      | 0 | 1 | 0 | 1 | PASSE |
+| M14      | 1 | 0 | 0 | 1 | PASSE |
+| M15      | 1 | 0 | 0 | 1 | PASSE |
+| M16      | 0 | 1 | 0 | 1 | PASSE |
+| M17      | 0 | 1 | 0 | 1 | PASSE |
+| M18      | 1 | 0 | 0 | 1 | PASSE |
+| M19      | 0 | 1 | 0 | 1 | PASSE |
+
+Verification programmatique : `verifierInvariantQuai`.
 
 **Consequence** : exclusion mutuelle stricte sur le quai. Pas de collision en station.
 
-### 5.3 Invariant portes (NEW)
+### 5.3 Invariant portes
 
 Enonce : `M(Portes_fermees) + M(Portes_ouvertes) = 1` pour tout marquage atteignable.
 
-Meme structure de preuve. Fonction analyseur : `verifierInvariantPortes`.
+| Marquage | Portes_fermees | Portes_ouvertes | Somme | Resultat |
+|----------|---------------:|----------------:|------:|:--------:|
+| M0..M10  | 1 | 0 | 1 | PASSE |
+| M11      | 0 | 1 | 1 | PASSE |
+| M12      | 1 | 0 | 1 | PASSE |
+| M13      | 0 | 1 | 1 | PASSE |
+| M14      | 1 | 0 | 1 | PASSE |
+| M15      | 0 | 1 | 1 | PASSE |
+| M16      | 1 | 0 | 1 | PASSE |
+| M17      | 0 | 1 | 1 | PASSE |
+| M18      | 0 | 1 | 1 | PASSE |
+| M19      | 0 | 1 | 1 | PASSE |
+
+Verification programmatique : `verifierInvariantPortes`.
 
 **Consequence** : les portes palieres sont toujours dans exactement un etat (ouvertes ou fermees), jamais dans un etat indetermine. Propriete de coherence d'etat.
 
@@ -194,7 +262,32 @@ Meme structure de preuve. Fonction analyseur : `verifierInvariantPortes`.
 
 Enonce : `M(Ti_hors) + M(Ti_attente) + M(Ti_sur_canton) + M(Ti_a_quai) = 1` pour i in {1,2}, sur tout marquage atteignable.
 
-Meme structure de preuve. Generalisation des 3 etats du modele initial.
+Le tableau ci-dessous donne l'etat unique actif de chaque train pour chaque marquage. Chaque ligne vaut donc une somme de 1 pour T1 et une somme de 1 pour T2.
+
+| Marquage | Etat actif T1 | Etat actif T2 | Resultat |
+|----------|---------------|---------------|:--------:|
+| M0       | `T1_hors`        | `T2_hors`        | PASSE |
+| M1       | `T1_attente`     | `T2_hors`        | PASSE |
+| M2       | `T1_hors`        | `T2_attente`     | PASSE |
+| M3       | `T1_sur_canton`  | `T2_hors`        | PASSE |
+| M4       | `T1_attente`     | `T2_attente`     | PASSE |
+| M5       | `T1_hors`        | `T2_sur_canton`  | PASSE |
+| M6       | `T1_a_quai`      | `T2_hors`        | PASSE |
+| M7       | `T1_sur_canton`  | `T2_attente`     | PASSE |
+| M8       | `T1_attente`     | `T2_sur_canton`  | PASSE |
+| M9       | `T1_hors`        | `T2_a_quai`      | PASSE |
+| M10      | `T1_a_quai`      | `T2_attente`     | PASSE |
+| M11      | `T1_a_quai`      | `T2_hors`        | PASSE |
+| M12      | `T1_attente`     | `T2_a_quai`      | PASSE |
+| M13      | `T1_hors`        | `T2_a_quai`      | PASSE |
+| M14      | `T1_a_quai`      | `T2_sur_canton`  | PASSE |
+| M15      | `T1_a_quai`      | `T2_attente`     | PASSE |
+| M16      | `T1_sur_canton`  | `T2_a_quai`      | PASSE |
+| M17      | `T1_attente`     | `T2_a_quai`      | PASSE |
+| M18      | `T1_a_quai`      | `T2_sur_canton`  | PASSE |
+| M19      | `T1_sur_canton`  | `T2_a_quai`      | PASSE |
+
+Verification programmatique : `verifierInvariantsParTrain`.
 
 ### 5.5 Surete PSD (CRITIQUE - coeur de l'extension)
 
@@ -206,9 +299,18 @@ Enonce LTL : `G ( Portes_ouvertes = 1 => T1_a_quai + T2_a_quai = 1 )`.
 
 1. **Structurelle** : la place `Portes_ouvertes` ne peut etre marquee que par les transitions `Ouverture_portes_Ti`, dont le pre contient `Ti_a_quai`. Donc tant que `Portes_ouvertes=1`, un train est a quai. La preuve est inductive sur les transitions.
 
-2. **Inductive** : par recurrence sur le marquage initial (M0 a `Portes_ouvertes=0`, donc l'implication est trivialement vraie) et chaque transition. Detail dans `documentation/livrables/preuves-manuelles.md` tache 2bis.1.
+2. **Inductive** : par recurrence sur le marquage initial (M0 a `Portes_ouvertes=0`, donc l'implication est trivialement vraie) et chaque transition.
 
 3. **Programmatique** : l'analyseur Scala (`verifierSurteOuverturePortes`) enumere les marquages atteignables et verifie pour chacun l'implication. Si la verification echoue sur un seul marquage, l'analyseur signale une violation.
+
+| Marquage avec `Portes_ouvertes=1` | T1_a_quai | T2_a_quai | Train a quai | Resultat |
+|-----------------------------------|----------:|----------:|--------------|:--------:|
+| M11 | 1 | 0 | T1 | PASSE |
+| M13 | 0 | 1 | T2 | PASSE |
+| M15 | 1 | 0 | T1 | PASSE |
+| M17 | 0 | 1 | T2 | PASSE |
+| M18 | 1 | 0 | T1 | PASSE |
+| M19 | 0 | 1 | T2 | PASSE |
 
 **Consequence M14** : les voyageurs ne peuvent jamais tomber sur les voies via les portes palieres. **Surete reglementaire CRITIQUE**.
 
@@ -218,6 +320,17 @@ Enonce : pour tout marquage M et tout train Ti, si `Ti_depart_quai` est tirable 
 
 **Justification structurelle** : c'est inscrit dans le pre de `Ti_depart_quai` : `{Ti_a_quai, Portes_fermees}`. La transition n'est pas tirable sinon. Verification programmatique : `verifierSurteDepartQuai` enumere les marquages et verifie la condition.
 
+| Marquage | T1_depart_quai tirable | T2_depart_quai tirable | Portes_fermees | Resultat |
+|----------|:----------------------:|:----------------------:|---------------:|:--------:|
+| M6       | OUI | NON | 1 | PASSE |
+| M9       | NON | OUI | 1 | PASSE |
+| M10      | OUI | NON | 1 | PASSE |
+| M12      | NON | OUI | 1 | PASSE |
+| M14      | OUI | NON | 1 | PASSE |
+| M16      | NON | OUI | 1 | PASSE |
+| M11, M13, M15, M17, M18, M19 | NON | NON | 0 | non tirable, surete OK |
+| Autres marquages | NON | NON | 1 | pas de train a quai |
+
 **Consequence M14** : aucun voyageur ne peut etre coince ou ecrase par un train qui demarre alors qu'il monte/descend. **Surete reglementaire CRITIQUE**.
 
 ### 5.6 Coherence par train
@@ -226,37 +339,60 @@ Reprise de la verification 5.4 par l'analyseur. Detail dans `documentation/livra
 
 ### 5.7 Absence de deadlock
 
-A justifier programmatiquement : pour tout marquage atteignable, il existe au moins une transition tirable. L'analyseur verifie en explorant l'espace d'etats accessible. Detail dans `documentation/livrables/preuves-manuelles.md` tache 4.
+A justifier programmatiquement : pour tout marquage atteignable, il existe au moins une transition tirable. L'analyseur verifie en explorant l'espace d'etats accessible. La somme des transitions tirables ci-dessous donne les **40 arcs** du graphe d'accessibilite.
 
-**Resultat attendu** : 0 deadlock sur les ~15-18 marquages.
+| Marquage | Nombre de transitions tirables | Exemples de transitions tirables |
+|----------|-------------------------------:|----------------------------------|
+| M0       | 2 | `T1_demande`, `T2_demande` |
+| M1       | 2 | `T1_entree_canton`, `T2_demande` |
+| M2       | 2 | `T1_demande`, `T2_entree_canton` |
+| M3       | 2 | `T1_arrivee_quai`, `T2_demande` |
+| M4       | 2 | `T1_entree_canton`, `T2_entree_canton` |
+| M5       | 2 | `T1_demande`, `T2_arrivee_quai` |
+| M6       | 3 | `T1_depart_quai`, `T2_demande`, `Ouverture_portes_T1` |
+| M7       | 1 | `T1_arrivee_quai` |
+| M8       | 1 | `T2_arrivee_quai` |
+| M9       | 3 | `T1_demande`, `T2_depart_quai`, `Ouverture_portes_T2` |
+| M10      | 3 | `T1_depart_quai`, `T2_entree_canton`, `Ouverture_portes_T1` |
+| M11      | 2 | `T2_demande`, `Fermeture_portes_T1` |
+| M12      | 3 | `T1_entree_canton`, `T2_depart_quai`, `Ouverture_portes_T2` |
+| M13      | 2 | `T1_demande`, `Fermeture_portes_T2` |
+| M14      | 2 | `T1_depart_quai`, `Ouverture_portes_T1` |
+| M15      | 2 | `T2_entree_canton`, `Fermeture_portes_T1` |
+| M16      | 2 | `T2_depart_quai`, `Ouverture_portes_T2` |
+| M17      | 2 | `T1_entree_canton`, `Fermeture_portes_T2` |
+| M18      | 1 | `Fermeture_portes_T1` |
+| M19      | 1 | `Fermeture_portes_T2` |
+
+**Resultat** : 0 deadlock sur les 20 marquages (confirme par `Analyseur.deadlocks` qui renvoie une liste vide).
 
 ### 5.8 Proprietes LTL
 
-Formalisation complete dans `documentation/livrables/preuves-manuelles.md` tache 5. Synthese :
+La verification LTL est volontairement bornee au graphe fini (20 noeuds, 40 arcs) : les Safety sont reduites a un predicat vrai sur tous les marquages ; les Liveness `G(p -> F q)` sont reduites a l'existence d'un chemin depuis chaque marquage source `p` vers un marquage cible `q`, sous fairness FIFO des controleurs.
 
-**Safety** :
-- Canton : `G !(T1_sur_canton AND T2_sur_canton)`
-- Quai : `G !(T1_a_quai AND T2_a_quai)`
-- **PSD-Open** : `G ( Portes_ouvertes -> (T1_a_quai OR T2_a_quai) )`
-- **PSD-Departure** : `G ( (Ti_a_quai AND X(Ti_hors)) -> Portes_fermees )`
+| Propriete LTL | Type | Reduction sur graphe fini | Methode Scala | Resultat |
+|---------------|------|---------------------------|---------------|:--------:|
+| `G !(T1_sur_canton AND T2_sur_canton)` | Safety | Aucun M0..M19 n'a les deux trains sur le canton | `verifierGSafety` | PASSE |
+| `G !(T1_a_quai AND T2_a_quai)` | Safety | Aucun M0..M19 n'a les deux trains a quai | `verifierGSafety` | PASSE |
+| `G (Portes_ouvertes -> (T1_a_quai OR T2_a_quai))` | Safety | Les 6 marquages portes ouvertes ont un train a quai | `verifierGSafety(_, verifierSurteOuverturePortes)` | PASSE |
+| `G (T1_attente -> F T1_sur_canton)` | Liveness | Depuis tout `T1_attente`, un chemin mene a `T1_sur_canton` | `verifierGFLiveness` | PASSE |
+| `G (T2_attente -> F T2_sur_canton)` | Liveness | Depuis tout `T2_attente`, un chemin mene a `T2_sur_canton` | `verifierGFLiveness` | PASSE |
 
-**Liveness** (sous fairness des controleurs FIFO) :
-- Canton : `G ( Ti_attente -> F Ti_sur_canton )`
-- PSD : `G ( Ti_a_quai -> F Portes_ouvertes )` (les voyageurs peuvent monter/descendre)
+La propriete PSD-Departure est traitee comme invariant critique de tirabilite en 5.5.2 : tout arc `Ti_depart_quai` part d'un marquage avec `Portes_fermees=1`. Elle n'est pas recomptee dans les 5 LTL principales affichees par `Analyseur.main`.
 
-Justification informelle sur l'espace d'etats fini : l'analyseur enumere les marquages, on verifie la condition. Si elle tient sur tous, la propriete LTL est satisfaite (model checking sur etat fini).
+Limite explicite : cette verification n'est pas un model checker LTL generique avec automate de Buchi ; elle est une evaluation directe et defendable sur un systeme fini, borne et entierement enumere.
 
 ---
 
 ## 6) Comparaison Akka vs Petri
 
-La matrice complete des 3 scenarios (cycle nominal, concurrence canton+quai, surete PSD invalide) est detaillee dans `documentation/livrables/comparaison.md` sections 2 a 4. La sortie reelle de l'analyseur (20 marquages M0..M19, 5 invariants PASSE, 0 deadlock) est reproduite dans `comparaison.md` section 6.
+La matrice complete des 3 scenarios (cycle nominal, concurrence canton+quai, surete PSD invalide) est detaillee dans `documentation/livrables/comparaison.md` sections 2 a 4. La sortie reelle de l'analyseur (20 marquages M0..M19, 40 arcs, 5 invariants PASSE, 0 deadlock, 5 LTL PASSE) est synthetisee dans `comparaison.md` section 6.
 
 ### 6.1 Synthese
 
 - **Scenario 1 (cycle nominal complet)** : 6 transitions tirees, 6 marquages traverses (M0 -> M1 -> M3 -> M6 -> M11 -> M6 -> M0). Cycle ferme. Tous les marquages traverses appartiennent a l'espace d'etats calcule par l'analyseur.
 - **Scenario 2 (concurrence canton+quai)** : 9 transitions tirees, 9 marquages traverses dont M14 et M18 (les marquages "interessants" ou T2 est sur canton pendant que T1 est a quai). Confirmation du tuilage canton/quai sans interference.
-- **Scenario 3 (surete PSD invalide)** : depuis M0, l'analyseur enumere les transitions tirables = `{T1_demande, T2_demande}` uniquement. `Ouverture_portes_Ti` n'est pas tirable. Cote Akka, le test `GestionnairePortesSpec` verifie le refus silencieux d'une `OuverturePortes` en l'absence de train a quai.
+- **Scenario 3 (surete PSD invalide)** : depuis M0, l'analyseur enumere les transitions tirables = `{T1_demande, T2_demande}` uniquement. `Ouverture_portes_Ti` n'est pas tirable. Cote Akka, `TrainSpec` verifie que le vrai `Train` n'emet `OuverturePortes` qu'apres autorisation du quai ; `GestionnairePortesSpec` verifie en defense le refus silencieux d'un autre train quand les portes sont deja ouvertes.
 
 ### 6.2 Coherence simulation/modele
 
@@ -277,7 +413,7 @@ Les limites suivantes sont des choix delibres du sprint, pas des oublis. Chacune
 - **Modele PSD simplifie** : un seul niveau de portes. La realite CBTC (IEEE 1474) modelise portes train + portes palieres avec synchronisation electronique.
 - **Scope volontairement restreint a 2 trains** : la generalisation a N trains aurait une complexite combinatoire en O(4^N) pour les marquages atteignables, rendant l'enumeration a la main des 5 invariants impraticable pour N > 3.
 - **Comparaison Akka vs Petri qualitative** : pas de mesure quantitative (latence, debit). Hors scope du cours.
-- **Pas de model checker LTL complet** : nous formalisons les proprietes LTL Safety et Liveness (section 5.8) et evaluons les Safety **directement sur le graphe d'accessibilite fini** dans l'analyseur Scala (`verifierGSafety` prevu en Phase 7). Aucun automate de Buchi, aucun produit synchronise. C'est une limitation explicite, pas un defaut : le sujet du cours autorise cette approche pragmatique pour un systeme borne.
+- **Pas de model checker LTL complet** : nous formalisons les proprietes LTL Safety et Liveness (section 5.8) et evaluons les Safety **directement sur le graphe d'accessibilite fini** dans l'analyseur Scala (`verifierGSafety` et `verifierGFLiveness`, livres en Phase 7 le 30/04). Aucun automate de Buchi, aucun produit synchronise. C'est une limitation explicite, pas un defaut : le sujet du cours autorise cette approche pragmatique pour un systeme borne.
 - **Read-arc emule** sur `Portes_fermees` (consume+reproduce) : Petri ordinaire n'a pas de read-arc natif. L'astuce est documentee mais reste une approximation structurelle.
 
 Toutes ces limites sont mentionnees une seconde fois en section 8 sous l'angle "extensions futures" pour distinguer ce qui n'est pas fait de ce qui ne *peut* pas etre fait dans le scope du cours.
@@ -289,7 +425,7 @@ Toutes ces limites sont mentionnees une seconde fois en section 8 sous l'angle "
 ### 8.1 Synthese
 
 - **Demontre formellement** : 5 invariants (canton, quai, portes, PSD-Open, PSD-Departure) prouves par induction structurelle et confirmes par enumeration programmatique sur les 20 marquages atteignables (cf `comparaison.md` section 6). Absence de deadlock confirmee. Exclusion mutuelle stricte sur les deux ressources critiques (canton et quai). Surete PSD au sens reglementaire (IEEE 1474, UITP).
-- **Demontre experimentalement** : 3 scenarios Akka simules (cycle nominal, concurrence canton+quai, tentative PSD invalide) avec correspondance ligne a ligne au modele Petri sur 9 transitions/12. 39 tests Akka et 20 tests d'analyseur passent (39 + 20 = pas un total simple ; le total de la suite est 39 tests).
+- **Demontre experimentalement** : 3 scenarios Akka simules (cycle nominal, concurrence canton+quai, tentative PSD invalide) avec correspondance ligne a ligne au modele Petri sur 9 transitions/12. **49 tests passent** (19 tests Akka : TrainSpec 6 + SectionControllerSpec 3 + QuaiControllerSpec 5 + GestionnairePortesSpec 5 ; 30 tests Petri : AnalyseurSpec).
 - **Defendable** : 5 acteurs Akka, 12 places et 12 transitions Petri, 5 invariants, 20 marquages. Tout est enumerable a la main et reproductible programmatiquement. Le rapport de l'analyseur (`comparaison.md` section 6) tient sur une page.
 - **Confiance globale** : sous les hypotheses du scope (pas de panne, pas de timeout, 2 trains, 1 canton, 1 quai), le sous-systeme satisfait les proprietes critiques attendues d'un metro automatique avec PSD. Toute defaillance des hypotheses (par exemple panne d'un controleur) sort du scope demontre et necessiterait une nouvelle analyse.
 
@@ -297,9 +433,9 @@ Toutes ces limites sont mentionnees une seconde fois en section 8 sous l'angle "
 
 Classees par cout estime croissant :
 
-1. **Verification LTL programmatique complete** (Phase 7 du PLAN, ~1h-2h) : ajouter `verifierGSafety` et `verifierGFLiveness` dans `Analyseur.scala`. Evaluation directe sur le graphe d'accessibilite fini, sans automate de Buchi. Coherent avec section 7. **Prevu sur ce sprint si le temps le permet.**
-2. **Graphe d'accessibilite avec arcs etiquetes** (~30 min) : enrichir `explorerEspaceEtats` pour retourner aussi les arcs `(M_i --t--> M_j)`. Sortie inserable en annexe A1 ou A4. **Prevu sur ce sprint.**
-3. **Test d'integration Akka-Petri programmatique** (1-2h) : un nouveau spec qui rejoue la trace de messages d'un scenario Akka comme suite de transitions Petri et compare les marquages. **Prevu sur ce sprint.**
+1. **Verification LTL programmatique complete** (Phase 7 du PLAN) : `verifierGSafety` et `verifierGFLiveness` ajoutes dans `Analyseur.scala`. Evaluation directe sur le graphe d'accessibilite fini, sans automate de Buchi. Coherent avec section 7. **LIVRE le 30/04/2026** : 3 Safety + 2 Liveness PASSE sur les 20 marquages.
+2. **Graphe d'accessibilite avec arcs etiquetes** : `explorerAvecArcs` retourne `(List[Marking], List[Arc])`. Sortie inserable en annexe A1. **LIVRE le 30/04/2026** : 40 arcs etiquetes.
+3. **Test d'integration Akka-Petri programmatique** (1-2h) : un nouveau spec qui rejoue la trace de messages d'un scenario Akka comme suite de transitions Petri et compare les marquages. **Non livre** ; la correspondance reste textuelle dans `comparaison.md` sections 2-4.
 4. **Petri temporise** (TPN) pour modeliser la duree d'arret a quai. Hors scope du cours (Petri ordinaire suffit pour la verification structurelle).
 5. **Generalisation N trains** : refactoring de `Train`, `SectionController`, `QuaiController` en parametriques sur l'ensemble des trains. Complexite combinatoire en O(4^N) pour l'analyseur. Hors sprint.
 6. **Second canton en serie ou deux quais opposes** : double les ressources globales et reactive le risque de deadlock croisement. Extension naturelle, hors sprint (verrou `protocole-coordination.md` section 2).
@@ -314,13 +450,90 @@ Le projet illustre concretement :
 
 - Comment la **doctrine "profondeur > complexite"** (PLAN section 8) permet de prouver davantage en simplifiant le modele plutot qu'en l'etendant.
 - Comment la **double modelisation** (acteurs Akka pour la simulation, Petri pour la verification) renforce la confiance par convergence.
-- Comment une **garde de surete critique** se traduit a la fois par une garde defensive cote code (refus silencieux du `GestionnairePortes`) et par une pre-condition structurelle cote modele (pre `{Ti_a_quai}` de `Ouverture_portes_Ti`). Les deux niveaux se valident mutuellement (triple preuve : structurelle, inductive, programmatique - cf section 5.5).
+- Comment une **propriete de surete critique** se traduit a la fois par une machine d'etats cote code (`Train` n'emet `OuverturePortes` qu'a quai), une garde defensive (`GestionnairePortes` refuse un second occupant), et une pre-condition structurelle cote modele (pre `{Ti_a_quai}` de `Ouverture_portes_Ti`). Les deux niveaux se valident mutuellement (triple preuve : structurelle, inductive, programmatique - cf section 5.5).
 
 ---
 
 ## Annexes
 
-- **A1** : sortie complete de l'analyseur Petri (20 marquages M0..M19, 5 invariants PASSE, 0 deadlock). Reproduite verbatim dans `documentation/livrables/comparaison.md` section 6.1. Les arcs etiquetes (M_i --transition--> M_j) seront ajoutes en Phase 7 (cf `PLAN.md` section 8.3).
-- **A2** : matrice de comparaison detaillee Akka/Petri (extrait de `documentation/livrables/comparaison.md` sections 2-5).
-- **A3** : extraits de code commentes (un Behavior par etat du Train sur 4 etats, garde de surete du `GestionnairePortes`, BFS de l'analyseur, fonctions `verifierSurteOuverturePortes` et `verifierSurteDepartQuai`). A finaliser en Phase 9.
-- **A4** : graphe d'accessibilite (20 noeuds, arcs etiquetes par transition, mise en evidence des 6 marquages avec `Portes_ouvertes` : M11, M13, M15, M17, M18, M19). A produire en Phase 7 a partir de l'extension de `explorerEspaceEtats`.
+### A1 - Graphe d'accessibilite etiquete
+
+Sortie de l'analyseur Petri : **20 noeuds, 40 arcs etiquetes**.
+
+```text
+M0  --T1_demande-->        M1
+M0  --T2_demande-->        M2
+M1  --T1_entree_canton-->  M3
+M1  --T2_demande-->        M4
+M2  --T1_demande-->        M4
+M2  --T2_entree_canton-->  M5
+M3  --T1_arrivee_quai-->   M6
+M3  --T2_demande-->        M7
+M4  --T1_entree_canton-->  M7
+M4  --T2_entree_canton-->  M8
+M5  --T1_demande-->        M8
+M5  --T2_arrivee_quai-->   M9
+M6  --T1_depart_quai-->    M0
+M6  --T2_demande-->        M10
+M6  --Ouverture_portes_T1--> M11
+M7  --T1_arrivee_quai-->   M10
+M8  --T2_arrivee_quai-->   M12
+M9  --T1_demande-->        M12
+M9  --T2_depart_quai-->    M0
+M9  --Ouverture_portes_T2--> M13
+M10 --T1_depart_quai-->    M2
+M10 --T2_entree_canton-->  M14
+M10 --Ouverture_portes_T1--> M15
+M11 --T2_demande-->        M15
+M11 --Fermeture_portes_T1->M6
+M12 --T1_entree_canton-->  M16
+M12 --T2_depart_quai-->    M1
+M12 --Ouverture_portes_T2--> M17
+M13 --T1_demande-->        M17
+M13 --Fermeture_portes_T2->M9
+M14 --T1_depart_quai-->    M5
+M14 --Ouverture_portes_T1--> M18
+M15 --T2_entree_canton-->  M18
+M15 --Fermeture_portes_T1->M10
+M16 --T2_depart_quai-->    M3
+M16 --Ouverture_portes_T2--> M19
+M17 --T1_entree_canton-->  M19
+M17 --Fermeture_portes_T2->M12
+M18 --Fermeture_portes_T1->M14
+M19 --Fermeture_portes_T2->M16
+```
+
+### A2 - Matrice Akka / Petri
+
+La matrice detaillee est fournie dans `documentation/livrables/comparaison.md` sections 2 a 5. Elle relie :
+- les messages Akka (`Demande`, `Autorisation`, `ArriveeQuai`, `OuverturePortes`, etc.) ;
+- les transitions Petri (`Ti_demande`, `Ti_entree_canton`, `Ouverture_portes_Ti`, etc.) ;
+- les marquages M0..M19 observes dans les scenarios.
+
+### A3 - Extraits de code a citer
+
+Extraits sources principaux pour la soutenance ou l'export PDF :
+
+| Sujet | Fichier | Role dans la preuve |
+|-------|---------|---------------------|
+| Machine d'etats du train | `src/main/scala/m14/troncon/Train.scala` | 4 etats (`hors`, `attente`, `sur_canton`, `a_quai`) alignes avec les places Petri |
+| Arbitrage canton FIFO | `src/main/scala/m14/troncon/SectionController.scala` | Exclusion mutuelle canton et progression sous FIFO |
+| Arbitrage quai FIFO | `src/main/scala/m14/troncon/QuaiController.scala` | Exclusion mutuelle quai et promotion du train en attente |
+| Garde PSD | `src/main/scala/m14/troncon/GestionnairePortes.scala` | Refus d'ouverture/fermeture par un train non occupant |
+| Reseau Petri | `src/main/scala/m14/petri/PetriNet.scala` | Encodage des 12 places et 12 transitions |
+| Analyse BFS + invariants + LTL | `src/main/scala/m14/petri/Analyseur.scala` | Exploration, 40 arcs, invariants, deadlocks, `verifierGSafety`, `verifierGFLiveness` |
+
+### A4 - Noeuds critiques PSD
+
+Marquages avec `Portes_ouvertes=1` : **M11, M13, M15, M17, M18, M19**. Tous contiennent exactement un train a quai :
+
+| Marquage | Train a quai | Sortie obligatoire vers portes fermees |
+|----------|--------------|-----------------------------------------|
+| M11 | T1 | `Fermeture_portes_T1 -> M6` |
+| M13 | T2 | `Fermeture_portes_T2 -> M9` |
+| M15 | T1 | `Fermeture_portes_T1 -> M10` |
+| M17 | T2 | `Fermeture_portes_T2 -> M12` |
+| M18 | T1 | `Fermeture_portes_T1 -> M14` |
+| M19 | T2 | `Fermeture_portes_T2 -> M16` |
+
+Ces six noeuds sont les temoins centraux de PSD-Open Safety : aucun marquage n'a `Portes_ouvertes=1` sans train a quai.

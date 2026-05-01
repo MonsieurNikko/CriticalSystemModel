@@ -1,18 +1,3 @@
-// LancerDemo.scala : pont entre l'execution Scala et la demo HTML animee.
-//
-// Lance via : sbt "runMain m14.demo.LancerDemo"
-//
-// Etapes executees :
-//   1. Regenere les 5 fichiers JSON de traces depuis le modele Petri verifie
-//      (scenarios A, B, C, D, E).
-//   2. Demarre un mini serveur HTTP local (port 8000 par defaut, ou premier port
-//      libre dans 8000-8010) servant le dossier demo/.
-//   3. Ouvre le navigateur par defaut sur http://localhost:<port>/index.html.
-//   4. Affiche les commandes disponibles (Enter = arret) et attend.
-//
-// Aucun framework externe : utilise com.sun.net.httpserver (JDK builtin) et
-// java.awt.Desktop. Compatible JDK 11+.
-
 package m14.demo
 
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
@@ -27,16 +12,11 @@ object LancerDemo extends App {
   private val racineDemo: Path = Paths.get("demo").toAbsolutePath.normalize()
   private val portsCandidats: List[Int] = (8000 to 8010).toList
 
-  // ---------------------------------------------------------------------------
-  // Etape 1 : regeneration des traces JSON.
-  // ---------------------------------------------------------------------------
   println("[1/3] Regeneration des traces JSON depuis le modele Petri verifie...")
+  // comme ca on ne presente pas une vieille trace par erreur.
   GenererTraces.main(Array.empty)
   println()
 
-  // ---------------------------------------------------------------------------
-  // Etape 2 : demarrage du serveur HTTP statique.
-  // ---------------------------------------------------------------------------
   if (!Files.isDirectory(racineDemo)) {
     System.err.println(s"ERREUR : dossier ${racineDemo} introuvable. Lancer depuis la racine du projet.")
     sys.exit(1)
@@ -54,9 +34,6 @@ object LancerDemo extends App {
   println(s"      (racine servie : $racineDemo)")
   println()
 
-  // ---------------------------------------------------------------------------
-  // Etape 3 : ouverture du navigateur.
-  // ---------------------------------------------------------------------------
   println("[3/3] Ouverture du navigateur...")
   ouvrirNavigateur(urlBase)
   println()
@@ -73,7 +50,6 @@ object LancerDemo extends App {
   println()
   println("  Appuyer sur Entree pour arreter le serveur et terminer.")
 
-  // Bloque jusqu'a Entree (lecture ligne sur stdin).
   try {
     Console.in.readLine()
   } catch {
@@ -83,10 +59,6 @@ object LancerDemo extends App {
   println("Arret du serveur...")
   server.stop(0)
   println("Termine.")
-
-  // ===========================================================================
-  // Helpers
-  // ===========================================================================
 
   private def demarrerServeur(racine: Path, ports: List[Int]): Option[(HttpServer, Int)] = {
     ports.iterator.flatMap { port =>
@@ -117,8 +89,6 @@ object LancerDemo extends App {
   }
 }
 
-// Handler HTTP minimal qui sert les fichiers statiques d'un dossier racine.
-// Refuse toute tentative de path traversal (../).
 private final class ServeurFichiersStatiques(racine: Path) extends HttpHandler {
 
   private val typesContenu: Map[String, String] = Map(
@@ -139,7 +109,7 @@ private final class ServeurFichiersStatiques(racine: Path) extends HttpHandler {
       }
       val cible = racine.resolve(cheminBrut.stripPrefix("/")).normalize()
 
-      // Securite : empeche la sortie hors du dossier racine.
+      // petit garde-fou contre les chemins du style ../.
       if (!cible.startsWith(racine)) {
         envoyer(echange, 403, "Forbidden".getBytes("UTF-8"), "text/plain")
         return
@@ -157,7 +127,6 @@ private final class ServeurFichiersStatiques(racine: Path) extends HttpHandler {
         if (idx >= 0) nom.substring(idx).toLowerCase else ""
       }
       val mime = typesContenu.getOrElse(ext, "application/octet-stream")
-      // Cache disable pour que la regeneration de traces soit immediatement visible.
       echange.getResponseHeaders.add("Cache-Control", "no-store")
       envoyer(echange, 200, octets, mime)
     } catch {

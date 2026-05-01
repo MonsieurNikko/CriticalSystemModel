@@ -1,6 +1,3 @@
-// Main.scala : demonstration console des scenarios critiques etendus PSD
-// (canton + quai + portes palieres) et synthese de l'analyse Petri.
-
 package m14
 
 import akka.actor.typed.ActorSystem
@@ -18,9 +15,7 @@ import m14.troncon.GestionnairePortes
 
 object Main extends App {
 
-  // Acteur de log : fait office de "faux train" qui se contente d'afficher les reponses
-  // recues. Sert a rendre la sortie console lisible. On evite d'utiliser le vrai acteur
-  // Train pour ne pas tomber dans son cycle infini.
+  // petit acteur pour afficher les reponses, pas plus.
   private def loggeur(nom: String): Behavior[MessagePourTrain] =
     Behaviors.receiveMessage {
       case Autorisation =>
@@ -64,7 +59,6 @@ object Main extends App {
 
   private def ok(b: Boolean): String = if (b) "OK" else "ECHEC"
 
-  // Acteur racine : execute les 3 scenarios l'un apres l'autre.
   private def demo(): Behavior[Unit] = Behaviors.setup { contexte =>
 
     println("=== Demonstration des 3 scenarios M14 (canton + quai + PSD) ===")
@@ -72,11 +66,6 @@ object Main extends App {
     println(s"Marquage initial Petri : ${afficherMarquage(marquageInitial)}")
     println()
 
-    // -----------------------------------------------------------------------
-    // Scenario 1 - Cycle nominal complet :
-    // Train1 demande canton -> entre canton -> arrive quai -> ouvre portes ->
-    // ferme portes -> quitte quai -> revient hors.
-    // -----------------------------------------------------------------------
     println("--- Scenario 1 - Cycle nominal complet (canton + quai + portes) ---")
     val sc1 = contexte.spawn(SectionController(), "sc1")
     val qc1 = contexte.spawn(QuaiController(), "qc1")
@@ -107,10 +96,6 @@ object Main extends App {
     Thread.sleep(120)
     println()
 
-    // -----------------------------------------------------------------------
-    // Scenario 2 - Concurrence canton + quai :
-    // Les 2 trains se disputent canton et quai. Le second attend a deux endroits.
-    // -----------------------------------------------------------------------
     println("--- Scenario 2 - Concurrence canton + quai ---")
     val sc2 = contexte.spawn(SectionController(), "sc2")
     val qc2 = contexte.spawn(QuaiController(), "qc2")
@@ -134,14 +119,8 @@ object Main extends App {
     Thread.sleep(80)
     println()
 
-    // -----------------------------------------------------------------------
-    // Scenario 3 - Tentative PSD invalide (TEST CRITIQUE) :
-    // On simule un actor malveillant qui envoie OuverturePortes alors qu'aucun train
-    // n'est a quai. La garde de surete du GestionnairePortes doit refuser silencieusement.
-    // Cote Petri : la transition Ouverture_portes_T1 n'est pas tirable depuis M0
-    // (Ti_a_quai = 0).
-    // -----------------------------------------------------------------------
     println("--- Scenario 3 - Tentative PSD invalide (CRITIQUE) ---")
+    // Attention: on force un message hors protocole pour comparer Akka et Petri.
     val gp3 = contexte.spawn(GestionnairePortes(), "gp3")
     val log3 = contexte.spawn(loggeur("Attaquant"), "log-attaquant")
     val m3 = marquageInitial

@@ -9,9 +9,12 @@
 ### 2. Objectifs
 - Garantir la qualite technique des modifications.
 - Garantir la tracabilite complete des changements.
-- Preserver les invariants critiques du sous-systeme M14 (troncon partage):
-  - exclusion mutuelle: T1_sur_troncon + T2_sur_troncon + Troncon_libre = 1
-  - absence de collision sur le troncon
+- Preserver les invariants critiques du sous-systeme M14 (canton + quai + portes palieres):
+  - exclusion mutuelle canton: T1_sur_canton + T2_sur_canton + Canton_libre = 1
+  - exclusion mutuelle quai:   T1_a_quai + T2_a_quai + Quai_libre = 1
+  - coherence portes:          Portes_fermees + Portes_ouvertes = 1
+  - PSD-Open Safety:           Portes_ouvertes=1 => un train est a quai (CRITIQUE)
+  - PSD-Departure Safety:      Ti_depart_quai tirable => Portes_fermees=1 (CRITIQUE)
   - absence de deadlock dans le protocole d'acces
 
 ### 3. Pre-travail obligatoire (avant toute modification)
@@ -90,10 +93,10 @@
   - pas de "patterns Scala idiomatiques" si une version naive marche
 - Obligations cote style:
   - noms de variables longs et explicites (en francais ou anglais, mais coherents dans un fichier)
-  - une ligne d'en-tete au sommet de chaque fichier source: `// NomDuFichier : role en une phrase.`
+  - pas d'en-tete obligatoire au sommet de chaque fichier source ; les noms de classes/packages doivent deja parler
   - fonctions courtes (<30 lignes), nesting <=3
   - duplication legere (2-3 lignes similaires) toleree si elle ameliore la lisibilite
-  - commentaires rares mais en francais simple, expliquant POURQUOI, jamais QUOI
+  - commentaires rares mais utiles, en francais simple, plutot pour expliquer POURQUOI
 - Obligations cote tracabilite:
   - le message de commit doit suivre la structure: 1) Quoi, 2) Pourquoi, 3) Comment relire (quel fichier ouvrir en premier)
 - Test de defendabilite: si un equipier ouvre un fichier, il doit pouvoir l'expliquer a l'oral en 2 minutes sans aide. Si non, le code est trop complexe et doit etre simplifie.
@@ -109,9 +112,12 @@
 ### 2. Goals
 - Ensure technical quality of all changes.
 - Ensure full change traceability.
-- Preserve critical M14 subsystem invariants (shared track section):
-  - mutual exclusion: T1_on_section + T2_on_section + section_free = 1
-  - no collision on the shared section
+- Preserve critical M14 subsystem invariants (final canton + platform + PSD model):
+  - canton mutual exclusion: T1_on_canton + T2_on_canton + canton_free = 1
+  - platform mutual exclusion: T1_at_platform + T2_at_platform + platform_free = 1
+  - door coherence: doors_closed + doors_open = 1
+  - PSD-Open Safety: open doors imply one train is at platform
+  - PSD-Departure Safety: a train can leave the platform only with closed doors
   - no deadlock in the access protocol
 
 ### 3. Mandatory pre-work (before any edit)
@@ -190,10 +196,10 @@
   - no "idiomatic Scala patterns" if a naive version works
 - Style obligations:
   - long, descriptive variable names (in French or English, but consistent within a file)
-  - one-line header at the top of every source file: `// FileName : role in one sentence.`
+  - no mandatory one-line header at the top of every source file; class/package names should already be clear
   - short functions (<30 lines), nesting <=3
   - mild duplication (2-3 similar lines) acceptable when it improves readability
-  - sparse comments in plain French, explaining WHY, never WHAT
+  - sparse but useful comments in plain French, mostly explaining WHY
 - Traceability obligations:
   - the commit message must follow the structure: 1) What, 2) Why, 3) How to re-read (which file to open first)
 - Defensibility test: if a teammate opens a file, they must be able to explain it orally in 2 minutes without help. If not, the code is too complex and must be simplified.

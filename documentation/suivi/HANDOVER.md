@@ -21,6 +21,8 @@ Si une de ces 5 etapes echoue ou semble incoherente : **stop**, demande a l'aute
 
 ## 2) Glossaire du projet
 
+> Note historique : les premieres phases utilisaient le vocabulaire "troncon partage". Dans le modele final, ce troncon est precise en **canton de signalisation**, puis on ajoute le quai et les portes palieres (PSD).
+
 ### Termes Akka / Scala
 
 - **Acteur** : entite isolee qui recoit des messages et change d'etat. Ne partage rien avec les autres acteurs.
@@ -33,17 +35,17 @@ Si une de ces 5 etapes echoue ou semble incoherente : **stop**, demande a l'aute
 
 ### Termes Reseau de Petri
 
-- **Place** : un "etat" possible. Dans notre cas : `Troncon_libre`, `T1_attente`, `T1_sur_troncon`, etc.
-- **Marquage** (marking) : combien de jetons sont dans chaque place a un instant donne. Notre marquage initial : 1 jeton dans `Troncon_libre`, 1 dans `T1_hors`, 1 dans `T2_hors`.
-- **Transition** : un evenement qui consomme des jetons dans certaines places et en produit dans d'autres. Exemple : `T1_entree_autorisee` consomme 1 jeton de `Troncon_libre` et 1 de `T1_attente`, produit 1 jeton dans `T1_sur_troncon`.
+- **Place** : un "etat" possible. Dans le modele final : `Canton_libre`, `Quai_libre`, `Portes_fermees`, `T1_attente`, `T1_sur_canton`, `T1_a_quai`, etc.
+- **Marquage** (marking) : combien de jetons sont dans chaque place a un instant donne. Notre marquage initial final : 1 jeton dans `Canton_libre`, 1 dans `Quai_libre`, 1 dans `Portes_fermees`, 1 dans `T1_hors`, 1 dans `T2_hors`.
+- **Transition** : un evenement qui consomme des jetons dans certaines places et en produit dans d'autres. Exemple : `T1_entree_canton` consomme 1 jeton de `Canton_libre` et 1 de `T1_attente`, produit 1 jeton dans `T1_sur_canton`.
 - **Tirable** (firable) : une transition est tirable si toutes ses places d'entree ont assez de jetons.
 - **Espace d'etats** (state space) : ensemble de tous les marquages atteignables depuis le marquage initial en tirant des transitions.
 - **Deadlock** : marquage ou aucune transition n'est tirable et qui n'est pas un etat final voulu.
-- **Invariant de place** (P-invariant) : combinaison lineaire de places qui reste constante quoi qu'il arrive. Notre invariant principal : `T1_sur_troncon + T2_sur_troncon + Troncon_libre = 1`.
+- **Invariant de place** (P-invariant) : combinaison lineaire de places qui reste constante quoi qu'il arrive. Exemple final : `T1_sur_canton + T2_sur_canton + Canton_libre = 1`.
 
 ### Termes verification
 
-- **Safety** (surete) : "rien de mal n'arrive jamais". Exemple : pas de collision sur le troncon.
+- **Safety** (surete) : "rien de mal n'arrive jamais". Exemple : pas de collision sur le canton, portes jamais ouvertes sans train a quai.
 - **Liveness** (vivacite) : "quelque chose de bien finit toujours par arriver". Exemple : un train en attente finit par passer.
 - **LTL** (Linear Temporal Logic) : logique pour exprimer Safety/Liveness. Operateurs : `G` (toujours), `F` (finalement), `X` (au prochain pas).
 - **Fairness** (equite) : hypothese disant qu'un evenement possible finit toujours par arriver. Necessaire pour prouver la Liveness.
@@ -51,7 +53,8 @@ Si une de ces 5 etapes echoue ou semble incoherente : **stop**, demande a l'aute
 ### Termes projet
 
 - **Phase 1 a 10** : decoupage du sprint, voir PLAN.md §4.
-- **Coeur** : le sous-systeme 2 trains + 1 troncon. Tout ce qui n'est pas coeur est "extension future".
+- **Socle initial** : le sous-systeme 2 trains + 1 troncon partage, utilise pour valider l'exclusion mutuelle de base.
+- **Coeur final** : 2 trains + 1 canton + 1 quai + 1 paire de portes palieres. C'est le modele rendu.
 
 ---
 
@@ -59,16 +62,15 @@ Si une de ces 5 etapes echoue ou semble incoherente : **stop**, demande a l'aute
 
 Quand tu ouvres un fichier ecrit par un coequipier :
 
-1. **Lire l'en-tete** (premiere ligne du fichier). Une seule phrase qui dit ce que fait le fichier. Si elle manque, ajoute-la ou demande a l'auteur.
-2. **Lire les noms de fonctions** uniquement, sans rentrer dans le corps. Tu dois pouvoir reconstituer le scenario juste avec les noms.
-3. **Choisir UNE fonction** et la lire entierement. Si tu ne comprends pas en 2 minutes, le code est trop complexe : ouvre une issue ou demande a l'auteur.
-4. **Lancer le test correspondant** pour voir le comportement en action.
+1. **Lire les noms de fonctions** uniquement, sans rentrer dans le corps. Tu dois pouvoir reconstituer le scenario juste avec les noms.
+2. **Choisir UNE fonction** et la lire entierement. Si tu ne comprends pas en 2 minutes, le code est trop complexe : ouvre une issue ou demande a l'auteur.
+3. **Lancer le test correspondant** pour voir le comportement en action.
 
 Conventions du repo :
 - Pas d'implicits, pas de macros, pas de point-free style, pas d'operateurs custom.
 - Pas de chaines complexes de `flatMap` / `for-yield` ; preferer `if/else` et boucles simples.
 - Variables longues et descriptives (`trainEnAttente` plutot que `t`).
-- Une ligne d'en-tete par fichier source : `// NomDuFichier : role en une phrase.`
+- Pas d'en-tete obligatoire dans chaque fichier source : les noms de packages/classes suffisent. Ajouter seulement quelques commentaires utiles.
 - Fonctions courtes (<30 lignes), nesting <=3.
 - Commentaires rares, en francais simple, expliquant POURQUOI, jamais QUOI.
 
@@ -81,7 +83,7 @@ Si le code ne respecte pas ces conventions, simplifie ou demande a l'auteur de s
 A faire dans cet ordre :
 
 - [ ] **Test de defendabilite** : ferme ton editeur, ouvre le fichier modifie, explique-le a voix haute en 2 min. Si tu n'y arrives pas, simplifie le code avant de pousser.
-- [ ] **En-tete une-ligne** present en haut de chaque fichier nouveau ou modifie en profondeur.
+- [ ] **Commentaires sobres** : pas de pavé explicatif dans le code, seulement quelques notes utiles quand le comportement n'est pas evident.
 - [ ] **`sbt compile`** : OK.
 - [ ] **`sbt test`** : OK (ou echec documente).
 - [ ] **`documentation/suivi/historique.md`** : nouvelle entree decrivant les changements, les commandes, le resultat.

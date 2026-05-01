@@ -1,6 +1,3 @@
-// AnalyseurSpec.scala : tests de l'analyseur Petri sur le reseau etendu PSD
-// (canton + quai + portes palieres).
-
 package m14.petri
 
 import org.scalatest.wordspec.AnyWordSpec
@@ -37,7 +34,6 @@ class AnalyseurSpec extends AnyWordSpec with Matchers {
     }
 
     "ne pas rendre T1_entree_canton tirable depuis M0" in {
-      // Pas tirable car T1_attente = 0 dans M0.
       estTirable(t1EntreeCanton, marquageInitial) shouldBe false
     }
 
@@ -181,13 +177,14 @@ class AnalyseurSpec extends AnyWordSpec with Matchers {
 
     "fournir un contre-exemple si Safety est violee" in {
       val resultat = analyser(reseauTroncon)
-      // Predicat impossible pour M0 : Canton_libre = 0. Doit renvoyer M0 en contre-exemple.
+      // petit test faux expres, pour verifier qu'on recupere bien un contre-exemple.
       val r = verifierGSafety(resultat.marquagesAtteignables, m => m.getOrElse(CantonLibre, 0) == 0)
       r.isLeft shouldBe true
     }
 
     "verifier G F liveness canton T1 (T1_attente -> F T1_sur_canton)" in {
       val resultat = analyser(reseauTroncon)
+      // pas un vrai gros model checker, juste le graphe fini du projet.
       val r = verifierGFLiveness(resultat.marquagesAtteignables, resultat.arcs,
         source = m => m.getOrElse(T1Attente, 0) >= 1,
         cible  = m => m.getOrElse(T1SurCanton, 0) >= 1)

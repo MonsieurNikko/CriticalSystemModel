@@ -18,6 +18,15 @@
 
 Sous-systeme critique M14 : controle d'acces concurrent de **2 trains automatiques** a **1 canton de signalisation** suivi de **1 quai equipe de portes palieres (PSD)**, via **3 controleurs centralises**.
 
+### Lecture chronologique pour le rendu
+
+Le planning garde la trace d'une construction en deux temps :
+
+1. **Phases 1 a 6 : socle initial**. Le projet commence volontairement petit : 2 trains, 1 troncon partage, 3 acteurs, 7 places Petri, 6 transitions, 8 marquages. Objectif : prouver l'exclusion mutuelle et l'absence de deadlock sur le coeur concurrent.
+2. **Phase Extension PSD + Phases 7 a 9 : upgrade final**. Une fois le socle stable, le troncon est precise en canton et le modele est etendu avec 1 quai + portes palieres. Objectif : rendre le cas plus M14 et ajouter PSD-Open / PSD-Departure.
+
+Cette chronologie est importante pour la soutenance : l'extension PSD n'est pas une derive de scope, c'est un upgrade fait apres validation du modele simple.
+
 Invariants principaux a prouver :
 
 ```
@@ -54,11 +63,11 @@ Hors coeur (mentionnes "extensions futures" dans le rapport, pas implementes) :
 | # | Livrable | Ou | Etat cible | Etat actuel |
 |---|----------|-----|-----------|-------------|
 | L1 | Bibliographie commentee (etat de l'art) | `documentation/livrables/biblio.md` | 5-8 sources, 2-4 lignes par source | **11 sources commentees** (9 initiales + 2 PSD : IEEE 1474 CBTC, UITP/PSD) |
-| L2 | Modele Akka/Scala fonctionnel | `src/main/scala/m14/troncon/` | Compile + 3 scenarios passent | **Modele initial complet** (Train + SectionController + tests + demo). **Extension PSD : code Phase B en attente** (5 acteurs cibles). |
+| L2 | Modele Akka/Scala fonctionnel | `src/main/scala/m14/troncon/` | Compile + 3 scenarios passent | **Complet** : 5 acteurs (2 Train + SectionController + QuaiController + GestionnairePortes), protocole 6+4, tests verts. |
 | L3 | Reseau de Petri | `petri/petri-troncon.md` (texte + ASCII) | 12 places, 12 transitions, marquage initial | **Complet (etendu PSD)** : 12 places, 12 transitions, ASCII, 5 invariants prouves a la main |
-| L4 | Rapport de verification (proprietes structurelles + invariants + LTL) | `documentation/livrables/rapport.md` | 5 invariants prouves (canton, quai, portes, PSD-Open, PSD-Departure), deadlocks ecartes, LTL formalise | **Squelette etendu PSD** (sections 1-4 et 7-8 a remplir Phase D) |
-| L5 | Analyseur Petri en code | `src/main/scala/m14/petri/` | Espace d'etats genere, 5 invariants verifies par programme | **Modele initial complet** : BFS, 8 marquages, invariants, deadlocks. **Extension PSD : Phase B.7** (cible 15-18 marquages, +invariantQuai/Portes, +verifierSurteOuverturePortes/DepartQuai). |
-| L6 | Simulation comparee Akka vs Petri (3 scenarios) | `documentation/livrables/comparaison.md` | Tableau de correspondance messages <-> transitions | **Etendu PSD** : 3 scenarios reecrits (cycle nominal complet, concurrence canton+quai, surete PSD invalide). Sortie analyseur a inserer en Phase D. |
+| L4 | Rapport de verification (proprietes structurelles + invariants + LTL) | `documentation/livrables/rapport.md` | 5 invariants prouves (canton, quai, portes, PSD-Open, PSD-Departure), deadlocks ecartes, LTL formalise | **Complet** : section 5 remplie avec tableaux du carnet, annexes A1-A4 alignees sur les sorties Phase 7. |
+| L5 | Analyseur Petri en code | `src/main/scala/m14/petri/` | Espace d'etats genere, 5 invariants verifies par programme | **Complet** : BFS, 20 marquages, 40 arcs, 5 invariants, 0 deadlock, 5 proprietes LTL. |
+| L6 | Simulation comparee Akka vs Petri (3 scenarios) | `documentation/livrables/comparaison.md` | Tableau de correspondance messages <-> transitions | **Complet** : 3 scenarios PSD + correspondance M0..M19 + synthese analyseur. |
 | L7 | Lien GitHub final | README.md | Depot propre, branche main a jour | A finaliser apres commit/push |
 | Bonus | Demo visuelle locale | `demo/index.html` | Aide de soutenance, pas preuve principale | **Prototype fait** : pas-a-pas Akka/Petri |
 
@@ -142,7 +151,7 @@ Hors coeur (mentionnes "extensions futures" dans le rapport, pas implementes) :
 
 ---
 
-### Phase Extension PSD : canton + quai + portes palieres (EN COURS)
+### Phase Extension PSD : canton + quai + portes palieres (TERMINEE HORS MERGE)
 
 Extension decidee pour rendre le projet M14-realiste sans exploser la combinatoire. Justification complete dans `documentation/contexte/recadrage-m14-troncon-critique.md` section 13.
 
@@ -180,19 +189,19 @@ Ordre d'implementation impose : Protocol -> QuaiController -> Train -> Gestionna
 - [x] C.3 — Creer `QuaiControllerSpec.scala` : 5 tests (autorisation, attente, promotion, garde occupant, reutilisation)
 - [x] C.4 — Creer `GestionnairePortesSpec.scala` : 5 tests dont 2 CRITIQUES verifient le refus silencieux PSD-Open (OuverturePortes et FermeturePortes d'un train non-occupant)
 - [x] C.5 — Adapter `AnalyseurSpec.scala` : 20 tests (12P/12T, exactement 20 marquages, 5 invariants PASSE, 0 deadlock, exclusions mutuelles canton+quai, instantiation explicite PSD-Open)
-- **Verification** : `sbt test` : **39/39 verts** (vs 22 avant extension)
+- **Verification** : `sbt test` : **49/49 verts** (vs 22 avant extension, apres ajout des tests LTL Phase 7)
 
-#### Sous-phase D : Execution + finalisation (EN COURS)
+#### Sous-phase D : Execution + finalisation (TERMINEE HORS MERGE)
 
 - [x] D.1 — `sbt clean compile` PASS
-- [x] D.2 — `sbt test` : **39 tests verts**
+- [x] D.2 — `sbt test` : **49 tests verts**
 - [x] D.3 — `sbt "runMain m14.petri.Analyseur"` : **20 marquages** atteignables (M0..M19), 5 invariants PASS, 0 deadlock
 - [x] D.4 — Sections narratives du `rapport.md` (1, 2, 3, 4, 6, 7, 8) remplies avec la sortie reelle de l'analyseur (29/04/2026)
 - [x] D.5 — Section 6 de `comparaison.md` remplie : sortie console reproduite verbatim + tableau de correspondance scenarios <-> marquages M0..M19 (29/04/2026)
 - [x] D.6 — Commit atomique Phase B+C + entree `historique.md`
 - [ ] D.7 — Merge `extension` -> `main` avec `--no-ff` (apres relecture equipe)
 - [x] D.8 — Push branche `extension` : 34dc087
-- **Verification globale** : `sbt test` vert (39/39) + 5 invariants PASS + rapport.md et comparaison.md finalises avec sortie reelle. Reste D.7 (merge) et Phase 7 (LTL programmatique).
+- **Verification globale** : `sbt test` vert (49/49) + 5 invariants PASS + 5 proprietes LTL PASS + rapport.md et comparaison.md finalises avec sortie reelle. Reste D.7 (merge) et Phase 9 (tag/push final).
 
 ---
 
@@ -202,21 +211,21 @@ Ordre d'implementation impose : Protocol -> QuaiController -> Train -> Gestionna
   - Safety canton : `G !(T1_sur_canton AND T2_sur_canton)`
   - Safety quai : `G !(T1_a_quai AND T2_a_quai)`
   - Safety PSD-Open : `G ( Portes_ouvertes -> (T1_a_quai OR T2_a_quai) )`
-  - Safety PSD-Departure : `G ( (Ti_a_quai AND X(Ti_hors)) -> Portes_fermees )`
+  - Safety PSD-Departure : `G ( (Ti_a_quai AND X(Ti_hors)) -> Portes_fermees )` (traitee programmatiquement comme invariant de tirabilite)
   - Liveness canton : `G (Ti_attente -> F Ti_sur_canton)` (sous fairness FIFO)
-  - Liveness PSD : `G (Ti_a_quai -> F Portes_ouvertes)`
+  - Liveness PSD : `G (Ti_a_quai -> F Portes_ouvertes)` (argument documentaire complementaire)
 - [x] Verification programmatique LTL Safety sur graphe etendu (`verifierGSafety` dans `Analyseur.scala`) — 3 proprietes Safety PASSE
-- [x] Verification programmatique LTL Liveness sur graphe etendu (`verifierGFLiveness`) — 2 proprietes Liveness canton + 1 PSD PASSE
+- [x] Verification programmatique LTL Liveness sur graphe etendu (`verifierGFLiveness`) — 2 proprietes Liveness canton PASSE
 - [x] Graphe d'accessibilite avec arcs etiquetes (`M_i --transition--> M_j`) — 40 arcs produits par `explorerAvecArcs`, repris en annexe A1 du rapport et tache 7 du carnet
 - [x] Tests unitaires correspondants : 3 tests "Graphe d'accessibilite" + 7 tests "Verification LTL programmatique" dans `AnalyseurSpec` (total : **49 tests verts**)
 - **Verification** : Safety renvoie `true` sur les 20 marquages. Liveness renvoie `true` sous hypothese FIFO documentee (cf `protocole-coordination.md` Q11).
 
 ---
 
-### Phase 8 : Bibliographie + rapport final (EN COURS)
+### Phase 8 : Bibliographie + rapport final (TERMINEE HORS RELECTURE EQUIPE)
 
 - [x] `documentation/livrables/biblio.md` : **11 references commentees** (Murata 1989, Akka, LTL TUM, Magee/Kramer, Lamport, RATP, Hewitt, Baier/Katoen, Manna/Pnueli, IEEE 1474 CBTC, UITP/PSD)
-- [ ] `documentation/livrables/rapport.md` complet — sections narratives a remplir (Phase Extension D.4) :
+- [x] `documentation/livrables/rapport.md` complet — sections narratives et section 5 finalisees :
   - Section 1 : Contexte et motivation (M14, PSD, sous-systeme retenu)
   - Section 3 : Architecture Akka (5 acteurs, protocole 6+4 messages)
   - Section 4 : Modele Petri formel (12 places, 12 transitions, read-arc emule)
@@ -231,9 +240,9 @@ Ordre d'implementation impose : Protocol -> QuaiController -> Train -> Gestionna
 
 ### Phase 9 : Polish, README, fusion main (A FAIRE)
 
-- [ ] Section "Comment lancer" du README claire et testee : `sbt compile`, `sbt test`, `sbt "runMain m14.Main"`, `sbt "runMain m14.petri.Analyseur"`
-- [ ] Aligner la demo `demo/index.html` sur le modele etendu (5 acteurs, nouveaux scenarios PSD)
-- [ ] Verifier `documentation/suivi/historique.md` a jour avec toutes les phases
+- [x] Section "Comment lancer" du README claire et testee : `sbt compile`, `sbt test`, `sbt "runMain m14.Main"`, `sbt "runMain m14.petri.Analyseur"`, `sbt "runMain m14.demo.LancerDemo"`
+- [x] Aligner la demo `demo/index.html` sur le modele etendu (5 acteurs, nouveaux scenarios PSD)
+- [x] Verifier `documentation/suivi/historique.md` a jour avec toutes les phases
 - [ ] Checklist finale livrables L1-L7 cochee une derniere fois
 - [ ] Commit/push de la branche finale apres validation collective
 - [ ] Tag git : `v1.0-rendu`
@@ -265,7 +274,7 @@ Un livrable est "fait" si et seulement si :
 | Risque | Probabilite | Parade |
 |--------|-------------|--------|
 | L'analyseur Petri prend plus de temps que prevu | Moyenne | Garder le reseau borne (12 places, 12 transitions verrouilles cf protocole-coordination.md section 2). Pas de generalisation N trains. |
-| Explosion combinatoire en passant de 8 a 15-18 marquages | Faible | Cible analytique deja calculee a la main dans `preuves-manuelles.md` tache 1. Si depassement -> revoir read-arc emule sur Portes_fermees. |
+| Explosion combinatoire en passant de 8 a 20 marquages | Faible | Chiffre reel confirme par l'analyseur et repris dans `preuves-manuelles.md` tache 1. Le graphe reste enumerable a la main. |
 | Bug de concurrence Akka non reproductible | Moyenne | Utiliser Akka TestKit avec probes deterministes. Pas de Thread.sleep. |
 | Conflit git lors du merge feature -> main | Faible | Branche actuelle `feature/m14-extension-quai-psd` isolee. Merge `--no-ff` uniquement Phase 7-bis D.7 apres tests verts. |
 | Desync code/doc pendant Phase 7-bis | Forte (assumee) | Phase A (doc) finie avant Phase B (code). La doc est source de verite, le code doit s'y conformer. |
@@ -294,9 +303,9 @@ Le cahier des charges le dit explicitement deux fois (§1.4 Risque 1 et §10 Rec
 
 > "Il vaut mieux avoir un modele simple, propre et verifiable qu'un systeme tres realiste mais impossible a analyser. Le projet sera mieux evalue si le raisonnement est rigoureux, meme avec un systeme volontairement simplifie."
 
-Consequence : le scope (2 trains, 1 canton, 1 quai, 1 paire de PSD, 15-18 marquages cibles, 6+4 messages, 12 places, 12 transitions) reste fige apres l'extension PSD du 29/04 (cf `documentation/gouvernance/protocole-coordination.md` section 2). A la place d'etendre encore le systeme, on etend la **verification** sur 4 axes a integrer dans les Phases 7-9 sans creer de nouvelle phase.
+Consequence : le scope (2 trains, 1 canton, 1 quai, 1 paire de PSD, 20 marquages atteignables, 6+4 messages, 12 places, 12 transitions) reste fige apres l'extension PSD du 29/04 (cf `documentation/gouvernance/protocole-coordination.md` section 2). A la place d'etendre encore le systeme, on etend la **verification** sur 4 axes a integrer dans les Phases 7-9 sans creer de nouvelle phase.
 
-> **Note 29/04** : cette section a ete redigee avant l'extension PSD. Les sous-sections 8.2 a 8.5 conservent leur logique mais le vocabulaire (`T1_sur_troncon`, 8 marquages, 7P/6T) doit etre lu dans le contexte du modele initial. La logique reste valable pour le modele etendu (5 invariants au lieu de 1, 15-18 marquages au lieu de 8) et est portee par la Phase 7-bis.
+> **Note 29/04** : cette section a ete redigee avant l'extension PSD. Les sous-sections 8.2 a 8.5 conservent leur logique mais le vocabulaire (`T1_sur_troncon`, 8 marquages, 7P/6T) doit etre lu dans le contexte du modele initial. La logique reste valable pour le modele etendu (5 invariants au lieu de 1, 20 marquages au lieu de 8) et est portee par la Phase 7-bis.
 
 ### 8.1 Refonte de Main.scala pour demontrer les 3 scenarios [FAIT 2026-04-27]
 - **Probleme** : `Main.scala` lancait l'ancien `StationControl` (heritage du scope Chatelet). Un correcteur qui clonait le repo et faisait `sbt run` voyait une simulation hors-scope. Les 3 scenarios n'etaient visibles que via les tests, ce qui paraissait moins fini.

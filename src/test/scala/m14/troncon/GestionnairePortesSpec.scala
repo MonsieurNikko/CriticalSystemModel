@@ -1,6 +1,3 @@
-// GestionnairePortesSpec.scala : tests unitaires de la garde de surete PSD-Open.
-// Test critique : seul le train present a quai peut ouvrir les portes.
-
 package m14.troncon
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
@@ -31,9 +28,6 @@ class GestionnairePortesSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
     }
 
     "REFUSER SILENCIEUSEMENT OuverturePortes d un autre train (PSD-Open Safety)" in {
-      // CRITIQUE : c'est l'invariant 6.1 du modele Petri.
-      // Quand les portes sont deja ouvertes pour T1, T2 ne doit JAMAIS reussir a
-      // les ouvrir aussi (il n'est pas l'occupant).
       val gp = spawn(GestionnairePortes())
       val probeT1 = createTestProbe[MessagePourTrain]()
       val probeT2 = createTestProbe[MessagePourTrain]()
@@ -41,7 +35,6 @@ class GestionnairePortesSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
       gp ! OuverturePortes(Train1, probeT1.ref)
       probeT1.expectMessage(PortesOuvertes)
 
-      // T2 envoie OuverturePortes : doit etre ignore silencieusement.
       gp ! OuverturePortes(Train2, probeT2.ref)
       probeT2.expectNoMessage()
     }
@@ -54,11 +47,9 @@ class GestionnairePortesSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
       gp ! OuverturePortes(Train1, probeT1.ref)
       probeT1.expectMessage(PortesOuvertes)
 
-      // T2 tente de fermer : doit etre ignore.
       gp ! FermeturePortes(Train2, probeT2.ref)
       probeT2.expectNoMessage()
 
-      // T1 (vrai occupant) peut toujours fermer.
       gp ! FermeturePortes(Train1, probeT1.ref)
       probeT1.expectMessage(PortesFermees)
     }
@@ -68,13 +59,11 @@ class GestionnairePortesSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
       val probeT1 = createTestProbe[MessagePourTrain]()
       val probeT2 = createTestProbe[MessagePourTrain]()
 
-      // Cycle T1
       gp ! OuverturePortes(Train1, probeT1.ref)
       probeT1.expectMessage(PortesOuvertes)
       gp ! FermeturePortes(Train1, probeT1.ref)
       probeT1.expectMessage(PortesFermees)
 
-      // Cycle T2 : maintenant les portes sont fermees, T2 peut donc les ouvrir.
       gp ! OuverturePortes(Train2, probeT2.ref)
       probeT2.expectMessage(PortesOuvertes)
       gp ! FermeturePortes(Train2, probeT2.ref)

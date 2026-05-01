@@ -33,6 +33,114 @@ Ordre obligatoire: chronologique inverse (la plus recente entree en premier).
 
 ## Entrees
 
+### [2026-05-01 18:12] - Narration de rendu : socle initial puis upgrade PSD
+- GitHub: @MonsieurNikko
+- Branche: `extension`
+- Contexte/tache: renforcer la documentation de rendu pour faire comprendre la progression du projet : d'abord un modele simple 2 trains / 1 troncon partage, ensuite l'upgrade final canton + quai + portes palieres (PSD). Relecture documentaire effectuee aussi pour supprimer les contradictions visibles avec le modele final.
+- Fichiers modifies:
+	- `README.md` (ajout d'une lecture chronologique "socle initial" puis "upgrade M14", clarification du perimetre final)
+	- `documentation/START-ICI.md` (section "Histoire courte a raconter au rendu")
+	- `documentation/livrables/rapport.md` (nouvelle section 1.4 "Demarche progressive du projet", correction de l'ordre Akka `ArriveeQuai` puis `Sortie`)
+	- `petri/petri-troncon.md` (section "Lecture historique du modele" : 7P/6T/8 marquages -> 12P/12T/20 marquages)
+	- `documentation/suivi/PLAN.md` (lecture chronologique des phases 1-6 puis extension PSD)
+	- `demo/README.md` et `documentation/suivi/COMMANDES.md` (phrase de soutenance : scenarios A/B = coeur initial, C/D/E = upgrade PSD)
+	- `documentation/livrables/comparaison.md` (lien entre scenarios initiaux et extension, correction ordre `ArriveeQuai`/`Sortie`)
+	- `documentation/livrables/preuves-manuelles.md` (10 messages Akka, 20 marquages reels au lieu d'une estimation 15-18)
+	- `documentation/gouvernance/lexique.md` (10 messages, vrais types `MessagePourQuai` / `MessagePourPortes`)
+	- `documentation/gouvernance/REGLES_PROJET.md` et `documentation/suivi/HANDOVER.md` (alignement avec le style code actuel : commentaires sobres, pas d'en-tete obligatoire)
+	- `documentation/gouvernance/protocole-coordination.md`, `documentation/gouvernance/repartition-equipe.md`, `documentation/suivi/notes-comprehension.md` (documents secondaires marques/alignes avec le statut historique ou final)
+- Changements detailles:
+	- Ajout d'une narration claire et repetee dans les fichiers d'entree : **Etape 1 = 2 trains / 1 troncon**, **Etape 2 = upgrade canton + quai + PSD**.
+	- Correction d'incoherences documentaires encore visibles : "8 messages" -> 10 messages, anciens types de protocole inexistants -> types reels, ordre Akka de l'arrivee au quai aligne avec `Train.scala`.
+	- Les documents historiques (`recadrage`, `notes-comprehension`, anciennes entrees d'historique) restent conserves mais sont contextualises comme traces du socle initial.
+- Commandes executees:
+	- `rg -n "8 messages|MessagePourQuaiController|MessagePourGestionnairePortes|T1_sur_troncon|Troncon_libre|sur_troncon|one-line header|en-tete" README.md documentation/gouvernance documentation/livrables documentation/suivi petri demo/README.md`
+	- `sbt -no-colors -batch "compile; test"`
+- Resultats de verification:
+	- Build: PASS
+	- Tests: PASS (49/49)
+	- Notes: modifications principalement Markdown ; aucun algorithme change.
+- Risques/impacts:
+	- Impact positif pour la soutenance : le correcteur voit la progression pedagogique du projet au lieu d'une extension sortie de nulle part.
+	- Les anciennes entrees de `historique.md` et le transcript `documentation/contexte/discussion.md` conservent volontairement du vocabulaire ancien car ce sont des traces historiques.
+- Prochaines actions recommandees:
+	- Relire rapidement `README.md`, `START-ICI.md` et `rapport.md` avant export/rendu.
+	- Continuer avec checklist finale L1-L7, merge `extension` -> `main`, puis tag `v1.0-rendu`.
+
+---
+
+### [2026-05-01 17:26] - Rapport finalise + clarification PSD-Open Akka/Petri
+- GitHub: @MonsieurNikko
+- Branche: `extension`
+- Contexte/tache: continuation des corrections de coherence apres l'audit documentaire. Objectif : terminer la Phase 8 (rapport final), mettre README/PLAN/Petri/comparaison au niveau de l'etat reel, puis clarifier une nuance importante : en Akka, PSD-Open est garanti par la machine d'etats du `Train` + garde defensive du `GestionnairePortes`, tandis que la preuve stricte "portes ouvertes => train a quai" est structurelle cote Petri.
+- Fichiers modifies:
+	- `documentation/livrables/rapport.md` (section 5 remplie avec tableaux canton/quai/portes, etats par train, PSD-Open, PSD-Departure, deadlock, LTL ; annexe A1 = 40 arcs ; A3/A4 concretes)
+	- `README.md` (commandes de verification completes, architecture 5 acteurs, chiffres 49 tests / 20 marquages / 40 arcs)
+	- `petri/petri-troncon.md` (15-18 marquages prevus -> 20 confirmes ; checklist analyseur cochee)
+	- `documentation/livrables/comparaison.md` (etat finalise, scenario PSD-Open corrige : message Akka hors protocole, preuve Petri non-tirabilite)
+	- `documentation/livrables/preuves-manuelles.md` (checklist terminee, LTL principales recadrees a 5 proprietes affichees par `Analyseur.main`, arcs `Ouverture_portes_*` remis au format exact)
+	- `documentation/suivi/PLAN.md` et `documentation/START-ICI.md` (Phase 8 terminee hors relecture equipe, Phase 9 partiellement cochee, actions restantes merge/tag)
+	- `documentation/gouvernance/lexique.md`, `documentation/gouvernance/protocole-coordination.md` (clarification : le gestionnaire ne sait pas seul qu'un train est a quai ; il fait confiance a l'etat du Train)
+	- `src/main/scala/m14/troncon/GestionnairePortes.scala` (commentaires corriges, comportement inchange)
+	- `src/main/scala/m14/demo/TraceWriter.scala`, `src/main/scala/m14/demo/GenererTraces.scala`, `demo/trace-violation.json`, `demo/README.md`, `documentation/suivi/COMMANDES.md` (demo PSD-Open alignee : Petri refuse, Akka hors protocole)
+- Changements detailles:
+	- Section 5 du rapport n'est plus un squelette : elle contient les tableaux exploitables pour la soutenance et l'export PDF.
+	- L'annexe A1 du rapport contient les 40 arcs dans l'ordre de l'analyseur, avec les arcs M12 deja corriges.
+	- La propriete PSD-Departure est documentee comme invariant critique de tirabilite, non recomptee dans les 5 LTL principales affichees par `Analyseur.main`.
+	- La demo ne pretend plus que `GestionnairePortes` refuse une premiere ouverture sans train a quai ; elle indique correctement que cette tentative est hors protocole Akka et non tirable en Petri.
+- Commandes executees:
+	- `sbt -no-colors -batch "compile; test"` -> PASS, 49/49
+	- `sbt -no-colors -batch -error "runMain m14.petri.Analyseur"` -> 20 marquages, 40 arcs, 5 invariants PASSE, 0 deadlock, 5 LTL PASSE
+	- `sbt -no-colors -batch -error "runMain m14.demo.GenererTraces"` -> 5 traces JSON regenerees
+	- `sbt -no-colors -batch "compile; test"` -> PASS, 49/49 apres regeneration/commentaires
+- Resultats de verification:
+	- Build: PASS
+	- Tests: PASS (49/49)
+	- Analyseur: PASS (20 marquages, 40 arcs, 5 invariants, 0 deadlock, 5 LTL)
+	- Demo traces: PASS (5 fichiers JSON regenerees)
+- Risques/impacts:
+	- Comportement Scala inchange ; seules les explications et les traces de demo changent, plus des commentaires de code.
+	- La clarification PSD-Open rend la defense plus honnete : la preuve formelle reste Petri, la simulation Akka s'appuie sur la machine d'etats du `Train`.
+- Prochaines actions recommandees:
+	- Relecture equipe du rapport finalise.
+	- Checklist finale L1-L7.
+	- Merge `extension` -> `main` avec `--no-ff`, puis tag `v1.0-rendu` apres validation collective.
+
+---
+
+### [2026-05-01 17:08] - Audit de coherence : corrections documentaires apres extension PSD
+- GitHub: @MonsieurNikko
+- Branche: `extension`
+- Contexte/tache: relecture transversale du depot pour reperer les divergences code/doc apres extension PSD et Phase 7. Toutes les corrections sont documentaires ; le code et les tests ne sont pas touches.
+- Fichiers modifies:
+	- `documentation/livrables/preuves-manuelles.md` (tache 7 : arcs M12 inverses, destinations corrigees pour matcher l'analyseur)
+	- `documentation/livrables/rapport.md` (chiffres et phrases obsoletes : `MessagePourCanton` -> `MessagePourControleur` ; `~15-18 marquages` -> `20 marquages` (x2) ; phrase absurde "39 + 20 = pas un total simple" remplacee par decompte reel 19+30=49 ; Phase 7 marquee LIVREE et non plus "prevue" ; annexes A1/A4 mises a jour avec arcs etiquetes deja produits)
+	- `demo/README.md` (reecrit : 5 scenarios A-E au lieu de 3, 49 tests au lieu de 39, 4 invariants visibles dans le bandeau au lieu de 5, mention `LancerDemo`, controle clic timeline)
+	- `documentation/gouvernance/lexique.md` (regle de verrouillage : "8 messages cote controleurs" -> "6 messages cote controleurs", coherent avec le tableau ci-dessus et `Protocol.scala`)
+	- `documentation/gouvernance/REGLES_PROJET.md` (invariants critiques : remplacement de l'invariant unique troncon par les 5 invariants reels du modele etendu PSD)
+	- `documentation/livrables/biblio.md` (3 references corrigees : Murata, Baier-Katoen, Magee-Kramer ; suppression du vocabulaire `T1_sur_troncon` / `Troncon_libre` au profit du vocabulaire actuel canton/quai/portes)
+	- `documentation/contexte/recadrage-m14-troncon-critique.md` (encart en tete : statut "document historique du recadrage initial 26/04", redirection vers `petri/petri-troncon.md` comme source de verite du modele etendu PSD)
+- Bugs corriges (resume) :
+	- **carnet de preuves tache 7** : `M12 --T1_entree_canton--> M1` etait faux (vrai : -> M16) ; `M12 --T2_depart_quai--> M16` etait faux (vrai : -> M1). Verification : depuis M12=(Canton_libre, Portes_fermees, T1_attente, T2_a_quai), `T1_entree_canton` consomme T1_attente+Canton_libre et produit T1_sur_canton -> donne (Portes_fermees, T1_sur_canton, T2_a_quai) = M16 ; `T2_depart_quai` consomme T2_a_quai+Portes_fermees et produit T2_hors+Quai_libre+Portes_fermees -> donne (Canton_libre, Portes_fermees, Quai_libre, T1_attente, T2_hors) = M1.
+	- **rapport.md ligne 86** : `MessagePourCanton` n'existe pas (le code utilise `MessagePourControleur`, cf `Protocol.scala:20`).
+	- **rapport.md ligne 292** : phrase "39 tests Akka et 20 tests d'analyseur passent (39 + 20 = pas un total simple ; le total de la suite est 39 tests)" remplacee par le decompte exact 19 (TrainSpec 6 + SectionControllerSpec 3 + QuaiControllerSpec 5 + GestionnairePortesSpec 5) + 30 (AnalyseurSpec) = 49.
+	- **lexique.md ligne 80** : "8 messages cote controleurs" (faux) -> "6 messages cote controleurs" (Demande, Sortie, ArriveeQuai, DepartQuai, OuverturePortes, FermeturePortes).
+- Commandes executees:
+	- `sbt -no-colors -batch "compile; test"` -> 49/49 PASS, build PASS
+- Resultats de verification:
+	- Build: PASS
+	- Tests: PASS (49/49 inchanges, aucune modification de code)
+	- Notes: aucune ; toutes les modifications sont en Markdown.
+- Risques/impacts:
+	- Aucun risque technique : la doc rejoint le code, pas l'inverse.
+	- L'annexe A1 du rapport pointe vers le carnet et `comparaison.md` ; ces deux sources sont desormais coherentes entre elles et avec la sortie de l'analyseur.
+- Prochaines actions recommandees:
+	- Phase 8 : remplir la section 5 du rapport (5.1 a 5.8) en recopiant les tableaux invariants du carnet (taches 2.1, 2.2, 2.3, 2bis.1, 2bis.2, 3, 4) et les 40 arcs en annexe A1.
+	- D.7 : merge `extension` -> `main` avec `--no-ff` apres relecture.
+	- Phase 9 : tag `v1.0-rendu`.
+
+---
+
 ### [2026-04-30 19:40] - Demo : 5 scenarios + LancerDemo + START-ICI a jour
 - GitHub: @MonsieurNikko
 - Branche: `extension`

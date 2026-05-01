@@ -1,6 +1,3 @@
-// TrainSpec.scala : tests unitaires de la machine a etats du Train
-// (extension PSD : 4 etats hors / attente / sur_canton / a_quai).
-
 package m14.troncon
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
@@ -9,7 +6,6 @@ import org.scalatest.wordspec.AnyWordSpecLike
 
 class TrainSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
-  // Helper : cree un train avec 3 probes (sectionController, quaiController, gestionnairePortes).
   private def setupTrain(id: IdTrain) = {
     val probeSection = createTestProbe[MessagePourControleur]()
     val probeQuai    = createTestProbe[MessagePourQuai]()
@@ -35,7 +31,6 @@ class TrainSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       probeQuai.expectNoMessage()
 
       trainRef ! Autorisation
-      // Apres entree canton, le train envoie immediatement ArriveeQuai au QuaiController.
       val arrivee = probeQuai.expectMessageType[ArriveeQuai]
       assert(arrivee.emetteur == Train1)
     }
@@ -46,7 +41,6 @@ class TrainSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       trainRef ! Autorisation
       probeQuai.expectMessageType[ArriveeQuai]
 
-      // Le quai dit Attente : le train ne doit rien envoyer aux portes.
       trainRef ! Attente
       probePortes.expectNoMessage()
     }
@@ -57,7 +51,6 @@ class TrainSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       trainRef ! Autorisation
       probeQuai.expectMessageType[ArriveeQuai]
 
-      // Quai accorde -> le train doit liberer le canton (Sortie) puis demander OuverturePortes.
       trainRef ! Autorisation
       val sortie = probeSection.expectMessageType[Sortie]
       assert(sortie.emetteur == Train1)
@@ -94,7 +87,6 @@ class TrainSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       val depart = probeQuai.expectMessageType[DepartQuai]
       assert(depart.emetteur == Train1)
 
-      // Cycle 2 : le train doit re-demander le canton automatiquement.
       val demande2 = probeSection.expectMessageType[Demande]
       assert(demande2.emetteur == Train1)
     }

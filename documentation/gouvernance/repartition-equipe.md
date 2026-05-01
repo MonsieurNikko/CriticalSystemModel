@@ -1,6 +1,8 @@
 # Repartition equipe (4 personnes) - Version recadree
 
-Objectif: livrer un noyau academique defendable sur un sous-systeme critique M14 simplifie (2 trains + 1 troncon partage), sans derive vers une simulation complete de station.
+> Note : ce fichier a servi au decoupage initial de l'equipe. Le projet a d'abord vise un socle **2 trains / 1 troncon partage**, puis ce socle a ete upgrade le 29/04 vers le modele final **canton + quai + portes palieres**.
+
+Objectif final: livrer un noyau academique defendable sur un sous-systeme critique M14 simplifie (2 trains + canton + quai + PSD), sans derive vers une simulation complete de station.
 
 ## 1) Principe de decoupage
 
@@ -12,12 +14,12 @@ Rotation recommandee chaque semaine pour que tout le monde comprenne tout le pro
 
 ### Pole A - Implémentation & Code Akka (Terminé)
 - Scope:
-  - Architecture et implémentation Akka (`SectionController`, `Train`, `Protocol`)
+  - Architecture et implémentation Akka (`SectionController`, `QuaiController`, `GestionnairePortes`, `Train`, `Protocol`)
   - Développement de l'analyseur Petri en Scala (`PetriNet`, `Analyseur`)
   - Rédaction des tests unitaires et d'intégration (Akka TestKit)
 - Livrables:
-  - Code fonctionnel et testé (22/22 verts)
-  - Preuves programmatiques d'absence de deadlock et d'exclusion mutuelle
+  - Code fonctionnel et testé (49/49 verts)
+  - Preuves programmatiques d'absence de deadlock, d'exclusion mutuelle et de surete PSD
 - Statut: Fait
 
 ### Pole B - Preuves d'Invariants & Modèle Formel (Charge: Moyenne)
@@ -49,14 +51,14 @@ Rotation recommandee chaque semaine pour que tout le monde comprenne tout le pro
 Pour eviter le travail en silo, vous partagez 3 zones communes:
 - Contrats de messages critiques (validation croisée de l'équipe)
 - Invariant principal et hypotheses de vivacite (validation croisée de l'équipe)
-- Scenarios de validation du troncon partage (validation croisée de l'équipe)
+- Scenarios de validation du canton/quai/PSD (validation croisée de l'équipe)
 
 Regle pratique: toute PR doit toucher au moins 1 artefact metier ET 1 artefact de validation (test, modele, ou doc de preuve).
 
 ## 4) Planning type sur 2 semaines (iteratif)
 
 ### Semaine 1
-- Jour 1: freeze du perimetre (2 trains, 1 troncon, 1 arbitre)
+- Jour 1: freeze du perimetre initial (2 trains, 1 troncon, 1 arbitre)
 - Jours 2-3: mise au propre du protocole critique + premier reseau Petri compact
 - Jour 4: integration intermediaire et revue des hypotheses
 - Jour 5: validation de l'invariant principal et des 3 scenarios
@@ -64,7 +66,7 @@ Regle pratique: toute PR doit toucher au moins 1 artefact metier ET 1 artefact d
 ### Semaine 2
 - Jours 1-2: consolidation concurrence/attente/progression
 - Jour 3: verification complete (compile, tests, coherence avec Petri)
-- Jour 4: freeze fonctionnel + documentation finale
+- Jour 4: freeze fonctionnel + upgrade PSD documente
 - Jour 5: repetition demo + buffer correction
 
 ## 5) Workflow Git conseille (collaboratif)

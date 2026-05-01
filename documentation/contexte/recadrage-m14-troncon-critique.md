@@ -1,5 +1,7 @@
 # Recadrage du projet existant - Sous-systeme critique M14 (2 trains, 1 troncon partage)
 
+> **Note de lecture (mise a jour 30/04/2026)** : ce document historique decrit le recadrage **initial** du 26/04 (modele a 1 troncon, 7 places, 6 transitions). Le projet a ensuite ete **etendu le 29/04** au modele canton + quai + portes palieres (PSD) : 12 places, 12 transitions, 5 invariants. Le vocabulaire `troncon` / `T1_sur_troncon` / `Troncon_libre` employe ci-dessous a ete renomme en `canton` / `T1_sur_canton` / `Canton_libre` ; voir la section 13 pour l'extension PSD et `petri/petri-troncon.md` pour le modele final source de verite.
+
 ## 1) Diagnostic du projet actuel
 
 Le projet existant est pertinent sur le fond, mais trop large pour une verification formelle manuelle robuste.
@@ -232,7 +234,7 @@ Decision validee le 29/04/2026 par l'equipe : reintegrer dans le coeur la **gest
 
 - **specifiques de la M14** (premiere ligne francaise integralement equipee), donc renforcent l'ancrage M14 du projet ;
 - **critiques au sens reglementaire** (defaillance = chute mortelle ou voyageur ecrase), exactement le type de propriete que demande le sujet "systemes critiques" ;
-- **modelisables de facon compacte** : 5 places + 4 transitions ajoutees, 4 messages Akka ajoutes. Le modele reste analysable a la main (15-18 marquages).
+- **modelisables de facon compacte** : 5 places + 4 transitions ajoutees, 4 messages Akka ajoutes. Le modele reste analysable a la main (**20 marquages** confirmes par l'analyseur).
 
 Nouveau scope du coeur :
 - 2 trains (4 etats chacun : `hors`, `enAttente`, `surCanton`, `aQuai`)

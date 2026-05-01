@@ -2,15 +2,17 @@
 
 > Livrable L6 du cahier des charges. Mise en correspondance ligne a ligne entre la simulation Akka et les transitions du reseau de Petri sur les 3 scenarios retenus apres extension PSD du 29/04/2026.
 >
-> **Source de verite du vocabulaire** : `petri/petri-troncon.md` (12 places, 12 transitions effectives) et `documentation/gouvernance/lexique.md` (4 etats par train, 8 messages cote controleurs/portes + 4 messages cote trains).
+> **Source de verite du vocabulaire** : `petri/petri-troncon.md` (12 places, 12 transitions effectives) et `documentation/gouvernance/lexique.md` (4 etats par train, 6 messages cote controleurs/portes + 4 messages cote trains).
 >
-> Etat : squelette etendu en Phase A (avant code). Sections 5 et 6 a finaliser apres execution de l'analyseur (Phase D).
+> Etat : finalise apres Phase 7. Les 3 scenarios Akka/Petri sont relies aux marquages M0..M19 ; l'analyseur confirme 20 marquages, 40 arcs, 5 invariants, 0 deadlock et 5 proprietes LTL PASSE.
 
 ---
 
 ## 1) Methode de comparaison
 
 Pour chaque scenario, on liste l'evenement Akka (envoi/reception de message), on indique la transition Petri correspondante, et on note le marquage Petri resultant. La regle de coherence est : **chaque transition Petri tirable doit avoir un message Akka declencheur identifiable, et reciproquement**, sauf cas explicitement documentes (`Attente`, `PortesOuvertes`, `PortesFermees` qui sont des notifications de protocole).
+
+Les scenarios 1 et 2 prolongent directement le **socle initial 2 trains / 1 troncon** : demande, attente, autorisation, exclusion mutuelle et progression apres liberation. Le scenario 3 ajoute la couche de surete apparue lors de l'upgrade final : portes palieres PSD et refus des ouvertures impossibles.
 
 Notation compacte des marquages : on liste uniquement les places ayant un jeton, separees par virgules.
 
@@ -31,7 +33,7 @@ M0 = (Canton_libre, Quai_libre, Portes_fermees, T1_hors, T2_hors)
 |------:|--------------------------------------------------------------------------------|---------------------------|---------------------------------------------------------------------------------|
 | 1     | Train1 envoie `Demande(Train1, replyTo)` au SectionController                  | `T1_demande`              | `(Canton_libre, Quai_libre, Portes_fermees, T1_attente, T2_hors)`               |
 | 2     | SectionController repond `Autorisation` a Train1                               | `T1_entree_canton`        | `(Quai_libre, Portes_fermees, T1_sur_canton, T2_hors)`                          |
-| 3     | Train1 envoie `Sortie(Train1)` au SectionController + `ArriveeQuai(Train1, replyTo)` au QuaiController, puis QuaiController repond `Autorisation` | `T1_arrivee_quai` | `(Canton_libre, Portes_fermees, T1_a_quai, T2_hors)`                            |
+| 3     | Train1 envoie `ArriveeQuai(Train1, replyTo)` au QuaiController ; apres `Autorisation`, il envoie `Sortie(Train1)` au SectionController | `T1_arrivee_quai` | `(Canton_libre, Portes_fermees, T1_a_quai, T2_hors)`                            |
 | 4     | Train1 envoie `OuverturePortes(Train1)` au GestionnairePortes, qui repond `PortesOuvertes` | `Ouverture_portes_T1`     | `(Canton_libre, Portes_ouvertes, T1_a_quai, T2_hors)`                           |
 | 5     | Train1 envoie `FermeturePortes(Train1)` au GestionnairePortes, qui repond `PortesFermees` | `Fermeture_portes_T1`     | `(Canton_libre, Portes_fermees, T1_a_quai, T2_hors)`                            |
 | 6     | Train1 envoie `DepartQuai(Train1)` au QuaiController                           | `T1_depart_quai`          | `(Canton_libre, Quai_libre, Portes_fermees, T1_hors, T2_hors)` (= M0)           |
@@ -54,12 +56,12 @@ M0 = (Canton_libre, Quai_libre, Portes_fermees, T1_hors, T2_hors)
 | 1     | Train1 envoie `Demande(Train1, ...)`                                           | `T1_demande`              | `(Canton_libre, Quai_libre, Portes_fermees, T1_attente, T2_hors)`                           |
 | 2     | SectionController repond `Autorisation` a Train1                               | `T1_entree_canton`        | `(Quai_libre, Portes_fermees, T1_sur_canton, T2_hors)`                                      |
 | 3     | Train2 envoie `Demande(Train2, ...)` -> SectionController repond `Attente`     | `T2_demande`              | `(Quai_libre, Portes_fermees, T1_sur_canton, T2_attente)`                                   |
-| 4     | Train1 atteint le quai : `Sortie` au SectionController + `ArriveeQuai` au QuaiController + `Autorisation` retour | `T1_arrivee_quai` | `(Canton_libre, Portes_fermees, T1_a_quai, T2_attente)`                                     |
+| 4     | Train1 demande le quai via `ArriveeQuai`, recoit `Autorisation`, puis signale `Sortie` au SectionController | `T1_arrivee_quai` | `(Canton_libre, Portes_fermees, T1_a_quai, T2_attente)`                                     |
 | 5     | SectionController depile la file FIFO et envoie `Autorisation` a Train2        | `T2_entree_canton`        | `(Portes_fermees, T1_a_quai, T2_sur_canton)`                                                |
 | 6     | Train1 envoie `OuverturePortes(Train1)` -> `PortesOuvertes`                    | `Ouverture_portes_T1`     | `(Portes_ouvertes, T1_a_quai, T2_sur_canton)`                                               |
 | 7     | Train1 envoie `FermeturePortes(Train1)` -> `PortesFermees`                     | `Fermeture_portes_T1`     | `(Portes_fermees, T1_a_quai, T2_sur_canton)`                                                |
 | 8     | Train1 envoie `DepartQuai(Train1)` au QuaiController                           | `T1_depart_quai`          | `(Quai_libre, Portes_fermees, T1_hors, T2_sur_canton)`                                      |
-| 9     | Train2 envoie `Sortie` + `ArriveeQuai(Train2, ...)` -> `Autorisation` retour   | `T2_arrivee_quai`         | `(Canton_libre, Portes_fermees, T1_hors, T2_a_quai)`                                        |
+| 9     | Train2 demande le quai via `ArriveeQuai`, recoit `Autorisation`, puis signale `Sortie` au SectionController | `T2_arrivee_quai`         | `(Canton_libre, Portes_fermees, T1_hors, T2_a_quai)`                                        |
 
 **Verifications cle** :
 - A toutes les etapes : `T1_sur_canton + T2_sur_canton + Canton_libre = 1` (exclusion canton).
@@ -74,24 +76,24 @@ M0 = (Canton_libre, Quai_libre, Portes_fermees, T1_hors, T2_hors)
 
 ## 4) Scenario 3 - Surete PSD (tentative invalide rejetee)
 
-**Description metier** : on cherche a verifier que la garde de surete des portes est **effective**. On simule une demande d'ouverture de portes alors qu'aucun train n'est a quai. Le `GestionnairePortes` doit refuser. Cote Petri, on verifie qu'aucune transition `Ouverture_portes_Ti` n'est tirable depuis un marquage ou les deux trains sont hors quai.
+**Description metier** : on cherche a verifier que PSD-Open est effective. Cote Petri, aucune transition `Ouverture_portes_Ti` ne doit etre tirable depuis un marquage ou les deux trains sont hors quai. Cote Akka, ce message est **hors protocole** : le vrai acteur `Train` n'envoie `OuverturePortes` que depuis son etat `a_quai`, ce qui est verifie par `TrainSpec`.
 
 **Conditions initiales** : M0 (aucun train a quai).
 
-### 4.1 Cas Akka : tentative directe et rejet
+### 4.1 Cas Akka : tentative hors protocole
 
 | Etape | Evenement Akka                                                                 | Transition Petri attendue       | Resultat                                                                          |
 |------:|--------------------------------------------------------------------------------|---------------------------------|-----------------------------------------------------------------------------------|
-| 1     | Un acteur envoie `OuverturePortes(Train1)` au GestionnairePortes alors que Train1 est `hors` | (aucune)                        | GestionnairePortes ignore (cas defensif documente, pas de message en retour)      |
+| 1     | Un acteur externe tente `OuverturePortes(Train1)` alors que Train1 est `hors`  | (aucune)                        | Message hors protocole : le vrai `Train1` ne peut pas emettre cela avant l'etat `a_quai` |
 
-**Verification cote tests** : `GestionnairePortesSpec` doit explicitement coder ce cas (`given an OuverturePortes message when no train is at quai, then state stays portesFermees, no PortesOuvertes is sent`).
+**Verification cote tests** : `TrainSpec` verifie que le train n'envoie pas `OuverturePortes` tant qu'il n'a pas recu l'autorisation du `QuaiController`; `GestionnairePortesSpec` verifie en defense que les portes deja ouvertes pour un occupant refusent silencieusement les demandes d'un autre train.
 
 ### 4.2 Cas Petri : analyse de tirabilite
 
 Depuis M0, les transitions tirables sont **uniquement** `T1_demande` et `T2_demande`. La transition `Ouverture_portes_T1` exige `Portes_fermees=1` (OK) ET `T1_a_quai=1` (KO car `T1_a_quai=0` dans M0). Donc `Ouverture_portes_T1` n'est **pas** tirable. Idem pour T2.
 
-**L'analyseur Scala doit produire** :
-- Pour M0 : enumeration des transitions tirables = `{T1_demande, T2_demande}`. Si l'analyseur signale `Ouverture_portes_Ti` comme tirable depuis M0, c'est un bug du modele (cas D du protocole-coordination).
+**L'analyseur Scala produit** :
+- Pour M0 : enumeration des transitions tirables = `{T1_demande, T2_demande}`. Si l'analyseur signalait `Ouverture_portes_Ti` comme tirable depuis M0, ce serait un bug du modele (cas D du protocole-coordination).
 
 ### 4.3 Cas Petri : verification globale de la propriete PSD-Open
 
@@ -100,12 +102,12 @@ Pour chaque marquage M atteignable depuis M0, l'analyseur verifie :
 M(Portes_ouvertes) = 1  =>  M(T1_a_quai) + M(T2_a_quai) = 1
 ```
 
-Une violation = bug du modele. Une absence de violation sur les ~15-18 marquages = preuve programmatique de la surete PSD-Open.
+Une violation = bug du modele. L'absence de violation sur les **20 marquages atteignables** est la preuve programmatique de la surete PSD-Open.
 
 **Verifications cle** :
-- Cote Akka : la garde de surete est codee explicitement dans `GestionnairePortes.scala`. Sans cette garde, le code accepterait une ouverture invalide (test rouge).
+- Cote Akka : la machine d'etats du `Train` interdit l'emission legitime de `OuverturePortes` avant l'etat `a_quai`, puis `GestionnairePortes` refuse les demandes concurrentes d'un autre occupant pendant que les portes sont ouvertes.
 - Cote Petri : la garde est structurelle (pre-condition de la transition). Sans `Ti_a_quai` dans le pre, le modele accepterait l'ouverture invalide (test rouge de l'analyseur).
-- **Convergence des deux niveaux** : le code Akka et le modele Petri implementent la meme contrainte de surete, par deux moyens differents (garde defensive vs pre-condition de transition).
+- **Convergence des deux niveaux** : le code Akka et le modele Petri implementent la meme contrainte de surete, par deux moyens differents (machine d'etats + garde defensive vs pre-condition de transition).
 
 ---
 
@@ -130,9 +132,9 @@ Les 3 scenarios couvrent **9 transitions sur 12**. Les 3 non couvertes sont stri
 
 ---
 
-## 6) Resultats de l'analyseur Petri (Phase D - sortie reelle)
+## 6) Resultats de l'analyseur Petri (sortie reelle)
 
-Sortie obtenue le 2026-04-29 via `sbt "runMain m14.petri.Analyseur"` sur la branche `extension` (commit a jour). Reproduit ici verbatim pour tracabilite.
+Sortie obtenue via `sbt "runMain m14.petri.Analyseur"` sur la branche `extension`. Le bloc ci-dessous donne la synthese console de base ; la liste exhaustive des 40 arcs etiquetes est reproduite dans `documentation/livrables/preuves-manuelles.md` tache 7 et dans `rapport.md` annexe A1.
 
 ### 6.1 Sortie console brute
 
@@ -181,13 +183,15 @@ Exclusion mutuelle quai   : PASSE
 
 ### 6.2 Lecture des resultats
 
-- **20 marquages atteignables** (M0..M19) au lieu des 15-18 estimes a la main en Phase A. L'ecart est explique par l'**independance partielle** entre l'etat des portes et la file d'attente du quai : un train peut etre `a_quai` avec portes ouvertes pendant que l'autre est dans n'importe lequel de ses 4 etats compatibles. La cible documentaire de `preuves-manuelles.md` tache 1 a ete sous-estimee et doit etre corrigee a 20.
+- **20 marquages atteignables** (M0..M19) au lieu des 15-18 estimes a la main en Phase A. L'ecart est explique par l'**independance partielle** entre l'etat des portes et la file d'attente du quai : un train peut etre `a_quai` avec portes ouvertes pendant que l'autre est dans n'importe lequel de ses 4 etats compatibles. La cible documentaire de `preuves-manuelles.md` tache 1 a ete corrigee a 20.
 - **3 invariants de ressource PASSE** sur les 20 marquages : verification automatique de `verifierInvariantCanton`, `verifierInvariantQuai`, `verifierInvariantPortes` (cf `Analyseur.scala`).
 - **2 invariants critiques de surete PSD PASSE** :
   - `PSD-Open` : aucun marquage parmi M11, M13, M15, M17, M18, M19 (les seuls avec `Portes_ouvertes`) n'a `T1_a_quai = T2_a_quai = 0`. Verifiable visuellement : chacun de ces 6 marquages contient `Ti_a_quai` pour au moins un i.
   - `PSD-Departure` : pour tout marquage avec `Ti_a_quai`, la transition `Ti_depart_quai` n'est tirable que si `Portes_fermees=1`. Aucune violation detectee.
 - **0 deadlock** : depuis chaque marquage atteignable, au moins une transition est tirable.
 - **Exclusion mutuelle canton et quai PASSE** : aucun marquage n'a `T1_sur_canton + T2_sur_canton > 1` ou `T1_a_quai + T2_a_quai > 1`.
+- **40 arcs etiquetes** : le graphe d'accessibilite complet est disponible en annexe A1 du rapport.
+- **5 proprietes LTL PASSE** : 3 Safety (`canton`, `quai`, `PSD-Open`) + 2 Liveness bornees (`T1_attente -> F T1_sur_canton`, `T2_attente -> F T2_sur_canton`) verifiees sur le graphe fini. PSD-Departure est verifiee comme invariant critique de tirabilite.
 
 ### 6.3 Correspondance avec les scenarios
 

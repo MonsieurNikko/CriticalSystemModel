@@ -77,6 +77,8 @@ Cette commande sert a verifier :
 
 ## 4) Demo visuelle HTML
 
+Pour presenter le projet, expliquer d'abord que la demo finale est l'upgrade d'un premier socle **2 trains / 1 troncon**. Les scenarios A/B montrent encore ce coeur de concurrence ; les scenarios C/D/E ajoutent le quai et les portes palieres.
+
 ### 4.a) Lancement automatique (recommande pour la soutenance)
 
 ```bash
@@ -107,7 +109,7 @@ La page permet de tester (extension PSD complete, 5 scenarios) :
 - **A** cycle nominal (1 train, 7 etapes) ;
 - **B** concurrence canton + quai (2 trains, 11 etapes) ;
 - **C** cycle complet sequentiel des 2 trains - liveness (13 etapes) ;
-- **D** tentative PSD-Open invalide (overlay rouge, 3 etapes - CRITIQUE) ;
+- **D** tentative PSD-Open invalide (transition Petri non tirable + message Akka hors protocole, overlay rouge, 3 etapes - CRITIQUE) ;
 - **E** tentative PSD-Departure portes ouvertes (overlay rouge puis sequence corrigee, 9 etapes - CRITIQUE).
 
 Toutes les traces sont generees depuis `m14.petri.PetriNet.tirer` (source de verite).

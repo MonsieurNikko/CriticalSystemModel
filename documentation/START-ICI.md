@@ -2,13 +2,24 @@
 
 > Nouveau sur le repo ? Lis cette page avant de coder. Elle dit quoi lancer, quoi lire, quoi modifier, et ce qu'il ne faut pas casser.
 
-> Derniere mise a jour : **30 avril 2026** (Phase 7 LTL programmatique terminee + demo 5 scenarios + `LancerDemo`).
+> Derniere mise a jour : **1 mai 2026** (rapport finalise, README/docs alignes sur 49 tests / 20 marquages / 40 arcs, clarification PSD-Open Akka/Petri).
 
 ---
 
 ## 1) Le projet en une phrase
 
 On modelise un sous-systeme critique inspire de la M14 : **deux trains automatiques veulent acceder a un canton de signalisation puis a un quai equipe de portes palieres (PSD), et on prouve formellement les invariants de surete** (exclusion mutuelle canton + exclusion mutuelle quai + portes palieres jamais ouvertes sans train a quai + train ne demarre jamais portes ouvertes).
+
+### 1.1 Histoire courte a raconter au rendu
+
+Le projet s'est fait en **deux etapes**, ce qui explique pourquoi certains anciens fichiers parlent encore de "troncon" :
+
+| Etape | Ce qu'on a fait | Pourquoi |
+|---|---|---|
+| **1 - Socle initial** | 2 trains + 1 troncon partage, sans quai ni portes. Modele Akka minimal, reseau Petri a 7 places / 6 transitions, 8 marquages. | Valider d'abord la concurrence simple : un seul train dans la zone critique, pas de deadlock, progression apres liberation. |
+| **2 - Upgrade final** | Le troncon est precise en **canton**, puis on ajoute le **quai** et les **portes palieres PSD**. Modele final : 12 places / 12 transitions, 20 marquages, 5 invariants. | Rendre le sujet plus proche de la M14 et ajouter deux vraies proprietes critiques : PSD-Open et PSD-Departure. |
+
+Donc au rendu, la lecture attendue est : **on a d'abord prouve un coeur simple 2 trains / 1 troncon, puis on l'a etendu proprement sans abandonner la preuve initiale**.
 
 Le projet combine :
 
@@ -65,7 +76,7 @@ Toutes les commandes utiles sont centralisees dans [`documentation/suivi/COMMAND
 
 ---
 
-## 3) Structure du depot (etat 30/04/2026)
+## 3) Structure du depot (etat final apres upgrade PSD)
 
 ```text
 CriticalSystemModel/
@@ -139,7 +150,7 @@ CriticalSystemModel/
 | Carnet de preuves manuelles | **FAIT** | Taches 1-7 remplies avec valeurs reelles (20 marquages, 40 arcs) |
 | Demo HTML animee | **FAIT** | 5 scenarios pilotes par traces JSON generees depuis le modele Scala |
 | Pont Scala -> demo (`LancerDemo`) | **FAIT** | Serveur HTTP local + auto-ouverture navigateur |
-| Rapport (sections 1-8 + annexes) | **EN COURS** | Sections 1-4, 6-8 remplies. Section 5 (proprietes) a finaliser depuis `preuves-manuelles.md` |
+| Rapport (sections 1-8 + annexes) | **FAIT** | Section 5 remplie depuis `preuves-manuelles.md`, annexes A1-A4 alignees sur les 40 arcs et les noeuds PSD |
 | Bibliographie | **FAIT** | 11 sources commentees |
 | Comparaison Akka vs Petri | **FAIT** | 3 scenarios + sortie analyseur verbatim |
 | Merge `extension` -> `main` | A FAIRE | D.7 du PLAN.md |
@@ -151,18 +162,18 @@ CriticalSystemModel/
 
 ### Piste A - Rapport et livrables
 
-Objectif : finaliser les sections du rapport en reprenant le carnet de preuves.
+Objectif : relire le rapport finalise en reprenant le carnet de preuves.
 
 Fichiers a editer :
 
 - [`documentation/livrables/rapport.md`](livrables/rapport.md)
 - [`documentation/livrables/preuves-manuelles.md`](livrables/preuves-manuelles.md) (source pour les tableaux)
 
-Actions prioritaires :
+Actions restantes :
 
-1. Reprendre les tableaux des taches 2.1 a 4 du carnet et les copier dans la section 5 du rapport.
-2. Inserer le bloc des 40 arcs (tache 7) en annexe A1.
-3. Relecture croisee.
+1. Relire les tableaux de la section 5 du rapport contre `preuves-manuelles.md`.
+2. Verifier que l'annexe A1 contient les 40 arcs dans le meme ordre que l'analyseur.
+3. Faire une relecture croisee equipe avant merge.
 
 > **Mode d'emploi detaille pour la redaction : voir section 9 plus bas.**
 
@@ -184,7 +195,7 @@ Sequence recommandee pour la demo :
    - **A** cycle nominal (1 train, 7 etapes)
    - **B** concurrence canton + quai (2 trains, 11 etapes)
    - **C** cycle complet 2 trains -> liveness (13 etapes)
-   - **D** violation PSD-Open : overlay rouge sur tentative ouverture sans train (3 etapes)
+   - **D** violation PSD-Open : overlay rouge sur tentative d'ouverture sans `Ti_a_quai` (transition Petri non tirable, message Akka hors protocole)
    - **E** violation PSD-Departure : tentative depart portes ouvertes refusee, puis sequence corrigee (9 etapes)
 4. `sbt "runMain m14.Main"` : montrer la coherence Akka + Petri en console.
 
@@ -210,7 +221,7 @@ Ces choix sont verrouilles pour eviter de casser les preuves (cf [`documentation
 - pas plus de **12 places, 12 transitions** dans le reseau de Petri ;
 - pas plus de **6 messages vers controleurs + 4 messages vers trains** ;
 - pas de pannes, timeouts ou Petri temporise dans le coeur du projet ;
-- la **garde de surete du `GestionnairePortes`** (refus d'ouverture sans train a quai) ne doit jamais etre desactivee : c'est le coeur de la propriete PSD-Open.
+- la **sequence de surete PSD-Open** ne doit jamais etre affaiblie : le `Train` ne doit envoyer `OuverturePortes` qu'en etat `a_quai`, et le `GestionnairePortes` doit refuser les demandes concurrentes d'un autre train quand les portes sont deja ouvertes.
 
 La demo HTML peut etre amelioree visuellement, mais elle doit rester alignee sur le modele etendu actuel et utiliser exclusivement des traces generees par `GenererTraces` (source de verite : `PetriNet.tirer`).
 
@@ -376,4 +387,3 @@ Une section est consideree finie quand :
 3. [`livrables/preuves-manuelles.md`](livrables/preuves-manuelles.md) doit refleter le code. Si divergence : on relance l'analyseur, on met a jour le carnet.
 4. [`livrables/rapport.md`](livrables/rapport.md) est en bout de chaine : il copie depuis le carnet. Jamais l'inverse.
 5. [`START-ICI.md`](START-ICI.md) (cette page) est un resume ; en cas de doute, la **source detaillee** prime.
-
